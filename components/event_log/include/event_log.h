@@ -59,12 +59,6 @@ esp_err_t event_log_add(event_log_level_t level, const char *fmt, ...)
  */
 esp_err_t event_log_get_recent(event_log_entry_t *entries, size_t max_entries, size_t *out_count);
 
-/**
- * @brief Get total number of events logged since init
- * @return Total event count
- */
-uint32_t event_log_get_total_count(void);
-
 #ifdef __cplusplus
 }
 #endif

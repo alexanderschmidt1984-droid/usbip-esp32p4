@@ -125,8 +125,3 @@ esp_err_t event_log_get_recent(event_log_entry_t *entries, size_t max_entries, s
 
     return ESP_OK;
 }
-
-uint32_t event_log_get_total_count(void)
-{
-    return s_log.total;
-}

@@ -39,7 +39,7 @@ static char s_ip_str[16] = "0.0.0.0";
 /* -------------------------------------------------------------------------- */
 static void get_hostname(char *buf, size_t len)
 {
-    const char *default_name = "usbip-esp32p4";
+    const char *default_name = CONFIG_USBIP_HOSTNAME;
     nvs_handle_t nvs;
     if (nvs_open("network", NVS_READONLY, &nvs) == ESP_OK) {
         size_t required = len;
@@ -253,11 +253,6 @@ esp_err_t network_mgr_init(void)
     ESP_LOGI(TAG, "Network manager initialized");
     event_log_add(EVENT_LOG_LEVEL_INFO, "Network manager initialized");
     return ESP_OK;
-}
-
-esp_netif_t *network_mgr_get_netif(void)
-{
-    return s_eth_netif;
 }
 
 void network_mgr_update_mdns_devices(int device_count)

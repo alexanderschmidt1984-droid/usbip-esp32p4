@@ -322,5 +322,6 @@ done:
     close(fd);
     ESP_LOGI(TAG, "Connection handler exiting for %s (fd=%d)", ip_str, fd);
     event_log_add(EVENT_LOG_LEVEL_INFO, "Client disconnected: %s", ip_str);
+    usbip_server_client_disconnected();
     vTaskDelete(NULL);
 }

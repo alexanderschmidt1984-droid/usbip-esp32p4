@@ -24,6 +24,20 @@ static TaskHandle_t s_server_task = NULL;
 static int          s_listen_fd   = -1;
 static volatile bool s_running    = false;
 
+/* Active-client count, capped at CONFIG_USBIP_MAX_CLIENTS. Touched from both the
+ * accept loop and the per-client handler tasks, so guarded by a spinlock. */
+static portMUX_TYPE s_client_lock    = portMUX_INITIALIZER_UNLOCKED;
+static int          s_active_clients = 0;
+
+void usbip_server_client_disconnected(void)
+{
+    portENTER_CRITICAL(&s_client_lock);
+    if (s_active_clients > 0) {
+        s_active_clients--;
+    }
+    portEXIT_CRITICAL(&s_client_lock);
+}
+
 /* Format an IPv4 address (network byte order) into a dotted string */
 static void ip4_to_str(uint32_t ip_nbo, char *buf, size_t buflen)
 {
@@ -112,6 +126,20 @@ static void usbip_server_task(void *arg)
             continue;
         }
 
+        /* Concurrent-client cap */
+        portENTER_CRITICAL(&s_client_lock);
+        bool at_capacity = (s_active_clients >= CONFIG_USBIP_MAX_CLIENTS);
+        portEXIT_CRITICAL(&s_client_lock);
+        if (at_capacity) {
+            ESP_LOGW(TAG, "Client limit (%d) reached, rejecting %s",
+                     CONFIG_USBIP_MAX_CLIENTS, ip_str);
+            event_log_add(EVENT_LOG_LEVEL_WARN,
+                          "Rejected connection from %s: client limit (%d) reached",
+                          ip_str, CONFIG_USBIP_MAX_CLIENTS);
+            close(client_fd);
+            continue;
+        }
+
         ESP_LOGI(TAG, "Accepted connection from %s (fd=%d)", ip_str, client_fd);
         event_log_add(EVENT_LOG_LEVEL_INFO, "Client connected: %s", ip_str);
 
@@ -146,6 +174,10 @@ static void usbip_server_task(void *arg)
             ESP_LOGE(TAG, "Failed to create connection handler task");
             free(ctx);
             close(client_fd);
+        } else {
+            portENTER_CRITICAL(&s_client_lock);
+            s_active_clients++;
+            portEXIT_CRITICAL(&s_client_lock);
         }
     }
 

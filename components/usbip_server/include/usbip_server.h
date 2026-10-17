@@ -35,6 +35,14 @@ esp_err_t usbip_server_stop(void);
  */
 void usbip_connection_handle(void *arg);
 
+/**
+ * @brief Notify the server that a client handler has exited.
+ *
+ * Decrements the active-client count enforced against CONFIG_USBIP_MAX_CLIENTS.
+ * The connection handler calls this exactly once as it tears down.
+ */
+void usbip_server_client_disconnected(void);
+
 #ifdef __cplusplus
 }
 #endif

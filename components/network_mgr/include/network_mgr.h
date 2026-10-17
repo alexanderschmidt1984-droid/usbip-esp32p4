@@ -18,12 +18,6 @@ extern "C" {
 esp_err_t network_mgr_init(void);
 
 /**
- * @brief Get the Ethernet network interface
- * @return Pointer to esp_netif_t, or NULL if not initialized
- */
-esp_netif_t *network_mgr_get_netif(void);
-
-/**
  * @brief Update the mDNS TXT record for device count
  * @param device_count Number of currently attached USB devices
  */
