@@ -2,13 +2,24 @@
 # Target
 CONFIG_IDF_TARGET="esp32p4"
 
-# Chip revision: support ESP32-P4 rev <3.0 (rev 1.3 etc.)
-# NOTE: rev <3.0 and >=3.0 are mutually exclusive due to hardware differences
+# Chip revision: ESP32-P4 rev >= 3.0 (e.g. v3.2 on newer Waveshare ESP32-P4-ETH)
+# NOTE: rev <3.0 and >=3.0 are mutually exclusive due to hardware differences.
+# For older rev 1.x chips use instead:
+#   CONFIG_ESP32P4_SELECTS_REV_LESS_V3=y
+#   CONFIG_ESP32P4_REV_MIN_100=y
 # CONFIG_ESP32P4_SELECTS_REV_LESS_V3 is not set
 CONFIG_ESP32P4_REV_MIN_300=y
 
 # CPU frequency
 CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_360=y
+
+# Power management: dynamic frequency scaling while no client is connected
+# (see USBIP_POWER_SAVE). No light sleep - the board must stay reachable.
+CONFIG_PM_ENABLE=y
+
+# Packet capture (USB traffic recording to SD card) is OFF by default: it
+# records everything incl. security-key traffic. Enable explicitly if needed.
+# CONFIG_CAPTURE_ENABLED is not set
 
 # PSRAM
 CONFIG_SPIRAM=y

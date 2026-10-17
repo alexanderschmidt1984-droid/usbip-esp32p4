@@ -17,6 +17,7 @@
  */
 
 #include "usb_host_mgr.h"
+#include "device_filter.h"
 #include "device_manager.h"
 #include "network_mgr.h"
 #include "webui.h"
@@ -234,6 +235,18 @@ static void handle_new_device(uint8_t dev_addr)
 
     ESP_LOGI(TAG, "New device: addr=%d, VID=0x%04x, PID=0x%04x, speed=%d",
              dev_addr, dev_desc->idVendor, dev_desc->idProduct, dev_info.speed);
+
+    /* 4b. VID:PID allowlist (Web UI -> Settings -> Device Filter). Hubs are never
+     *     filtered so that allowed devices behind them still enumerate. */
+    if (dev_desc->bDeviceClass != USB_CLASS_HUB &&
+        !device_filter_allows(dev_desc->idVendor, dev_desc->idProduct)) {
+        ESP_LOGW(TAG, "Device %04x:%04x blocked by device filter - not exported",
+                 dev_desc->idVendor, dev_desc->idProduct);
+        event_log_add(EVENT_LOG_LEVEL_WARN, "USB device %04x:%04x blocked by device filter",
+                      dev_desc->idVendor, dev_desc->idProduct);
+        usb_host_device_close(s_client_hdl, dev_hdl);
+        return;
+    }
 
     /* ESP-IDF v5.5+ caches string descriptors during enumeration.
      * Read them directly from the device info -- no control transfer needed. */

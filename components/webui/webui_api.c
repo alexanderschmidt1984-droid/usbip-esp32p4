@@ -15,6 +15,7 @@
 #include "device_manager.h"
 #include "usb_host_mgr.h"
 #include "access_control.h"
+#include "device_filter.h"
 #include "network_mgr.h"
 #include "event_log.h"
 #include "freertos/FreeRTOS.h"
@@ -381,8 +382,9 @@ static esp_err_t handle_api_settings_auth_get(httpd_req_t *req)
 
     char buf[256];
     int n = snprintf(buf, sizeof(buf),
-        "{\"enabled\":%s,\"username\":\"%s\"}",
-        enabled ? "true" : "false", esc_user);
+        "{\"enabled\":%s,\"username\":\"%s\",\"has_password\":%s}",
+        enabled ? "true" : "false", esc_user,
+        webui_auth_has_password() ? "true" : "false");
     return send_json(req, buf, n);
 }
 
@@ -403,9 +405,16 @@ static esp_err_t handle_api_settings_auth_post(httpd_req_t *req)
     json_get_string(body, "username", username, sizeof(username));
     json_get_string(body, "password", password, sizeof(password));
 
-    webui_auth_save(enabled, username, password);
+    /* Empty password = keep the current one (see webui_auth_save) */
+    esp_err_t err = webui_auth_save(enabled, username, password);
+    memset(password, 0, sizeof(password));
+    memset(body, 0, sizeof(body));
+    if (err != ESP_OK) {
+        return send_json_error(req, 400, "a password is required to enable authentication");
+    }
 
-    event_log_add(EVENT_LOG_LEVEL_INFO, "Auth settings updated via WebUI");
+    event_log_add(EVENT_LOG_LEVEL_INFO, "Auth settings updated via WebUI (auth %s)",
+                  enabled ? "enabled" : "disabled");
     return send_json_ok(req);
 }
 
@@ -489,7 +498,62 @@ static esp_err_t handle_api_settings_acl_post(httpd_req_t *req)
         }
     }
 
+    /* Anti-lockout: the ACL now also guards the Web UI, so when switching to
+     * closed mode make sure the client that saved the setting stays allowed. */
+    if (access_control_is_closed_mode()) {
+        uint32_t me = webui_req_client_ip(req);
+        if (me != 0 && !access_control_is_allowed(me)) {
+            access_control_add_ip(me);
+            ip4_addr_t a; a.addr = me;
+            event_log_add(EVENT_LOG_LEVEL_INFO, "ACL: added requesting client %s to allowlist",
+                          ip4addr_ntoa(&a));
+        }
+    }
+
     event_log_add(EVENT_LOG_LEVEL_INFO, "ACL settings updated via WebUI");
+    return send_json_ok(req);
+}
+
+/* ---- Device filter (VID:PID allowlist) ---- */
+
+static esp_err_t handle_api_settings_devfilter_get(httpd_req_t *req)
+{
+    if (!webui_check_auth(req)) return webui_reject_auth(req);
+
+    bool enabled = false;
+    char list[DEVICE_FILTER_LIST_MAX];
+    device_filter_get(&enabled, list, sizeof(list));
+
+    char buf[DEVICE_FILTER_LIST_MAX + 64];
+    int n = snprintf(buf, sizeof(buf), "{\"enabled\":%s,\"list\":\"%s\"}",
+                     enabled ? "true" : "false", list);
+    return send_json(req, buf, n);
+}
+
+static esp_err_t handle_api_settings_devfilter_post(httpd_req_t *req)
+{
+    if (!webui_check_auth(req)) return webui_reject_auth(req);
+
+    char body[512];
+    if (read_body(req, body, sizeof(body)) < 0) {
+        return send_json_error(req, 400, "missing body");
+    }
+
+    bool enabled = false;
+    char list[DEVICE_FILTER_LIST_MAX] = "";
+    json_get_bool(body, "enabled", &enabled);
+    json_get_string(body, "list", list, sizeof(list));
+
+    esp_err_t err = device_filter_set(enabled, list);
+    if (err == ESP_ERR_INVALID_ARG) {
+        return send_json_error(req, 400,
+            "invalid list - use hex VID:PID or VID:* separated by commas (max 16)");
+    } else if (err != ESP_OK) {
+        return send_json_error(req, 500, "saving filter failed");
+    }
+
+    /* Re-enumerate so the new filter applies to already connected devices */
+    usb_host_mgr_reset_bus();
     return send_json_ok(req);
 }
 
@@ -644,5 +708,17 @@ void webui_api_register(httpd_handle_t server)
     };
     httpd_register_uri_handler(server, &uri_system_factory_reset);
 
-    ESP_LOGI(TAG, "API endpoints registered (13 routes)");
+    const httpd_uri_t uri_devfilter_get = {
+        .uri = "/api/settings/devfilter", .method = HTTP_GET,
+        .handler = handle_api_settings_devfilter_get, .user_ctx = NULL
+    };
+    httpd_register_uri_handler(server, &uri_devfilter_get);
+
+    const httpd_uri_t uri_devfilter_post = {
+        .uri = "/api/settings/devfilter", .method = HTTP_POST,
+        .handler = handle_api_settings_devfilter_post, .user_ctx = NULL
+    };
+    httpd_register_uri_handler(server, &uri_devfilter_post);
+
+    ESP_LOGI(TAG, "API endpoints registered (15 routes)");
 }

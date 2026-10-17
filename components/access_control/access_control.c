@@ -3,6 +3,7 @@
  */
 
 #include "access_control.h"
+#include "device_filter.h"
 #include "event_log.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
@@ -77,7 +78,7 @@ static esp_err_t save_allowlist_to_nvs(void)
     return err;
 }
 
-esp_err_t access_control_init(void)
+static esp_err_t acl_load(void)
 {
     s_closed_mode = false;
     s_allowlist_count = 0;
@@ -126,6 +127,14 @@ esp_err_t access_control_init(void)
     return ESP_OK;
 }
 
+esp_err_t access_control_init(void)
+{
+    esp_err_t err = acl_load();
+    /* VID:PID device filter lives in this component as well */
+    device_filter_init();
+    return err;
+}
+
 bool access_control_check(uint32_t client_ip)
 {
     if (!s_closed_mode) {
@@ -142,6 +151,16 @@ bool access_control_check(uint32_t client_ip)
     ip_to_str(client_ip, ip_str, sizeof(ip_str));
     ESP_LOGW(TAG, "Denied connection from %s (not in allowlist)", ip_str);
     event_log_add(EVENT_LOG_LEVEL_WARN, "Access denied for %s", ip_str);
+    return false;
+}
+
+bool access_control_is_allowed(uint32_t client_ip)
+{
+    for (int i = 0; i < s_allowlist_count; i++) {
+        if (s_allowlist[i] == client_ip) {
+            return true;
+        }
+    }
     return false;
 }
 

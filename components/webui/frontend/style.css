@@ -1013,3 +1013,5 @@ body {
 .text-dim {
     color: var(--text-dim);
 }
+
+.hint { font-size: 12px; opacity: .75; margin: 6px 0 10px; }

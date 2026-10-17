@@ -47,14 +47,24 @@ static const char *TAG = "xfer_eng";
  * The client's own timeout (CMD_UNLINK) handles normal cancellation. */
 #define PENDING_URB_TIMEOUT_US  (120 * 1000 * 1000LL)
 
-/* select() timeout for polling the socket (microseconds) */
-#define SELECT_TIMEOUT_US   1000
+/* select() timeout for polling the socket (microseconds).
+ * Short while URBs are in flight (completion latency), longer when idle so the
+ * engine task doesn't spin at 1 kHz with nothing to do (saves CPU/power).
+ * Incoming socket data still wakes select() immediately in both cases. */
+#define SELECT_TIMEOUT_US        1000
+#define SELECT_TIMEOUT_IDLE_US   20000
 
 /* Maximum concurrent pending URBs */
 #define MAX_PENDING_URBS    32
 
+/* Upper bound for isochronous packets per URB. Linux usbip sends at most a few
+ * dozen; anything larger is malformed or hostile (and would let a client force
+ * huge allocations / an int overflow in the drain length). */
+#define MAX_ISO_PACKETS     128
+
 /* Linux errno values (USB/IP client expects these, not ESP-IDF values) */
 #define LINUX_EIO           5
+#define LINUX_EINVAL        22
 #define LINUX_ENODEV        19
 #define LINUX_EPIPE         32
 #define LINUX_EOVERFLOW     75
@@ -80,6 +90,11 @@ typedef struct {
     usb_transfer_status_t usb_status;
     bool is_control;
     int dev_index;  // device_manager index for stats updates
+    /* Set when a cancel could not confirm completion: the transfer may still be
+     * in flight inside the USB stack, so xfer/sem must NOT be freed yet (the
+     * completion callback still points at this slot). The slot stays reserved
+     * (owner_fd = -1) and is reaped once the callback has fired. */
+    bool orphaned;
 } pending_urb_t;
 
 static pending_urb_t s_pending[MAX_PENDING_URBS];
@@ -230,14 +245,15 @@ static int send_error_reply(int fd, uint32_t seqnum, int32_t status)
  *                   If false, just wait for the transfer to complete on its own
  *                   (for CMD_UNLINK - avoids changing endpoint state on device).
  */
-static void cancel_pending_urb(pending_urb_t *slot, usb_device_handle_t dev_handle, bool force)
+static bool cancel_pending_urb(pending_urb_t *slot, usb_device_handle_t dev_handle, bool force)
 {
+    bool done = false;
     if (!slot->is_control && dev_handle) {
         if (!force) {
             /* Gentle cancel: wait briefly for the transfer to complete naturally.
              * This avoids halting the endpoint which could interfere with device protocol. */
             if (xSemaphoreTake(slot->sem, pdMS_TO_TICKS(500)) == pdTRUE) {
-                return; /* Transfer completed naturally */
+                return true; /* Transfer completed naturally */
             }
             /* Transfer didn't complete in 500ms - MUST force-cancel to prevent
              * use-after-free when we free the slot but the transfer is still in-flight. */
@@ -248,16 +264,17 @@ static void cancel_pending_urb(pending_urb_t *slot, usb_device_handle_t dev_hand
         usb_host_endpoint_halt(dev_handle, ep_addr);
         usb_host_endpoint_flush(dev_handle, ep_addr);
         /* Wait for the canceled callback */
-        xSemaphoreTake(slot->sem, pdMS_TO_TICKS(1000));
+        done = (xSemaphoreTake(slot->sem, pdMS_TO_TICKS(1000)) == pdTRUE);
         usb_host_endpoint_clear(dev_handle, ep_addr);
     } else if (!slot->is_control) {
         /* No device handle (device already removed) - just wait for callback.
          * The USB host stack should fire the callback with error status. */
-        xSemaphoreTake(slot->sem, pdMS_TO_TICKS(2000));
+        done = (xSemaphoreTake(slot->sem, pdMS_TO_TICKS(2000)) == pdTRUE);
     } else {
         /* EP0 control: wait for USB stack's own timeout */
-        xSemaphoreTake(slot->sem, pdMS_TO_TICKS(6000));
+        done = (xSemaphoreTake(slot->sem, pdMS_TO_TICKS(6000)) == pdTRUE);
     }
+    return done;
 }
 
 /**
@@ -273,7 +290,62 @@ static void free_pending_slot(pending_urb_t *slot)
         usb_host_transfer_free(slot->xfer);
         slot->xfer = NULL;
     }
+    slot->orphaned = false;
     slot->active = false;
+}
+
+/**
+ * @brief Release a slot after a cancel attempt.
+ *
+ * If the cancel confirmed completion, the slot is freed normally. Otherwise the
+ * transfer may still be in flight: freeing xfer/sem now would be a
+ * use-after-free when the USB stack later completes it (transfer_cb writes to
+ * slot->usb_status and gives slot->sem, and the stack still owns xfer). Park the
+ * slot as an orphan instead; reap_orphans() frees it once the callback fired.
+ */
+static void release_after_cancel(pending_urb_t *slot, bool done)
+{
+    if (done) {
+        free_pending_slot(slot);
+        return;
+    }
+    ESP_LOGW(TAG, "URB seqnum=%lu still in flight after cancel; parking until completion",
+             (unsigned long)slot->seqnum);
+    portENTER_CRITICAL(&s_pending_lock);
+    slot->orphaned = true;
+    slot->owner_fd = -1;   /* no connection polls it any more */
+    portEXIT_CRITICAL(&s_pending_lock);
+}
+
+/**
+ * @brief Free orphaned slots whose transfer has finally completed.
+ * Safe to call from any connection task.
+ */
+static void reap_orphans(void)
+{
+    for (int i = 0; i < MAX_PENDING_URBS; i++) {
+        pending_urb_t *slot = &s_pending[i];
+        /* Claim the orphan under the lock (owner_fd -1 -> -2) so two connection
+         * tasks never touch/free the same slot concurrently. */
+        bool claimed = false;
+        portENTER_CRITICAL(&s_pending_lock);
+        if (slot->active && slot->orphaned && slot->owner_fd == -1) {
+            slot->owner_fd = -2;
+            claimed = true;
+        }
+        portEXIT_CRITICAL(&s_pending_lock);
+        if (!claimed) {
+            continue;
+        }
+        if (slot->sem && xSemaphoreTake(slot->sem, 0) == pdTRUE) {
+            ESP_LOGI(TAG, "Reaped orphaned URB seqnum=%lu", (unsigned long)slot->seqnum);
+            free_pending_slot(slot);
+        } else {
+            portENTER_CRITICAL(&s_pending_lock);
+            slot->owner_fd = -1;   /* still in flight - try again later */
+            portEXIT_CRITICAL(&s_pending_lock);
+        }
+    }
 }
 
 /**
@@ -427,10 +499,35 @@ static int handle_cmd_submit(int fd, usbip_header_t *hdr, const dm_device_info_t
              direction == USBIP_DIR_IN ? "IN" : "OUT",
              (long)buflen, (unsigned long)hdr->u.cmd_submit.transfer_flags);
 
-    /* Clamp buffer length */
-    if (buflen < 0) buflen = 0;
+    /* Validate packet count. A bogus value can't be resynchronised reliably
+     * (drain length num_iso*16 could overflow), so drop the connection. */
+    if (num_iso < 0 || num_iso > MAX_ISO_PACKETS) {
+        ESP_LOGE(TAG, "CMD_SUBMIT seqnum=%lu: invalid number_of_packets %ld, closing",
+                 (unsigned long)seqnum, (long)num_iso);
+        return -1;
+    }
+    if (buflen < 0) {
+        ESP_LOGE(TAG, "CMD_SUBMIT seqnum=%lu: negative transfer_buffer_length, closing",
+                 (unsigned long)seqnum);
+        return -1;
+    }
+    /* OUT data longer than our buffer used to be silently truncated while the
+     * surplus bytes stayed in the socket and were then parsed as the next
+     * header (stream desync). Consume the payload and fail the URB instead. */
+    if (direction == USBIP_DIR_OUT && buflen > MAX_TRANSFER_SIZE) {
+        ESP_LOGW(TAG, "CMD_SUBMIT seqnum=%lu: OUT length %ld > %d, rejecting",
+                 (unsigned long)seqnum, (long)buflen, MAX_TRANSFER_SIZE);
+        if (drain_socket(fd, buflen) != 0) {
+            return -1;
+        }
+        if (num_iso > 0 && drain_socket(fd, num_iso * 16) != 0) {
+            return -1;
+        }
+        send_error_reply(fd, seqnum, -LINUX_EINVAL);
+        return 0;
+    }
+    /* IN requests larger than our buffer are clamped (short read), as before. */
     if (buflen > MAX_TRANSFER_SIZE) buflen = MAX_TRANSFER_SIZE;
-    if (num_iso < 0) num_iso = 0;
 
     /* Intercept SET_INTERFACE (bmRequestType=0x01, bRequest=0x0B). ESP-IDF brings
      * up an alternate setting's endpoints only via usb_host_interface_claim(); a
@@ -593,7 +690,7 @@ static int handle_cmd_submit(int fd, usbip_header_t *hdr, const dm_device_info_t
 
     /* For ISO: receive ISO packet descriptors from socket */
     if (num_iso > 0) {
-        uint32_t iso_total = 0;
+        uint64_t iso_total = 0;   /* 64-bit: client-supplied lengths must not wrap */
         for (int i = 0; i < num_iso; i++) {
             usbip_iso_packet_descriptor_t iso_desc;
             if (usbip_net_recv(fd, &iso_desc, sizeof(iso_desc)) != 0) {
@@ -605,10 +702,20 @@ static int handle_cmd_submit(int fd, usbip_header_t *hdr, const dm_device_info_t
             xfer->isoc_packet_desc[i].num_bytes = iso_desc.length;
             iso_total += iso_desc.length;
         }
+        /* The per-packet lengths come from the client: never let their sum
+         * exceed the buffer we actually allocated. */
+        if (iso_total > xfer->data_buffer_size) {
+            ESP_LOGW(TAG, "ISO seqnum=%lu: packet lengths (%lu) exceed buffer (%u), rejecting",
+                     (unsigned long)seqnum, (unsigned long)iso_total,
+                     (unsigned)xfer->data_buffer_size);
+            send_error_reply(fd, seqnum, -LINUX_EINVAL);
+            free_pending_slot(slot);
+            return 0;  /* stream is in sync: all descriptors were consumed */
+        }
         /* ESP-IDF requires xfer->num_bytes to exactly equal the sum of all isoc
          * packet lengths ("num_bytes != num_bytes of all packets" otherwise). The
          * MPS round-up applied to IN transfers above breaks that, so set it here. */
-        xfer->num_bytes = iso_total;
+        xfer->num_bytes = (int)iso_total;
     }
 
     /* Submit the transfer */
@@ -664,9 +771,9 @@ static int handle_cmd_unlink(int fd, usbip_header_t *hdr, const dm_device_info_t
                  (unsigned long)unlink_seqnum,
                  (unsigned)(slot->ep | (slot->direction == USBIP_DIR_IN ? 0x80 : 0x00)));
 
-        cancel_pending_urb(slot, dev_handle, false);
+        bool done = cancel_pending_urb(slot, dev_handle, false);
         /* Do NOT send RET_SUBMIT - spec says no RET_SUBMIT after successful UNLINK */
-        free_pending_slot(slot);
+        release_after_cancel(slot, done);
     }
 
     /* Send RET_UNLINK response.
@@ -748,8 +855,13 @@ int transfer_engine_run(int sockfd, const char *busid)
     event_log_add(EVENT_LOG_LEVEL_INFO, "Transfer engine started for %s (addr=%d)",
                   busid, devinfo.dev_addr);
 
-    /* Initialize pending URB table */
-    memset(s_pending, 0, sizeof(s_pending));
+    /* NOTE: the pending-URB table is shared by all client connections (slots are
+     * isolated by owner_fd). It must NOT be cleared here: the former
+     * memset(s_pending, 0, ...) wiped other clients' in-flight URBs (leaking
+     * their transfers/semaphores and leaving USB callbacks pointing at zeroed
+     * slots -> crash) whenever a second device was imported. Only reclaim
+     * orphans whose transfers have since completed. */
+    reap_orphans();
 
     /* Main concurrent URB forwarding loop */
     int ret = 0;
@@ -770,9 +882,18 @@ int transfer_engine_run(int sockfd, const char *busid)
         FD_ZERO(&readfds);
         FD_SET(sockfd, &readfds);
 
+        /* Poll fast only while this connection has URBs in flight. */
+        bool have_pending = false;
+        for (int i = 0; i < MAX_PENDING_URBS; i++) {
+            if (s_pending[i].active && s_pending[i].owner_fd == sockfd) {
+                have_pending = true;
+                break;
+            }
+        }
+
         struct timeval tv;
         tv.tv_sec = 0;
-        tv.tv_usec = SELECT_TIMEOUT_US;
+        tv.tv_usec = have_pending ? SELECT_TIMEOUT_US : SELECT_TIMEOUT_IDLE_US;
 
         int sel_ret = select(sockfd + 1, &readfds, NULL, NULL, &tv);
 
@@ -838,13 +959,16 @@ int transfer_engine_run(int sockfd, const char *busid)
                 ESP_LOGE(TAG, "Transfer timeout (seqnum=%lu), aborting ep=0x%02x",
                          (unsigned long)slot->seqnum, slot->xfer->bEndpointAddress);
 
-                cancel_pending_urb(slot, cached_dev_handle, true);
+                bool done = cancel_pending_urb(slot, cached_dev_handle, true);
 
                 /* Send timeout reply */
                 send_error_reply(sockfd, slot->seqnum, -LINUX_ETIMEDOUT);
-                free_pending_slot(slot);
+                release_after_cancel(slot, done);
             }
         }
+
+        /* Free any orphaned slots whose transfers have completed meanwhile */
+        reap_orphans();
 
         /* ---- Phase 3: Check if device still exists ---- */
         if (device_manager_get(dev_index, &devinfo) != ESP_OK || !devinfo.in_use) {
@@ -877,12 +1001,12 @@ cleanup:
             ESP_LOGW(TAG, "Cleanup: aborting pending URB seqnum=%lu",
                      (unsigned long)slot->seqnum);
 
-            cancel_pending_urb(slot, cleanup_handle, true);
+            bool done = cancel_pending_urb(slot, cleanup_handle, true);
 
             /* Send -ENODEV for each pending URB so client knows device is gone */
             send_error_reply(sockfd, slot->seqnum, -LINUX_ENODEV);
 
-            free_pending_slot(slot);
+            release_after_cancel(slot, done);
         }
     }
 

@@ -4,6 +4,6 @@ dependencies:
   # IDF 6.0 moved the USB host layer and the IP101 Ethernet PHY driver out of
   # core into the component registry (they were in-core through 5.x). Required
   # to build on ESP-IDF 6.0+. They still register as components "usb" / "ip101".
-  espressif/usb: "*"
+  espressif/usb: ">=1.6.0"  # 1.6.0 fixes hub/enum issues
   espressif/ip101:
     version: "^1.0.0"

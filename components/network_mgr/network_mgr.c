@@ -56,6 +56,72 @@ static void get_hostname(char *buf, size_t len)
 /* -------------------------------------------------------------------------- */
 /*  Event handlers                                                            */
 /* -------------------------------------------------------------------------- */
+
+/*
+ * Static IPv4 configuration from NVS namespace "network" (written by the web UI):
+ *   dhcp = "false", static_ip / netmask / gateway / dns = dotted quad.
+ * Previously these values were stored but never applied. Invalid values fall
+ * back to DHCP so the board can never become unreachable by a typo.
+ */
+static bool parse_ip4(const char *s, esp_ip4_addr_t *out)
+{
+    if (!s || !s[0]) return false;
+    out->addr = esp_ip4addr_aton(s);
+    return out->addr != 0 && out->addr != 0xFFFFFFFFu;
+}
+
+static void apply_static_ip(void)
+{
+    nvs_handle_t nvs;
+    char dhcp[8] = "true", ip[20] = "", mask[20] = "", gw[20] = "", dns[20] = "";
+    if (nvs_open("network", NVS_READONLY, &nvs) != ESP_OK) {
+        return; /* nothing stored: DHCP */
+    }
+    size_t len;
+    len = sizeof(dhcp); nvs_get_str(nvs, "dhcp", dhcp, &len);
+    len = sizeof(ip);   nvs_get_str(nvs, "static_ip", ip, &len);
+    len = sizeof(mask); nvs_get_str(nvs, "netmask", mask, &len);
+    len = sizeof(gw);   nvs_get_str(nvs, "gateway", gw, &len);
+    len = sizeof(dns);  nvs_get_str(nvs, "dns", dns, &len);
+    nvs_close(nvs);
+
+    if (strcmp(dhcp, "false") != 0 && strcmp(dhcp, "0") != 0) {
+        return;
+    }
+
+    esp_netif_ip_info_t info = {0};
+    if (!parse_ip4(ip, &info.ip) || !parse_ip4(mask, &info.netmask)) {
+        ESP_LOGW(TAG, "Static IP config invalid (ip='%s' mask='%s') - using DHCP", ip, mask);
+        event_log_add(EVENT_LOG_LEVEL_WARN, "Static IP config invalid - using DHCP");
+        return;
+    }
+    if (!parse_ip4(gw, &info.gw)) {
+        info.gw.addr = 0;
+    }
+
+    esp_err_t err = esp_netif_dhcpc_stop(s_eth_netif);
+    if (err != ESP_OK && err != ESP_ERR_ESP_NETIF_DHCP_ALREADY_STOPPED) {
+        ESP_LOGW(TAG, "dhcpc_stop failed: %s - using DHCP", esp_err_to_name(err));
+        return;
+    }
+    err = esp_netif_set_ip_info(s_eth_netif, &info);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "set_ip_info failed: %s - back to DHCP", esp_err_to_name(err));
+        esp_netif_dhcpc_start(s_eth_netif);
+        return;
+    }
+    esp_netif_dns_info_t d = {0};
+    if (!parse_ip4(dns, &d.ip.u_addr.ip4)) {
+        d.ip.u_addr.ip4 = info.gw;          /* default: router as DNS */
+    }
+    if (d.ip.u_addr.ip4.addr != 0) {
+        d.ip.type = ESP_IPADDR_TYPE_V4;
+        esp_netif_set_dns_info(s_eth_netif, ESP_NETIF_DNS_MAIN, &d);
+    }
+    ESP_LOGI(TAG, "Static IP applied: %s/%s gw %s", ip, mask, gw[0] ? gw : "-");
+    event_log_add(EVENT_LOG_LEVEL_INFO, "Static IP %s applied", ip);
+}
+
 static void on_eth_event(void *arg, esp_event_base_t event_base,
                          int32_t event_id, void *event_data)
 {
@@ -63,6 +129,7 @@ static void on_eth_event(void *arg, esp_event_base_t event_base,
     case ETHERNET_EVENT_CONNECTED:
         ESP_LOGI(TAG, "Ethernet link up");
         event_log_add(EVENT_LOG_LEVEL_INFO, "Ethernet link up");
+        apply_static_ip();
         break;
     case ETHERNET_EVENT_DISCONNECTED:
         ESP_LOGW(TAG, "Ethernet link down");

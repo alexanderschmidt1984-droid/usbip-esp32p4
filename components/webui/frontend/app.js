@@ -3,6 +3,22 @@
 (function() {
     'use strict';
 
+    /* Server requires X-USBIP-CSRF on every non-GET request (CSRF protection).
+     * Wrap fetch once so every call - including inline onclick handlers - sends it. */
+    (function() {
+        var origFetch = window.fetch.bind(window);
+        window.fetch = function(url, opts) {
+            opts = opts || {};
+            var m = (opts.method || 'GET').toUpperCase();
+            if (m !== 'GET' && m !== 'HEAD') {
+                var h = new Headers(opts.headers || {});
+                h.set('X-USBIP-CSRF', '1');
+                opts.headers = h;
+            }
+            return origFetch(url, opts);
+        };
+    })();
+
     /* ================================================================
      * Utility functions
      * ================================================================ */
@@ -1034,6 +1050,7 @@
         loadNetworkSettings();
         loadAuthSettings();
         loadAclSettings();
+        loadDevFilter();
         loadSystemInfo();
     }
 
@@ -1126,7 +1143,12 @@
                     $authFields.style.display = data.enabled ? 'block' : 'none';
                 }
                 if ($setAuthUser) $setAuthUser.value = data.username || '';
-                if ($setAuthPass) $setAuthPass.value = '';
+                if ($setAuthPass) {
+                    $setAuthPass.value = '';
+                    $setAuthPass.placeholder = data.has_password ? '(unchanged)' : 'required';
+                }
+                var $hint = document.getElementById('auth-hint');
+                if ($hint) $hint.style.display = data.has_password ? 'none' : 'block';
             })
             .catch(function() { /* ignore */ });
     }
@@ -1146,6 +1168,45 @@
         .then(function(data) {
             if (data.ok) {
                 toast('Auth settings saved', 'success');
+                loadAuthSettings();
+            } else {
+                toast(data.error || 'Save failed', 'error');
+            }
+        })
+        .catch(function() { toast('Request failed', 'error'); });
+    };
+
+    /* --- Device filter (VID:PID allowlist) --- */
+
+    function loadDevFilter() {
+        var $en = document.getElementById('devf-enabled');
+        var $list = document.getElementById('devf-list');
+        if (!$en || !$list) return;
+        fetch('/api/settings/devfilter')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                $en.checked = !!data.enabled;
+                $list.value = data.list || '';
+            })
+            .catch(function() { /* ignore */ });
+    }
+
+    window.saveDevFilter = function() {
+        var body = {
+            enabled: document.getElementById('devf-enabled').checked,
+            list: document.getElementById('devf-list').value.trim()
+        };
+        if (body.enabled && !confirm('Apply device filter? The USB bus is reset and attached clients are dropped.')) return;
+        fetch('/api/settings/devfilter', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.ok) {
+                toast('Device filter saved', 'success');
+                loadDevFilter();
             } else {
                 toast(data.error || 'Save failed', 'error');
             }

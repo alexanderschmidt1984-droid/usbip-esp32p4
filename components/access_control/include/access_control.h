@@ -31,6 +31,13 @@ esp_err_t access_control_init(void);
 bool access_control_check(uint32_t client_ip);
 
 /**
+ * @brief Silent allowlist lookup (no logging) - for frequent checks such as
+ *        Web UI requests. Returns true if ip is in the allowlist.
+ * @param client_ip Client IP address (network byte order)
+ */
+bool access_control_is_allowed(uint32_t client_ip);
+
+/**
  * @brief Check if access control is in closed mode
  * @return true if closed mode is active
  */

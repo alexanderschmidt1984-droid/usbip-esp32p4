@@ -11,6 +11,10 @@
 #include "esp_psram.h"
 #include "esp_system.h"
 #include "esp_heap_caps.h"
+#include "sdkconfig.h"
+#if CONFIG_USBIP_POWER_SAVE
+#include "esp_pm.h"
+#endif
 
 #include "event_log.h"
 #include "access_control.h"
@@ -84,6 +88,22 @@ void app_main(void)
     /* Install custom log handler to catch USB hub TT errors for WebUI */
     s_orig_vprintf = esp_log_set_vprintf(custom_vprintf);
     ESP_LOGI(TAG, "Custom log handler installed");
+
+#if CONFIG_USBIP_POWER_SAVE
+    {
+        /* Dynamic frequency scaling: idle at USBIP_PM_MIN_FREQ_MHZ, full clock
+         * whenever a USB/IP client has a device attached (PM lock). Light sleep
+         * stays off so Ethernet/USB remain responsive. */
+        esp_pm_config_t pm = {
+            .max_freq_mhz = CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,
+            .min_freq_mhz = CONFIG_USBIP_PM_MIN_FREQ_MHZ,
+            .light_sleep_enable = false,
+        };
+        esp_err_t pm_err = esp_pm_configure(&pm);
+        ESP_LOGI(TAG, "Power save (DFS %d-%d MHz): %s", pm.min_freq_mhz, pm.max_freq_mhz,
+                 esp_err_to_name(pm_err));
+    }
+#endif
 
     ESP_ERROR_CHECK(access_control_init());
     ESP_LOGI(TAG, "Access control initialized");

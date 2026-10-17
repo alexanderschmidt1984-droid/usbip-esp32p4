@@ -15,4 +15,5 @@ idf_component_register(
         esp_psram
         esp_system
         heap
+        esp_pm
 )

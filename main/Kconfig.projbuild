@@ -24,4 +24,43 @@ menu "USB/IP Server Configuration"
         help
             Hostname used for mDNS advertisement.
 
+    config USBIP_DEVICE_ALLOWLIST
+        string "Default USB device allowlist (VID:PID)"
+        default ""
+        help
+            Comma-separated list of USB devices that may be exported, as
+            hexadecimal VID:PID pairs. "*" matches any PID of a vendor, e.g.
+            "1050:*" for all Yubico keys or "1050:0407,0403:6001".
+            Empty = every device is exported (original behaviour).
+            This is only the factory default: the list can be changed at
+            runtime in the Web UI (Settings -> Device Filter) and is then
+            stored in NVS.
+
+    config USBIP_WEBUI_REQUIRE_PASSWORD
+        bool "Require a Web UI password before settings can be changed"
+        default y
+        help
+            Secure default: as long as no Web UI password is configured, every
+            state-changing request (ACL, network, device filter, export,
+            capture, factory reset, ...) is refused, except setting the
+            password itself. Read-only pages stay available.
+
+    config USBIP_POWER_SAVE
+        bool "Power save: dynamic CPU frequency scaling"
+        depends on PM_ENABLE
+        default y
+        help
+            Lets the CPU clock down to USBIP_PM_MIN_FREQ_MHZ while no USB/IP
+            client is connected. A power-management lock keeps the CPU at full
+            speed for as long as a client connection is open, so transfer
+            latency is unaffected. Light sleep is NOT used (the board must stay
+            reachable on the network).
+
+    config USBIP_PM_MIN_FREQ_MHZ
+        int "Minimum CPU frequency when idle (MHz)"
+        depends on USBIP_POWER_SAVE
+        default 40
+        help
+            CPU frequency used while idle. 40 MHz = crystal frequency.
+
 endmenu

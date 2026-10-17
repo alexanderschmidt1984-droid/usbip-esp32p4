@@ -35,9 +35,21 @@ void webui_notify_device_change(void);
  * @brief Save authentication settings to NVS
  * @param enabled  Whether auth is enabled
  * @param username Username (NULL to keep current)
- * @param password Plaintext password - stored as SHA-256 hash (NULL to keep current)
+ * @param password Plaintext password - stored as salted, iterated SHA-256
+ *                 (NULL or "" to keep current)
+ * @return ESP_OK, or ESP_ERR_INVALID_ARG when enabling auth without any password
  */
-void webui_auth_save(bool enabled, const char *username, const char *password);
+esp_err_t webui_auth_save(bool enabled, const char *username, const char *password);
+
+/**
+ * @brief Whether a Web UI password has been configured
+ */
+bool webui_auth_has_password(void);
+
+/**
+ * @brief Client IPv4 address of a request (network byte order), 0 if unknown
+ */
+uint32_t webui_req_client_ip(httpd_req_t *req);
 
 /**
  * @brief Check if authentication is currently enabled

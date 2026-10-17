@@ -10,6 +10,31 @@
 #include "usb_host_mgr.h"
 #include "event_log.h"
 #include "esp_log.h"
+#include "sdkconfig.h"
+#if CONFIG_USBIP_POWER_SAVE
+#include "esp_pm.h"
+#include "freertos/FreeRTOS.h"
+
+/* Full CPU clock while at least one device is attached (counting lock). */
+static esp_pm_lock_handle_t s_pm_lock;
+static portMUX_TYPE s_pm_mux = portMUX_INITIALIZER_UNLOCKED;
+
+static void pm_busy(bool on)
+{
+    if (!s_pm_lock) {
+        esp_pm_lock_handle_t h = NULL;
+        if (esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "usbip", &h) != ESP_OK) return;
+        portENTER_CRITICAL(&s_pm_mux);
+        if (!s_pm_lock) { s_pm_lock = h; h = NULL; }
+        portEXIT_CRITICAL(&s_pm_mux);
+        if (h) esp_pm_lock_delete(h);
+    }
+    if (on) esp_pm_lock_acquire(s_pm_lock);
+    else    esp_pm_lock_release(s_pm_lock);
+}
+#else
+static inline void pm_busy(bool on) { (void)on; }
+#endif
 
 #include <string.h>
 #include <lwip/sockets.h>
@@ -244,7 +269,9 @@ static int handle_import(int fd, uint16_t client_version, uint32_t client_ip)
     }
 
     /* Enter the URB transfer loop (blocks until done) */
+    pm_busy(true);
     transfer_engine_run(fd, req.busid);
+    pm_busy(false);
 
     /* Release interfaces and the device */
     usb_host_mgr_release_interfaces(info.dev_addr);
