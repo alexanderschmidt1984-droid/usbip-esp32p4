@@ -814,6 +814,39 @@ static esp_err_t handle_api_settings_security_cert(httpd_req_t *req)
     return send_json(req, buf, n);
 }
 
+/* ---- USB hub compatibility (Full Speed only) ---- */
+
+static esp_err_t handle_api_settings_usb_get(httpd_req_t *req)
+{
+    if (!webui_check_auth(req)) return webui_reject_auth(req);
+    char buf[128];
+    int n = snprintf(buf, sizeof(buf),
+                     "{\"supported\":%s,\"hub_seen\":%s,\"fsls_active\":%s,\"fsls_saved\":%s}",
+                     usb_host_mgr_fsls_supported() ? "true" : "false",
+                     usb_host_mgr_hub_seen() ? "true" : "false",
+                     usb_host_mgr_fsls_only() ? "true" : "false",
+                     usb_host_mgr_fsls_saved() ? "true" : "false");
+    return send_json(req, buf, n);
+}
+
+static esp_err_t handle_api_settings_usb_post(httpd_req_t *req)
+{
+    if (!webui_check_auth(req)) return webui_reject_auth(req);
+    char body[128];
+    bool on;
+    if (read_body(req, body, sizeof(body)) < 0 || !json_get_bool(body, "fsls_only", &on)) {
+        return send_json_error(req, 400, "missing fsls_only");
+    }
+    esp_err_t err = usb_host_mgr_set_fsls_only(on);
+    if (err == ESP_ERR_NOT_SUPPORTED) {
+        return send_json_error(req, 400, "hub compatibility needs a newer ESP-IDF");
+    } else if (err != ESP_OK) {
+        return send_json_error(req, 500, "saving USB setting failed");
+    }
+    event_log_add(EVENT_LOG_LEVEL_INFO, "Hub compatibility %s (after restart)", on ? "on" : "off");
+    return send_json_ok(req);
+}
+
 /* ---- Power save ---- */
 
 static esp_err_t handle_api_settings_power_get(httpd_req_t *req)
@@ -990,6 +1023,18 @@ void webui_api_register(httpd_handle_t server)
         .handler = handle_api_system_restart, .user_ctx = NULL
     };
     httpd_register_uri_handler(server, &uri_system_restart);
+
+    const httpd_uri_t uri_settings_usb_get = {
+        .uri = "/api/settings/usb", .method = HTTP_GET,
+        .handler = handle_api_settings_usb_get, .user_ctx = NULL
+    };
+    httpd_register_uri_handler(server, &uri_settings_usb_get);
+
+    const httpd_uri_t uri_settings_usb_post = {
+        .uri = "/api/settings/usb", .method = HTTP_POST,
+        .handler = handle_api_settings_usb_post, .user_ctx = NULL
+    };
+    httpd_register_uri_handler(server, &uri_settings_usb_post);
 
     const httpd_uri_t uri_settings_power_get = {
         .uri = "/api/settings/power", .method = HTTP_GET,

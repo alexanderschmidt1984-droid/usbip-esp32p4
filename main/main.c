@@ -51,8 +51,10 @@ static int custom_vprintf(const char *fmt, va_list args)
     /* Check for known USB hub/enum error patterns in the format string */
     if (fmt) {
         if (strstr(fmt, "transaction translator") || strstr(fmt, "TT") ) {
+            usb_host_mgr_note_tt_reject();
             event_log_add(EVENT_LOG_LEVEL_WARN,
-                "USB hub: FS/LS device rejected (no TT support). Connect directly to root port.");
+                "USB hub: FS/LS device rejected (no TT support). Connect it directly to the board, "
+                "or enable Settings -> USB -> hub compatibility.");
         } else if (strstr(fmt, "CHECK_SHORT_DEV_DESC FAILED") ||
                    strstr(fmt, "CHECK_FULL_CONFIG_DESC FAILED")) {
             event_log_add(EVENT_LOG_LEVEL_WARN,

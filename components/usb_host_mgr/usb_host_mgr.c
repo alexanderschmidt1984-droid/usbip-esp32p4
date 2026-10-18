@@ -23,11 +23,21 @@
 #include "webui.h"
 #include "event_log.h"
 #include "esp_log.h"
+#include "nvs.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "usb/usb_host.h"
+#include "hal/usb_dwc_hal.h"
+
+/* Full-Speed-only host needs USB DWC HAL config support in ESP-IDF (newer
+ * than v6.0.2); without it esp-usb refuses to install with fsls_only. */
+#ifdef USB_DWC_HAL_INIT_HAS_CONFIG
+#define FSLS_SUPPORTED 1
+#else
+#define FSLS_SUPPORTED 0
+#endif
 
 #include "esp_heap_caps.h"
 
@@ -51,6 +61,10 @@ static TaskHandle_t s_daemon_task_hdl;
 static TaskHandle_t s_class_driver_task_hdl;
 static SemaphoreHandle_t s_daemon_ready_sem;
 static usb_host_client_handle_t s_client_hdl;
+static bool s_fsls_only;       /* hub compatibility, latched at install time */
+static bool s_fsls_saved;
+static volatile bool s_hub_seen;
+
 static volatile bool s_stop_requested;
 
 /* Device-removal flag: set by handle_device_gone(), read by transfer engine */
@@ -281,6 +295,7 @@ static void handle_new_device(uint8_t dev_addr)
     dm_info.speed = map_speed(dev_info.speed);
     build_busid_path(&dev_info, dm_info.path, sizeof(dm_info.path));
     if (dev_info.parent.port_num != 0) {
+        s_hub_seen = true;
         ESP_LOGI(TAG, "  Device is behind a hub (parent port=%u), busid=%s",
                  dev_info.parent.port_num, dm_info.path);
     }
@@ -434,18 +449,56 @@ static void client_event_cb(const usb_host_client_event_msg_t *event_msg, void *
 
 /* ---- Daemon task ---- */
 
+bool usb_host_mgr_fsls_supported(void) { return FSLS_SUPPORTED; }
+bool usb_host_mgr_fsls_only(void)  { return s_fsls_only; }
+bool usb_host_mgr_fsls_saved(void) { return s_fsls_saved; }
+bool usb_host_mgr_hub_seen(void)   { return s_hub_seen || s_fsls_only; }
+void usb_host_mgr_note_tt_reject(void) { s_hub_seen = true; }
+
+esp_err_t usb_host_mgr_set_fsls_only(bool on)
+{
+    if (on && !FSLS_SUPPORTED) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    nvs_handle_t nvs;
+    esp_err_t err = nvs_open("usb", NVS_READWRITE, &nvs);
+    if (err != ESP_OK) {
+        return err;
+    }
+    err = nvs_set_u8(nvs, "fsls", on ? 1 : 0);
+    if (err == ESP_OK) err = nvs_commit(nvs);
+    nvs_close(nvs);
+    if (err == ESP_OK) {
+        s_fsls_saved = on;
+        ESP_LOGI(TAG, "Hub compatibility (Full Speed only) %s - after restart", on ? "on" : "off");
+    }
+    return err;
+}
+
 static void usb_host_daemon_task(void *arg)
 {
     ESP_LOGI(TAG, "USB host daemon task started");
 
-    const usb_host_config_t host_config = {
+    usb_host_config_t host_config = {
         .skip_phy_setup = false,
         .root_port_unpowered = false,
         .intr_flags = ESP_INTR_FLAG_LEVEL1,
         .enum_filter_cb = NULL,
+        .fsls_only = s_fsls_only,
     };
 
     esp_err_t err = usb_host_install(&host_config);
+    if (err != ESP_OK && host_config.fsls_only) {
+        /* Never let the hub-compatibility option take USB down: drop it,
+         * forget it, and install normally. */
+        ESP_LOGW(TAG, "Full-Speed-only host failed (%s) - hub compatibility off",
+                 esp_err_to_name(err));
+        event_log_add(EVENT_LOG_LEVEL_WARN, "Hub compatibility not supported - switched off");
+        s_fsls_only = false;
+        usb_host_mgr_set_fsls_only(false);
+        host_config.fsls_only = false;
+        err = usb_host_install(&host_config);
+    }
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to install USB host: %s", esp_err_to_name(err));
         xSemaphoreGive(s_daemon_ready_sem);
@@ -453,7 +506,8 @@ static void usb_host_daemon_task(void *arg)
         return;
     }
 
-    ESP_LOGI(TAG, "USB host library installed");
+    ESP_LOGI(TAG, "USB host library installed%s",
+             s_fsls_only ? " (hub compatibility: Full Speed only)" : "");
     xSemaphoreGive(s_daemon_ready_sem);
 
     while (!s_stop_requested) {
@@ -548,6 +602,19 @@ esp_err_t usb_host_mgr_init(void)
     memset(s_tracked, 0, sizeof(s_tracked));
     s_stop_requested = false;
     s_client_hdl = NULL;
+
+    nvs_handle_t nvs;
+    uint8_t fsls = 0;
+    if (nvs_open("usb", NVS_READONLY, &nvs) == ESP_OK) {
+        nvs_get_u8(nvs, "fsls", &fsls);
+        nvs_close(nvs);
+    }
+    s_fsls_only = s_fsls_saved = (fsls != 0);
+    if (s_fsls_only && !FSLS_SUPPORTED) {
+        ESP_LOGW(TAG, "Hub compatibility stored but not supported by this ESP-IDF - ignored");
+        s_fsls_only = false;
+        usb_host_mgr_set_fsls_only(false);
+    }
 
     s_daemon_ready_sem = xSemaphoreCreateBinary();
     if (!s_daemon_ready_sem) {

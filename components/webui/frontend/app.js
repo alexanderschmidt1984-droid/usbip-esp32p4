@@ -1184,7 +1184,7 @@
          * the server's max_open_sockets (7), and its LRU purge then closes the
          * WebSocket (oldest socket) -> brief "Disconnected" on every visit. */
         var loaders = [loadNetworkSettings, loadAuthSettings, loadAclSettings,
-                       loadDevFilter, loadWireguard, loadSecurity, loadPower, loadSystemInfo];
+                       loadUsbHub, loadDevFilter, loadWireguard, loadSecurity, loadPower, loadSystemInfo];
         loaders.reduce(function(p, fn) {
             return p.then(function() { return fn(); }, function() { return fn(); });
         }, Promise.resolve());
@@ -1354,6 +1354,39 @@
             } else {
                 toast(data.error || 'Save failed', 'error');
             }
+        })
+        .catch(function() { toast('Request failed', 'error'); });
+    };
+
+    /* --- USB hub compatibility (Full Speed only) --- */
+
+    function loadUsbHub() {
+        return fetch('/api/settings/usb')
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                document.getElementById('usb-hub-panel').style.display =
+                    d.supported && (d.hub_seen || d.fsls_saved) ? '' : 'none';
+                document.getElementById('set-fsls').checked = !!d.fsls_saved;
+                var state = d.fsls_active ? 'Aktiv: USB läuft mit Full Speed.' : 'Aktiv: USB läuft mit High Speed.';
+                if (d.fsls_saved !== d.fsls_active) state += ' Neue Einstellung gilt nach dem Neustart.';
+                document.getElementById('usb-fsls-state').textContent = state;
+            })
+            .catch(function() { /* ignore */ });
+    }
+
+    window.saveUsbHub = function() {
+        var on = document.getElementById('set-fsls').checked;
+        if (!confirm('Einstellung speichern und Board neu starten? Eingebundene Geräte werden getrennt.')) return;
+        fetch('/api/settings/usb', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fsls_only: on })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.ok) { toast(data.error || 'Save failed', 'error'); return; }
+            toast('Gespeichert - Board startet neu', 'success');
+            fetch('/api/system/restart', { method: 'POST' });
         })
         .catch(function() { toast('Request failed', 'error'); });
     };

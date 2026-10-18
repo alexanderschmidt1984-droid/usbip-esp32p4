@@ -103,6 +103,23 @@ esp_err_t usb_host_mgr_reset_bus(void);
  */
 esp_err_t usb_host_mgr_set_alt_setting(uint8_t dev_addr, uint8_t iface, uint8_t alt);
 
+/*
+ * Hub compatibility (Full-Speed-only host). esp-usb has no transaction
+ * translator yet, so Full/Low-Speed devices (security keys, keyboards, serial
+ * adapters) are rejected behind a High-Speed hub. With fsls_only the root port
+ * never answers the High-Speed chirp: hub and devices all run at Full Speed
+ * (12 Mbit/s), no TT needed - at the cost of throughput for mass storage.
+ * Stored in NVS "usb"/"fsls", off by default, applied at the next boot.
+ */
+bool      usb_host_mgr_fsls_supported(void);       /* ESP-IDF can do it (compile time) */
+bool      usb_host_mgr_fsls_only(void);            /* active since boot */
+bool      usb_host_mgr_fsls_saved(void);           /* stored setting (next boot) */
+esp_err_t usb_host_mgr_set_fsls_only(bool on);     /* store; takes effect after restart */
+/* A hub was seen since boot: a device behind a hub port, or a Full-Speed device
+ * rejected for lack of a transaction translator (see usb_host_mgr_note_tt_reject). */
+bool      usb_host_mgr_hub_seen(void);
+void      usb_host_mgr_note_tt_reject(void);
+
 #ifdef __cplusplus
 }
 #endif
