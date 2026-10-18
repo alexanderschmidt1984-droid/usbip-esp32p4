@@ -113,7 +113,11 @@ static esp_err_t esp_wireguard_peer_init(const wireguard_config_t *config, struc
     }
     peer->keep_alive = config->persistent_keepalive;
 
-    /* Allow device's own address through tunnel */
+    /* FIX(usbip): default allowed source = the tunnel subnet (address & netmask).
+     * Upstream used the device's own address /32, which only "worked" because
+     * the inner-packet filter compared the destination (fix 1). With the source
+     * check, own-address-/32 drops every packet from the peer, and with
+     * WIREGUARD_MAX_SRC_IPS == 1 there is no slot left to add the subnet. */
     {
         if(ipaddr_aton(config->address, &(peer->allowed_ip)) != 1) {
             ESP_LOGE(TAG, "peer_init: invalid address: `%s`", config->address);
@@ -121,12 +125,19 @@ static esp_err_t esp_wireguard_peer_init(const wireguard_config_t *config, struc
             goto fail;
         }
 
-        // Only the single IP is allowed, thus /32 netmask, leaving to the user
-        // the responsibility to set the appropriate list of other allowed IPs.
         ip_addr_t allowed_mask = IPADDR4_INIT_BYTES(255, 255, 255, 255);
+        ip_addr_t mask;
+        if (config->netmask && ipaddr_aton(config->netmask, &mask) == 1 && IP_IS_V4(&mask)) {
+            allowed_mask = mask;
+        }
         peer->allowed_mask = allowed_mask;
+        ip_2_ip4(&peer->allowed_ip)->addr &= ip_2_ip4(&peer->allowed_mask)->addr;
     }
-    ESP_LOGI(TAG, "default allowed_ip: %s/%s", config->address, ipaddr_ntoa(&(peer->allowed_mask)));
+    {
+        char net[IPADDR_STRLEN_MAX];
+        ipaddr_ntoa_r(&(peer->allowed_ip), net, sizeof(net));
+        ESP_LOGI(TAG, "default allowed_ip: %s/%s", net, ipaddr_ntoa(&(peer->allowed_mask)));
+    }
 
     peer->endport_port = config->port;
     peer->keep_alive = config->persistent_keepalive;

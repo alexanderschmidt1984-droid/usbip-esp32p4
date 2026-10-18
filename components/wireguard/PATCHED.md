@@ -13,3 +13,6 @@ This copy overrides the registry package. All changes are marked `FIX(usbip)`:
 6. Inner IPv6 packets were accepted without any source filtering - now dropped.
 7. Replay window widened from 32 to 2048 packets; 64-bit counter difference no
    longer truncated; counters >= REJECT_AFTER_MESSAGES rejected.
+8. Default allowed source IP was the device's own address /32 - with fix 1 that drops
+   every packet from the peer (and MAX_SRC_IPS = 1 leaves no slot for more). Now the
+   tunnel subnet (address & netmask). Found on hardware.

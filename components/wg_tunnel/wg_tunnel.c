@@ -30,6 +30,14 @@
 #include "freertos/semphr.h"
 #include "freertos/event_groups.h"
 #include "lwip/ip4_addr.h"
+#include "lwip/opt.h"
+
+/* The WireGuard netif is a plain lwIP netif whose ->state is the WireGuard
+ * device. Unless esp_netif keeps its pointer in client_data, its global netif
+ * callback treats ->state as an esp_netif_t and faults on netif_add(). */
+#if !LWIP_ESP_NETIF_DATA
+#error "WireGuard needs LWIP_ESP_NETIF_DATA: enable CONFIG_LWIP_PPP_SUPPORT (see sdkconfig.defaults)"
+#endif
 
 #include <string.h>
 #include <stdio.h>
