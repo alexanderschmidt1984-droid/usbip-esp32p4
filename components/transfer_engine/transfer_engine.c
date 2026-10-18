@@ -30,8 +30,11 @@
 
 static const char *TAG = "xfer_eng";
 
-/* Maximum transfer buffer size */
-#define MAX_TRANSFER_SIZE   16384
+/* Maximum transfer buffer size. Linux usb-storage submits up to 120 KiB per
+ * URB (max_sectors 240); clamping IN reads below that leaves the surplus in the
+ * device, which then spills into the next URB (CSW) and breaks the stream.
+ * Buffers come from internal DMA RAM (PSRAM DMA broke enumeration on rev3.2). */
+#define MAX_TRANSFER_SIZE   (128 * 1024)
 
 /* Minimum transfer buffer allocation */
 #define MIN_TRANSFER_SIZE   64
@@ -375,6 +378,15 @@ static int send_completed_reply(int fd, pending_urb_t *slot, usb_device_handle_t
         if (slot->is_control && actual_length >= 8) {
             actual_length -= 8; /* subtract setup packet */
         } else if (slot->is_control) {
+            actual_length = 0;
+        }
+        /* IN buffers are rounded up to the MPS, so a device can return more
+         * than the client asked for. vhci drops the whole connection on
+         * actual_length > transfer_buffer_length; report babble instead. */
+        if (actual_length > slot->buflen) {
+            ESP_LOGW(TAG, "seqnum=%lu: device returned %ld bytes > requested %ld (overflow)",
+                     (unsigned long)slot->seqnum, (long)actual_length, (long)slot->buflen);
+            reply_status = -LINUX_EOVERFLOW;
             actual_length = 0;
         }
     }
