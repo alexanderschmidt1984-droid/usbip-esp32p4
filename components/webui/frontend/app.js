@@ -1052,6 +1052,7 @@
         loadAclSettings();
         loadDevFilter();
         loadWireguard();
+        loadSecurity();
         loadSystemInfo();
     }
 
@@ -1317,6 +1318,100 @@
             cfg += 'PresharedKey = <same preshared key>\n';
         $id('wg-peercfg').value = cfg;
         $id('wg-peercfg').style.display = 'block';
+    };
+
+    /* --- Transport encryption (USB/IP over TLS, HTTPS) --- */
+
+    var secState = {};
+
+    function loadSecurity() {
+        if (!document.getElementById('sec-https')) return;
+        fetch('/api/settings/security')
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                secState = d;
+                var radios = document.querySelectorAll('input[name="tls-mode"]');
+                for (var i = 0; i < radios.length; i++) radios[i].checked = (parseInt(radios[i].value, 10) === d.usbip_tls_mode);
+                document.getElementById('sec-https').checked = !!d.https;
+                document.getElementById('sec-fp').textContent = d.cert_fp || '(no certificate yet)';
+                var note = document.getElementById('sec-https-note');
+                note.textContent = (d.https !== d.https_active) ? 'Restart required to apply.' :
+                    (d.https_active ? 'Active: https://' + location.hostname + '/' : '');
+                document.getElementById('sec-tls-info').textContent = 'Port ' + d.tls_port +
+                    ' · active TLS sessions: ' + d.tls_sessions;
+            })
+            .catch(function() { /* ignore */ });
+    }
+
+    function tlsModeValue() {
+        var r = document.querySelector('input[name="tls-mode"]:checked');
+        return r ? parseInt(r.value, 10) : 0;
+    }
+
+    window.saveSecurity = function() {
+        var https = document.getElementById('sec-https').checked;
+        var mode = tlsModeValue();
+        if (mode === 2 && !confirm('TLS only: plain USB/IP connections (port 3240) will be refused. Clients need stunnel. Continue?')) return;
+        if (https !== !!secState.https_active &&
+            !confirm('HTTPS change takes effect after a restart. The web UI will then be at ' +
+                     (https ? 'https://' : 'http://') + location.hostname + '/ . Your browser will warn once about the self-signed certificate - compare the fingerprint shown here.')) return;
+        fetch('/api/settings/security', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usbip_tls_mode: mode, https: https })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.ok) { toast('Encryption settings saved', 'success'); loadSecurity(); }
+            else toast(d.error || 'Save failed', 'error');
+        })
+        .catch(function() { toast('Request failed', 'error'); });
+    };
+
+    function pskRequest(action) {
+        return fetch('/api/settings/security/psk', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: action })
+        }).then(function(r) { return r.json(); });
+    }
+
+    function showStunnel(d) {
+        var host = location.hostname;
+        var port = secState.tls_port || 3241;
+        document.getElementById('sec-psk').value = d.psk;
+        document.getElementById('sec-stunnel').value =
+            '# /etc/stunnel/usbip.conf\n' +
+            '[usbip]\nclient = yes\naccept = 127.0.0.1:3240\nconnect = ' + host + ':' + port + '\n' +
+            'PSKsecrets = /etc/stunnel/usbip.psk\nPSKidentity = ' + d.identity + '\n' +
+            'sslVersionMax = TLSv1.2\n' +
+            'ciphers = ECDHE-PSK-CHACHA20-POLY1305:ECDHE-PSK-AES128-CBC-SHA256:PSK-AES128-GCM-SHA256\n\n' +
+            '# /etc/stunnel/usbip.psk  (chmod 600)\n' + d.identity + ':' + d.psk + '\n\n' +
+            '# then:  sudo usbip attach -r 127.0.0.1 -b <busid>\n';
+        document.getElementById('sec-stunnel-box').style.display = 'block';
+    }
+
+    window.secShowPsk = function() {
+        pskRequest('show').then(function(d) {
+            if (d.ok) showStunnel(d); else toast(d.error || 'Failed', 'error');
+        }).catch(function() { toast('Request failed', 'error'); });
+    };
+
+    window.secRegenPsk = function() {
+        if (!confirm('Create a new TLS key? Existing stunnel configurations stop working.')) return;
+        pskRequest('regenerate').then(function(d) {
+            if (d.ok) { showStunnel(d); toast('New TLS key created', 'success'); }
+            else toast(d.error || 'Failed', 'error');
+        }).catch(function() { toast('Request failed', 'error'); });
+    };
+
+    window.secRegenCert = function() {
+        if (!confirm('Create a new HTTPS certificate? It is used after the next restart; browsers will warn again.')) return;
+        fetch('/api/settings/security/cert', { method: 'POST' })
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                if (d.ok) { toast('New certificate created (active after restart)', 'success'); loadSecurity(); }
+                else toast(d.error || 'Failed', 'error');
+            })
+            .catch(function() { toast('Request failed', 'error'); });
     };
 
     /* --- ACL --- */

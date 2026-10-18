@@ -229,6 +229,33 @@
             </div>
 
             <div class="panel">
+                <div class="panel-title">Encryption (local network)</div>
+                <div class="form-group"><label>USB/IP over TLS (pre-shared key, PC uses stunnel)</label>
+                    <label class="radio-label"><input type="radio" name="tls-mode" value="0" checked> Off</label>
+                    <label class="radio-label"><input type="radio" name="tls-mode" value="1"> Additional (plain 3240 + TLS)</label>
+                    <label class="radio-label"><input type="radio" name="tls-mode" value="2"> TLS only</label>
+                </div>
+                <p class="hint" id="sec-tls-info"></p>
+                <div class="form-row">
+                    <button class="btn btn-sm" onclick="secShowPsk()">Show key &amp; stunnel config</button>
+                    <button class="btn btn-sm" onclick="secRegenPsk()">New key</button>
+                </div>
+                <div id="sec-stunnel-box" style="display:none">
+                    <div class="form-group"><label>TLS key (secret)</label><input type="text" id="sec-psk" readonly></div>
+                    <textarea id="sec-stunnel" readonly rows="12" style="width:100%;font-family:monospace"></textarea>
+                </div>
+                <div class="form-group" style="margin-top:12px">
+                    <label class="checkbox-label"><input type="checkbox" id="sec-https"> HTTPS for this web UI (self-signed, after restart)</label>
+                </div>
+                <p class="hint">Certificate SHA-256: <span id="sec-fp" style="word-break:break-all">-</span></p>
+                <p class="hint" id="sec-https-note"></p>
+                <div class="form-row">
+                    <button class="btn" onclick="saveSecurity()">Save Encryption</button>
+                    <button class="btn btn-sm" onclick="secRegenCert()">New certificate</button>
+                </div>
+            </div>
+
+            <div class="panel">
                 <div class="panel-title">WireGuard Tunnel</div>
                 <div class="form-group">
                     <label class="checkbox-label"><input type="checkbox" id="wg-enabled"> Enable WireGuard tunnel</label>

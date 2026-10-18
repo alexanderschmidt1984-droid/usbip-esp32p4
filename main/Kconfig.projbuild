@@ -79,4 +79,11 @@ menu "USB/IP Server Configuration"
             WireGuard handshakes need correct wall-clock time; it is fetched via
             SNTP from this server before the tunnel starts.
 
+    config USBIP_TLS_PORT
+        int "USB/IP over TLS port"
+        default 3241
+        help
+            TCP port of the TLS-PSK proxy for USB/IP. Enabled and switched
+            (off / additional / TLS only) in the web UI. The PC side uses stunnel.
+
 endmenu

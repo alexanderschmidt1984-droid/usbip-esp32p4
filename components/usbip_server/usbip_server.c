@@ -8,6 +8,7 @@
 #include "usbip_proto.h"
 #include "event_log.h"
 #include "esp_log.h"
+#include "sec_tls.h"
 #include "esp_heap_caps.h"
 
 #include "freertos/FreeRTOS.h"
@@ -118,8 +119,19 @@ static void usbip_server_task(void *arg)
             continue;
         }
 
+        /* TLS: connections forwarded by the on-board TLS proxy arrive via
+         * loopback and were already access-checked there. In "TLS only" mode
+         * the plaintext port refuses every other client. */
+        bool via_tls = sectls_is_proxy_peer(client_ip);
+        if (!via_tls && sectls_usbip_mode() == SECTLS_USBIP_ONLY) {
+            ESP_LOGW(TAG, "Plaintext connection from %s refused (TLS only)", ip_str);
+            event_log_add(EVENT_LOG_LEVEL_WARN, "Rejected %s: USB/IP is TLS-only", ip_str);
+            close(client_fd);
+            continue;
+        }
+
         /* Access control check */
-        if (!access_control_check(client_ip)) {
+        if (!via_tls && !access_control_check(client_ip)) {
             ESP_LOGW(TAG, "Connection from %s denied by access control", ip_str);
             event_log_add(EVENT_LOG_LEVEL_WARN, "Rejected connection from %s", ip_str);
             close(client_fd);

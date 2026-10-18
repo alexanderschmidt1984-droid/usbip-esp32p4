@@ -17,6 +17,7 @@
 #include "access_control.h"
 #include "device_filter.h"
 #include "wg_tunnel.h"
+#include "sec_tls.h"
 #include <time.h>
 #include "network_mgr.h"
 #include "event_log.h"
@@ -653,6 +654,79 @@ static esp_err_t handle_api_settings_wireguard_genkey(httpd_req_t *req)
     return send_json(req, buf, n);
 }
 
+
+/* ---- Transport encryption (USB/IP TLS, HTTPS) ---- */
+
+static esp_err_t handle_api_settings_security_get(httpd_req_t *req)
+{
+    if (!webui_check_auth(req)) return webui_reject_auth(req);
+    char fp[SECTLS_FP_LEN];
+    sectls_cert_fingerprint(fp, sizeof(fp));
+    char buf[320];
+    int n = snprintf(buf, sizeof(buf),
+        "{\"usbip_tls_mode\":%d,\"tls_port\":%u,\"tls_sessions\":%d,"
+        "\"https\":%s,\"https_active\":%s,\"cert_fp\":\"%s\"}",
+        (int)sectls_usbip_mode(), sectls_tls_port(), sectls_active_sessions(),
+        sectls_https_enabled() ? "true" : "false", webui_https_active() ? "true" : "false", fp);
+    return send_json(req, buf, n);
+}
+
+static esp_err_t handle_api_settings_security_post(httpd_req_t *req)
+{
+    if (!webui_check_auth(req)) return webui_reject_auth(req);
+    char body[256];
+    if (read_body(req, body, sizeof(body)) < 0) return send_json_error(req, 400, "missing body");
+
+    unsigned mode;
+    if (json_get_uint(body, "usbip_tls_mode", &mode)) {
+        if (mode > SECTLS_USBIP_ONLY) return send_json_error(req, 400, "invalid mode");
+        if (sectls_set_usbip_mode((sectls_usbip_mode_t)mode) != ESP_OK) {
+            return send_json_error(req, 500, "saving TLS mode failed");
+        }
+    }
+    bool https;
+    if (json_get_bool(body, "https", &https) && https != sectls_https_enabled()) {
+        if (sectls_set_https(https) != ESP_OK) {
+            return send_json_error(req, 500, "HTTPS setting failed (certificate?)");
+        }
+    }
+    return send_json_ok(req);
+}
+
+/* The PSK is a secret: only handed out via POST (CSRF header + password required). */
+static esp_err_t handle_api_settings_security_psk(httpd_req_t *req)
+{
+    if (!webui_check_auth(req)) return webui_reject_auth(req);
+    char body[96] = "";
+    read_body(req, body, sizeof(body));
+    char action[16] = "show";
+    json_get_string(body, "action", action, sizeof(action));
+    if (strcmp(action, "regenerate") == 0 && sectls_regenerate_psk() != ESP_OK) {
+        return send_json_error(req, 500, "key generation failed");
+    }
+    char psk[SECTLS_PSK_LEN + 1];
+    sectls_get_psk(psk, sizeof(psk));
+    char buf[128];
+    int n = snprintf(buf, sizeof(buf), "{\"ok\":true,\"identity\":\"%s\",\"psk\":\"%s\"}",
+                     SECTLS_PSK_IDENTITY, psk);
+    memset(psk, 0, sizeof(psk));
+    httpd_resp_set_hdr(req, "Cache-Control", "no-store");
+    esp_err_t r = send_json(req, buf, n);
+    memset(buf, 0, sizeof(buf));
+    return r;
+}
+
+static esp_err_t handle_api_settings_security_cert(httpd_req_t *req)
+{
+    if (!webui_check_auth(req)) return webui_reject_auth(req);
+    if (sectls_regenerate_cert() != ESP_OK) return send_json_error(req, 500, "certificate generation failed");
+    char fp[SECTLS_FP_LEN];
+    sectls_cert_fingerprint(fp, sizeof(fp));
+    char buf[160];
+    int n = snprintf(buf, sizeof(buf), "{\"ok\":true,\"cert_fp\":\"%s\"}", fp);
+    return send_json(req, buf, n);
+}
+
 /* ---- System info ---- */
 
 static esp_err_t handle_api_system_info(httpd_req_t *req)
@@ -834,5 +908,29 @@ void webui_api_register(httpd_handle_t server)
     };
     httpd_register_uri_handler(server, &uri_wg_genkey);
 
-    ESP_LOGI(TAG, "API endpoints registered (18 routes)");
+    const httpd_uri_t uri_sec_get = {
+        .uri = "/api/settings/security", .method = HTTP_GET,
+        .handler = handle_api_settings_security_get, .user_ctx = NULL
+    };
+    httpd_register_uri_handler(server, &uri_sec_get);
+
+    const httpd_uri_t uri_sec_post = {
+        .uri = "/api/settings/security", .method = HTTP_POST,
+        .handler = handle_api_settings_security_post, .user_ctx = NULL
+    };
+    httpd_register_uri_handler(server, &uri_sec_post);
+
+    const httpd_uri_t uri_sec_psk = {
+        .uri = "/api/settings/security/psk", .method = HTTP_POST,
+        .handler = handle_api_settings_security_psk, .user_ctx = NULL
+    };
+    httpd_register_uri_handler(server, &uri_sec_psk);
+
+    const httpd_uri_t uri_sec_cert = {
+        .uri = "/api/settings/security/cert", .method = HTTP_POST,
+        .handler = handle_api_settings_security_cert, .user_ctx = NULL
+    };
+    httpd_register_uri_handler(server, &uri_sec_cert);
+
+    ESP_LOGI(TAG, "API endpoints registered (22 routes)");
 }

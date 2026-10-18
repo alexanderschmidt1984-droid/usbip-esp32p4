@@ -17,4 +17,5 @@ idf_component_register(
         heap
         esp_pm
         wg_tunnel
+        sec_tls
 )

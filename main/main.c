@@ -25,6 +25,7 @@
 #include "usbip_server.h"
 #include "webui.h"
 #include "wg_tunnel.h"
+#include "sec_tls.h"
 #if CONFIG_CAPTURE_ENABLED
 #include "capture.h"
 #endif
@@ -136,6 +137,12 @@ void app_main(void)
         ESP_LOGW(TAG, "Capture init: %s (non-fatal)", esp_err_to_name(cap_ret));
     }
 #endif
+
+    /* Transport encryption (USB/IP over TLS, HTTPS cert) - before server/web UI */
+    esp_err_t tls_ret = sectls_init();
+    if (tls_ret != ESP_OK) {
+        ESP_LOGW(TAG, "TLS init failed: %s", esp_err_to_name(tls_ret));
+    }
 
     ESP_ERROR_CHECK(usbip_server_init());
     ESP_LOGI(TAG, "USB/IP server initialized");

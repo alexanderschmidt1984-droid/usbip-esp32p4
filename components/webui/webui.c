@@ -25,6 +25,8 @@
 #include "esp_random.h"
 #include "lwip/sockets.h"
 #include "sdkconfig.h"
+#include "sec_tls.h"
+#include "esp_https_server.h"
 
 static const char *TAG = "webui";
 
@@ -579,6 +581,13 @@ static void stats_timer_cb(void *arg)
     ws_broadcast_stats();
 }
 
+static bool s_https_active;
+
+bool webui_https_active(void)
+{
+    return s_https_active;
+}
+
 /* ---- Public API ---- */
 
 esp_err_t webui_init(void)
@@ -590,13 +599,38 @@ esp_err_t webui_init(void)
     config.core_id = 1;
     config.task_priority = 5;
     config.stack_size = 8192;
-    config.max_uri_handlers = 32;
+    config.max_uri_handlers = 48;     /* 32 was exhausted with all features enabled */
     config.max_open_sockets = 7;      /* was 4; starved slots wedged the server (LWIP_MAX_SOCKETS raised to 16) */
     config.lru_purge_enable = true;   /* reclaim the oldest socket instead of refusing new connections when full */
     config.recv_wait_timeout = 10;    /* seconds; don't let a stalled peer pin a slot indefinitely */
     config.send_wait_timeout = 10;
 
-    esp_err_t ret = httpd_start(&s_server, &config);
+    esp_err_t ret = ESP_FAIL;
+    s_https_active = false;
+    const char *cert = NULL, *key = NULL;
+    size_t cert_len = 0, key_len = 0;
+    if (sectls_https_enabled() &&
+        sectls_get_https_cert(&cert, &cert_len, &key, &key_len) == ESP_OK) {
+        httpd_ssl_config_t ssl = HTTPD_SSL_CONFIG_DEFAULT();
+        ssl.httpd = config;
+        ssl.httpd.max_open_sockets = 4;   /* each TLS session holds ~35 KB */
+        ssl.servercert = (const uint8_t *)cert;
+        ssl.servercert_len = cert_len;
+        ssl.prvtkey_pem = (const uint8_t *)key;
+        ssl.prvtkey_len = key_len;
+        ssl.port_secure = 443;
+        ret = httpd_ssl_start(&s_server, &ssl);
+        if (ret == ESP_OK) {
+            s_https_active = true;
+            ESP_LOGI(TAG, "Web UI: HTTPS on port 443");
+        } else {
+            ESP_LOGE(TAG, "HTTPS start failed (%s) - falling back to HTTP", esp_err_to_name(ret));
+            event_log_add(EVENT_LOG_LEVEL_WARN, "HTTPS failed - web UI on plain HTTP");
+        }
+    }
+    if (ret != ESP_OK) {
+        ret = httpd_start(&s_server, &config);
+    }
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to start HTTP server: %s", esp_err_to_name(ret));
         return ret;

@@ -81,6 +81,9 @@ bool webui_check_auth(httpd_req_t *req);
  */
 esp_err_t webui_reject_auth(httpd_req_t *req);
 
+/** true if the web UI is currently served over HTTPS */
+bool webui_https_active(void);
+
 #ifdef __cplusplus
 }
 #endif
