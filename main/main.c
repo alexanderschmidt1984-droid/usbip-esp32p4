@@ -11,6 +11,8 @@
 #include "esp_psram.h"
 #include "esp_system.h"
 #include "esp_heap_caps.h"
+#include "esp_timer.h"
+#include "nvs.h"
 #include "sdkconfig.h"
 #if CONFIG_PM_PROFILING
 #include "esp_pm.h"
@@ -61,6 +63,61 @@ static int custom_vprintf(const char *fmt, va_list args)
     return ret;
 }
 
+/*
+ * Factory reset without the web UI: press RESET (or switch the power on)
+ * RESET_TAP_COUNT times in a row, each within RESET_TAP_WINDOW_MS of the
+ * previous start. Every such start bumps a counter in NVS; once the board has
+ * run for RESET_TAP_WINDOW_MS the counter is cleared. Software restarts and
+ * crashes are not counted, so a crash loop never wipes the settings.
+ * (The BOOT button is no option: GPIO 35 is RMII TXD1 on this board.)
+ */
+#define RESET_TAP_COUNT     5
+#define RESET_TAP_WINDOW_MS 5000
+
+static void reset_tap_clear(void *arg)
+{
+    (void)arg;
+    nvs_handle_t nvs;
+    if (nvs_open("boot", NVS_READWRITE, &nvs) == ESP_OK) {
+        nvs_set_u8(nvs, "taps", 0);
+        nvs_commit(nvs);
+        nvs_close(nvs);
+    }
+}
+
+static void reset_tap_check(void)
+{
+    esp_reset_reason_t why = esp_reset_reason();
+    if (why != ESP_RST_POWERON && why != ESP_RST_EXT) {
+        return;
+    }
+
+    uint8_t taps = 0;
+    nvs_handle_t nvs;
+    if (nvs_open("boot", NVS_READWRITE, &nvs) != ESP_OK) {
+        return;
+    }
+    nvs_get_u8(nvs, "taps", &taps);
+    taps++;
+    nvs_set_u8(nvs, "taps", taps);
+    nvs_commit(nvs);
+    nvs_close(nvs);
+
+    if (taps >= RESET_TAP_COUNT) {
+        ESP_LOGW(TAG, "RESET pressed %d times in a row: factory reset", taps);
+        nvs_flash_erase();
+        esp_restart();
+    }
+    ESP_LOGI(TAG, "Reset tap %d/%d (factory reset after %d in a row)", taps, RESET_TAP_COUNT,
+             RESET_TAP_COUNT);
+
+    static esp_timer_handle_t s_tap_timer;
+    const esp_timer_create_args_t args = { .callback = reset_tap_clear, .name = "reset_tap" };
+    if (esp_timer_create(&args, &s_tap_timer) == ESP_OK) {
+        esp_timer_start_once(s_tap_timer, (uint64_t)RESET_TAP_WINDOW_MS * 1000);
+    }
+}
+
 void app_main(void)
 {
     esp_err_t ret;
@@ -78,6 +135,8 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
     ESP_LOGI(TAG, "NVS initialized");
+
+    reset_tap_check();
 
     /* Log PSRAM info */
     size_t psram_size = esp_psram_get_size();

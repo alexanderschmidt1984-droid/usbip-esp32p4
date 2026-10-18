@@ -293,7 +293,7 @@ sudo systemctl enable --now avahi-daemon</pre><p>In <code>/etc/nsswitch.conf</co
                         <li>Passwort ändern: neues in beide Felder eintragen. Beide leer lassen = bisheriges Passwort bleibt.</li>
                         <li>Nach 5 falschen Versuchen sperrt das Board weitere Anmeldungen von diesem PC für 30 Sekunden.</li>
                         <li>Ohne HTTPS geht das Passwort unverschlüsselt durchs LAN. Schutz: HTTPS (Panel „Encryption“) oder die Oberfläche über WireGuard öffnen.</li>
-                        <li><b>Passwort vergessen</b>: Factory Reset geht nur angemeldet. Sonst per USB-Kabel nur die Einstellungen löschen, die Firmware bleibt: <code>idf.py -p /dev/ttyACM0 erase-region 0x9000 0x6000</code> (Windows: <code>-p COM3</code> o.&nbsp;ä.). Dabei gehen alle Einstellungen verloren (auch WireGuard- und TLS-Schlüssel).</li>
+                        <li><b>Passwort vergessen</b>: am Board <b>RESET 5× kurz hintereinander</b> drücken (Abstand jeweils unter 5&nbsp;s) – das setzt alles auf Werkseinstellungen. Oder per USB-Kabel nur die Einstellungen löschen, die Firmware bleibt: <code>idf.py -p /dev/ttyACM0 erase-region 0x9000 0x6000</code> (Windows: <code>-p COM3</code> o.&nbsp;ä.). Dabei gehen alle Einstellungen verloren (auch WireGuard- und TLS-Schlüssel).</li>
                     </ul>
                 </details>
             </div>
@@ -577,6 +577,7 @@ usbip attach -r <span class="h-wgaddr"></span> -b 1-1</pre></li>
                         <li><b>Energiesparen</b> (ab Werk an): Ohne angehängtes Gerät läuft die CPU mit 100&nbsp;MHz statt 400&nbsp;MHz. Sobald ein Gerät angehängt ist, geht sie auf vollen Takt, die Übertragung wird also nicht langsamer. Abgehakt läuft das Board die ganze Zeit mit 400&nbsp;MHz. Wirkt sofort, ohne Neustart. Ist es an, steht unten links das grüne Blatt.</li>
                         <li><b>Restart</b>: startet das Board neu. Eingebundene USB-Geräte werden dabei an allen PCs getrennt und müssen danach neu mit <code>attach</code> eingebunden werden.</li>
                         <li><b>Factory Reset</b>: löscht <b>alle</b> Einstellungen (Netzwerk, Passwort, ACL, Geräte-Filter, WireGuard- und TLS-Schlüssel) und startet neu. Danach gilt DHCP ohne Passwort.</li>
+                        <li><b>Ohne Web-UI zurücksetzen</b>: die <b>RESET</b>-Taste am Board <b>5× hintereinander</b> drücken, zwischen zwei Drückern jeweils weniger als 5&nbsp;s (gut: etwa einmal pro Sekunde). Beim 5. Start löscht das Board alle Einstellungen wie Factory Reset. Strom aus/ein zählt genauso. Ein einzelner Reset oder Stromausfall löst nichts aus; Abstürze zählen nicht mit. Die BOOT-Taste geht dafür nicht (beim Einschalten gedrückt = Flash-Modus, im Betrieb belegt Ethernet den Pin).</li>
                         <li><b>Firmware-Update</b>: per USB-Kabel mit <code>idf.py -p /dev/ttyACM0 flash</code> (Windows: <code>-p COM3</code> o.&nbsp;ä.). Die Einstellungen bleiben erhalten.</li>
                     </ul>
                 </details>
