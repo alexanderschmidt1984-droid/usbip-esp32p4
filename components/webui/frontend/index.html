@@ -241,6 +241,10 @@
                     <button class="btn btn-sm" onclick="secRegenPsk()">New key</button>
                 </div>
                 <div id="sec-stunnel-box" style="display:none">
+                    <div class="form-group">
+                        <label class="radio-label"><input type="radio" name="stunnel-os" value="linux" checked> Linux</label>
+                        <label class="radio-label"><input type="radio" name="stunnel-os" value="windows"> Windows 10/11</label>
+                    </div>
                     <div class="form-group"><label>TLS key (secret)</label><input type="text" id="sec-psk" readonly></div>
                     <textarea id="sec-stunnel" readonly rows="12" style="width:100%;font-family:monospace"></textarea>
                 </div>

@@ -1374,19 +1374,46 @@
         }).then(function(r) { return r.json(); });
     }
 
+    var lastPsk = null;
+
+    function stunnelOs() {
+        var r = document.querySelector('input[name="stunnel-os"]:checked');
+        return r ? r.value : 'linux';
+    }
+
     function showStunnel(d) {
+        if (d) lastPsk = d;
+        d = lastPsk;
+        if (!d) return;
         var host = location.hostname;
         var port = secState.tls_port || 3241;
-        document.getElementById('sec-psk').value = d.psk;
-        document.getElementById('sec-stunnel').value =
-            '# /etc/stunnel/usbip.conf\n' +
-            '[usbip]\nclient = yes\naccept = 127.0.0.1:3240\nconnect = ' + host + ':' + port + '\n' +
-            'PSKsecrets = /etc/stunnel/usbip.psk\nPSKidentity = ' + d.identity + '\n' +
+        var common = '[usbip]\nclient = yes\naccept = 127.0.0.1:3240\nconnect = ' + host + ':' + port + '\n';
+        var tail = 'PSKidentity = ' + d.identity + '\n' +
             'sslVersionMax = TLSv1.2\n' +
-            'ciphers = ECDHE-PSK-CHACHA20-POLY1305:ECDHE-PSK-AES128-CBC-SHA256:PSK-AES128-GCM-SHA256\n\n' +
-            '# /etc/stunnel/usbip.psk  (chmod 600)\n' + d.identity + ':' + d.psk + '\n\n' +
-            '# then:  sudo usbip attach -r 127.0.0.1 -b <busid>\n';
+            'ciphers = ECDHE-PSK-CHACHA20-POLY1305:ECDHE-PSK-AES128-CBC-SHA256:PSK-AES128-GCM-SHA256\n\n';
+        var txt;
+        if (stunnelOs() === 'windows') {
+            var dir = 'C:\\Program Files (x86)\\stunnel\\config';
+            txt = '; ' + dir + '\\stunnel.conf  (replace the example services in it)\n' +
+                  '; 64-bit installer: C:\\Program Files\\stunnel\\config - adjust both paths\n' +
+                  common + 'PSKsecrets = ' + dir + '\\usbip.psk\n' + tail +
+                  '; ' + dir + '\\usbip.psk  (one line)\n' + d.identity + ':' + d.psk + '\n\n' +
+                  '; Admin console:\n;   stunnel.exe -install\n;   net start stunnel\n' +
+                  '; then:\n;   usbip.exe attach -r 127.0.0.1 -b <busid>\n';
+        } else {
+            txt = '# /etc/stunnel/usbip.conf\n' + common +
+                  'PSKsecrets = /etc/stunnel/usbip.psk\n' + tail +
+                  '# /etc/stunnel/usbip.psk  (chmod 600)\n' + d.identity + ':' + d.psk + '\n\n' +
+                  '# then:  sudo usbip attach -r 127.0.0.1 -b <busid>\n';
+        }
+        document.getElementById('sec-psk').value = d.psk;
+        document.getElementById('sec-stunnel').value = txt;
         document.getElementById('sec-stunnel-box').style.display = 'block';
+    }
+
+    var osRadios = document.querySelectorAll('input[name="stunnel-os"]');
+    for (var oi = 0; oi < osRadios.length; oi++) {
+        osRadios[oi].addEventListener('change', function() { showStunnel(); });
     }
 
     window.secShowPsk = function() {
