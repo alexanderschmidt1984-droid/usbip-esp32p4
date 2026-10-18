@@ -1047,13 +1047,14 @@
      * ================================================================ */
 
     function loadAllSettings() {
-        loadNetworkSettings();
-        loadAuthSettings();
-        loadAclSettings();
-        loadDevFilter();
-        loadWireguard();
-        loadSecurity();
-        loadSystemInfo();
+        /* One request at a time: seven parallel fetches plus the WebSocket exceed
+         * the server's max_open_sockets (7), and its LRU purge then closes the
+         * WebSocket (oldest socket) -> brief "Disconnected" on every visit. */
+        var loaders = [loadNetworkSettings, loadAuthSettings, loadAclSettings,
+                       loadDevFilter, loadWireguard, loadSecurity, loadSystemInfo];
+        loaders.reduce(function(p, fn) {
+            return p.then(function() { return fn(); }, function() { return fn(); });
+        }, Promise.resolve());
     }
 
     /* --- Network --- */
@@ -1074,7 +1075,7 @@
     }
 
     function loadNetworkSettings() {
-        fetch('/api/settings/network')
+        return fetch('/api/settings/network')
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if ($setHostname) $setHostname.value = data.hostname || '';
@@ -1137,7 +1138,7 @@
     }
 
     function loadAuthSettings() {
-        fetch('/api/settings/auth')
+        return fetch('/api/settings/auth')
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if ($setAuthEnabled) {
@@ -1184,7 +1185,7 @@
         var $en = document.getElementById('devf-enabled');
         var $list = document.getElementById('devf-list');
         if (!$en || !$list) return;
-        fetch('/api/settings/devfilter')
+        return fetch('/api/settings/devfilter')
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 $en.checked = !!data.enabled;
@@ -1241,7 +1242,7 @@
 
     function loadWireguard(statusOnly) {
         if (!$id('wg-enabled')) return;
-        fetch('/api/settings/wireguard')
+        return fetch('/api/settings/wireguard')
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 wgStatus(data);
@@ -1326,7 +1327,7 @@
 
     function loadSecurity() {
         if (!document.getElementById('sec-https')) return;
-        fetch('/api/settings/security')
+        return fetch('/api/settings/security')
             .then(function(r) { return r.json(); })
             .then(function(d) {
                 secState = d;
@@ -1455,7 +1456,7 @@
     }
 
     function loadAclSettings() {
-        fetch('/api/settings/acl')
+        return fetch('/api/settings/acl')
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 /* Set mode radio */
@@ -1541,7 +1542,7 @@
     /* --- System info --- */
 
     function loadSystemInfo() {
-        fetch('/api/system/info')
+        return fetch('/api/system/info')
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 var $ver = document.getElementById('sys-version');
@@ -1562,6 +1563,7 @@
 
     var capState = { capturing: false, card_present: false };
     var capPollTimer = null;
+    var capUnavailable = false;  /* firmware built without CONFIG_CAPTURE_ENABLED */
 
     function formatFileSize(bytes) {
         if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' MB';
@@ -1571,8 +1573,19 @@
 
     function pollCaptureStatus() {
         fetch('/api/capture/status')
-            .then(function(r) { return r.json(); })
+            .then(function(r) {
+                if (r.status === 404) {
+                    /* No capture routes: hide the panel and stop polling for good */
+                    capUnavailable = true;
+                    stopCapturePoll();
+                    var $panel = document.getElementById('cap-panel');
+                    if ($panel) $panel.style.display = 'none';
+                    return null;
+                }
+                return r.json();
+            })
             .then(function(data) {
+                if (!data) return;
                 capState = data;
                 var $card = document.getElementById('cap-card');
                 var $status = document.getElementById('cap-status');
@@ -1610,7 +1623,7 @@
     }
 
     function startCapturePoll() {
-        if (capPollTimer) return;
+        if (capPollTimer || capUnavailable) return;
         pollCaptureStatus();
         capPollTimer = setInterval(pollCaptureStatus, 2000);
     }
