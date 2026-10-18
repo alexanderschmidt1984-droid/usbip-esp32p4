@@ -10,6 +10,7 @@
 #include "esp_system.h"
 #include "esp_timer.h"
 #include "esp_chip_info.h"
+#include "esp_app_desc.h"
 #include "nvs_flash.h"
 #include "nvs.h"
 #include "device_manager.h"
@@ -743,10 +744,11 @@ static esp_err_t handle_api_system_info(httpd_req_t *req)
 
     char buf[512];
     int n = snprintf(buf, sizeof(buf),
-        "{\"version\":\"1.0.0\",\"idf_version\":\"%s\","
+        "{\"version\":\"%s\",\"idf_version\":\"%s\","
         "\"chip\":\"ESP32-P4\",\"revision\":\"v%d.%d\","
         "\"heap_free\":%" PRIu32 ",\"heap_internal\":%" PRIu32 ","
         "\"uptime_sec\":%d}",
+        esp_app_get_description()->version,
         esp_get_idf_version(),
         chip_info.revision / 100, chip_info.revision % 100,
         free_heap, internal_heap,

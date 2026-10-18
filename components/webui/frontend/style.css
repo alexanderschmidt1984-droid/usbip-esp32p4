@@ -17,6 +17,13 @@
     --sidebar-bg: #1e293b;
     --sidebar-text: #e2e8f0;
     --sidebar-active: #3b82f6;
+    --surface-alt: #f8f9fc;
+    --line: #cbd5e1;
+    --grid: #e8e8ef;
+    --green-text: #16a34a;
+    --warn-text: #d97706;
+    --purple-text: #9333ea;
+    color-scheme: light;
     --font: system-ui, -apple-system, 'Segoe UI', sans-serif;
     --mono: 'SF Mono', 'Cascadia Code', Consolas, monospace;
     --shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
@@ -299,27 +306,28 @@ body {
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    background: rgba(245, 246, 250, 0.5);
+    background: var(--surface-alt);
 }
 
-.panel > .bw-summary,
-.panel > canvas,
-.panel > .log-area,
-.panel > .form-group,
-.panel > .form-row,
-.panel > .info-row,
-.panel > .btn-row,
-.panel > .btn,
-.panel > #static-fields,
-.panel > #auth-fields,
-.panel > #acl-list-section {
+.panel > :not(.panel-title) {
     margin-left: 1.25rem;
     margin-right: 1.25rem;
 }
 
 .panel > .form-group:first-of-type,
-.panel > .bw-summary {
+.panel > .bw-summary,
+.panel > .panel-title + * {
     margin-top: 1rem;
+}
+
+.panel > :last-child:not(.panel-title) {
+    margin-bottom: 1.25rem;
+}
+
+.panel > textarea {
+    display: block;
+    width: calc(100% - 2.5rem) !important;
+    box-sizing: border-box;
 }
 
 .panel > .btn {
@@ -382,7 +390,7 @@ body {
 }
 
 .log-entry.info .msg { color: var(--text); }
-.log-entry.warn .msg { color: #d97706; font-weight: 500; }
+.log-entry.warn .msg { color: var(--warn-text); font-weight: 500; }
 .log-entry.error .msg { color: var(--red); font-weight: 500; }
 .log-entry.debug .msg { color: var(--text-dim); }
 
@@ -420,7 +428,7 @@ body {
 }
 
 .device-card-header:hover {
-    background: rgba(245, 246, 250, 0.6);
+    background: var(--surface-alt);
 }
 
 .device-card-header .status-dot {
@@ -535,13 +543,13 @@ body {
 
 .badge-hs {
     background: rgba(34, 197, 94, 0.1);
-    color: #16a34a;
+    color: var(--green-text);
     border: 1px solid rgba(34, 197, 94, 0.25);
 }
 
 .badge-ss {
     background: rgba(168, 85, 247, 0.1);
-    color: #9333ea;
+    color: var(--purple-text);
     border: 1px solid rgba(168, 85, 247, 0.25);
 }
 
@@ -559,7 +567,7 @@ body {
 
 .badge-exported {
     background: rgba(34, 197, 94, 0.1);
-    color: #16a34a;
+    color: var(--green-text);
 }
 
 .badge-error {
@@ -569,7 +577,7 @@ body {
 
 /* ---- Topology ---- */
 .topology-container {
-    background: #f8f9fc;
+    background: var(--surface-alt);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 1.5rem;
@@ -605,7 +613,7 @@ body {
 }
 
 .topology-container .topo-edge line {
-    stroke: #cbd5e1;
+    stroke: var(--line);
     stroke-width: 1.5;
 }
 
@@ -1015,9 +1023,9 @@ body {
 }
 
 .hint { font-size: 12px; opacity: .75; margin: 6px 0 10px; }
-.wg-state.ok { color: #2e9d57; font-weight: 600; }
-.wg-state.busy { color: #c98a10; }
-.wg-state.err { color: #d04040; }
+.wg-state.ok { color: var(--green-text); font-weight: 600; }
+.wg-state.busy { color: var(--warn-text); }
+.wg-state.err { color: var(--red); }
 
 /* ---- WireGuard badge (sidebar, under the connection LED) ---- */
 .wg-badge { margin-top: -0.25rem; }
@@ -1025,7 +1033,7 @@ body {
 .wg-badge.secure { color: var(--green); font-weight: 600; }
 .wg-badge.lan { color: rgba(226, 232, 240, 0.6); }
 .wg-badge.busy { color: var(--orange); }
-.badge.badge-wg { background: rgba(34, 197, 94, 0.12); color: #15803d; }
+.badge.badge-wg { background: rgba(34, 197, 94, 0.12); color: var(--green-text); }
 
 /* ---- Settings help ---- */
 details.help { margin-top: 12px; border-top: 1px solid var(--border-light); padding-top: 8px; }
@@ -1045,3 +1053,57 @@ details.help[open] > summary { margin-bottom: 8px; }
 .os-tabs button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 .os-pane { display: none; }
 .os-pane.active { display: block; }
+
+/* ---- Theme toggle (sidebar footer) ---- */
+.theme-toggle { display: flex; align-items: center; gap: 0.375rem; margin-top: 0.5rem; padding: 0.25rem 0.625rem;
+                font: inherit; font-size: 0.6875rem; color: rgba(226, 232, 240, 0.7); background: rgba(255, 255, 255, 0.06);
+                border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 999px; cursor: pointer; }
+.theme-toggle:hover { color: #ffffff; background: rgba(255, 255, 255, 0.12); }
+
+/* ---- Dark theme: follows the system unless chosen explicitly ---- */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --bg: #0f1520;
+        --surface: #182130;
+        --surface-alt: #1d2738;
+        --border: #2a3648;
+        --border-light: #222d3d;
+        --text: #e2e8f0;
+        --text-secondary: #a3b1c6;
+        --text-dim: #6f7f96;
+        --accent: #60a5fa;
+        --accent-hover: #3b82f6;
+        --sidebar-bg: #0b111b;
+        --line: #3a4a60;
+        --grid: #263244;
+        --green-text: #4ade80;
+        --warn-text: #fbbf24;
+        --purple-text: #c084fc;
+        --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+        --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+        color-scheme: dark;
+    }
+}
+:root[data-theme="dark"] {
+    --bg: #0f1520;
+    --surface: #182130;
+    --surface-alt: #1d2738;
+    --border: #2a3648;
+    --border-light: #222d3d;
+    --text: #e2e8f0;
+    --text-secondary: #a3b1c6;
+    --text-dim: #6f7f96;
+    --accent: #60a5fa;
+    --accent-hover: #3b82f6;
+    --sidebar-bg: #0b111b;
+    --line: #3a4a60;
+    --grid: #263244;
+    --green-text: #4ade80;
+    --warn-text: #fbbf24;
+    --purple-text: #c084fc;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+    color-scheme: dark;
+}

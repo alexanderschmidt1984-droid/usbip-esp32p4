@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>USB/IP Server</title>
     <link rel="stylesheet" href="/style.css">
+    <script>
+        /* Apply the saved theme before first paint ("auto" = follow the system). */
+        try {
+            var t = localStorage.getItem('usbip-theme');
+            if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+        } catch (e) { /* storage blocked: follow the system */ }
+    </script>
 </head>
 <body>
     <!-- Sidebar -->
@@ -66,7 +73,10 @@
                 <span id="wg-badge-text"></span>
             </div>
             <div class="sidebar-info" id="sidebar-uptime">--</div>
-            <div class="sidebar-info sidebar-version">v1.0.0</div>
+            <div class="sidebar-info sidebar-version" id="sidebar-version">--</div>
+            <button type="button" class="theme-toggle" id="theme-toggle" title="Design wechseln">
+                <span id="theme-toggle-icon">&#9680;</span><span id="theme-toggle-text">Auto</span>
+            </button>
         </div>
     </nav>
 
