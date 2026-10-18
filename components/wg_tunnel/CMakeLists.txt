@@ -9,6 +9,6 @@ endif()
 idf_component_register(
     SRCS ${srcs}
     INCLUDE_DIRS "include"
-    PRIV_REQUIRES esphome__wireguard esphome__libsodium esp_netif esp_event nvs_flash lwip
+    PRIV_REQUIRES wireguard esphome__libsodium esp_netif esp_event nvs_flash lwip
                   event_log esp_hw_support
 )

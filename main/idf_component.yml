@@ -7,6 +7,6 @@ dependencies:
   espressif/usb: ">=1.6.0"  # 1.6.0 fixes hub/enum issues
   espressif/ip101:
     version: "^1.0.0"
-  # WireGuard (fork of trombik/esp_wireguard maintained by ESPHome; supports
-  # ESP-IDF 6 / mbedTLS 4). Pulls in esphome/libsodium.
-  esphome/wireguard: "^0.4.8"
+  # WireGuard: esphome/wireguard 0.4.8 is vendored with security fixes in
+  # components/wireguard (see PATCHED.md); it needs ESPHome's libsodium port.
+  esphome/libsodium: "^1.10021.1"
