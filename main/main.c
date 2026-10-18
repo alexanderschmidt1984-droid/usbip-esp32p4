@@ -24,6 +24,7 @@
 #include "transfer_engine.h"
 #include "usbip_server.h"
 #include "webui.h"
+#include "wg_tunnel.h"
 #if CONFIG_CAPTURE_ENABLED
 #include "capture.h"
 #endif
@@ -113,6 +114,12 @@ void app_main(void)
 
     ESP_ERROR_CHECK(network_mgr_init());
     ESP_LOGI(TAG, "Network manager initialized");
+
+    /* WireGuard: non-fatal, stays idle until enabled in the web UI */
+    esp_err_t wg_ret = wg_tunnel_init();
+    if (wg_ret != ESP_OK) {
+        ESP_LOGW(TAG, "WireGuard init failed: %s", esp_err_to_name(wg_ret));
+    }
 
     ESP_ERROR_CHECK(usb_host_mgr_init());
     ESP_LOGI(TAG, "USB host manager initialized");

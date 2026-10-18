@@ -63,4 +63,20 @@ menu "USB/IP Server Configuration"
         help
             CPU frequency used while idle. 40 MHz = crystal frequency.
 
+    config USBIP_WIREGUARD
+        bool "WireGuard tunnel support"
+        default y
+        help
+            Compiles in an outbound WireGuard tunnel (esphome/wireguard). It is
+            configured and switched on/off in the web UI (Settings -> WireGuard)
+            and is off until enabled there.
+
+    config USBIP_WG_NTP_SERVER
+        string "NTP server for WireGuard"
+        depends on USBIP_WIREGUARD
+        default "pool.ntp.org"
+        help
+            WireGuard handshakes need correct wall-clock time; it is fetched via
+            SNTP from this server before the tunnel starts.
+
 endmenu

@@ -16,6 +16,8 @@
 #include "usb_host_mgr.h"
 #include "access_control.h"
 #include "device_filter.h"
+#include "wg_tunnel.h"
+#include <time.h>
 #include "network_mgr.h"
 #include "event_log.h"
 #include "freertos/FreeRTOS.h"
@@ -557,6 +559,100 @@ static esp_err_t handle_api_settings_devfilter_post(httpd_req_t *req)
     return send_json_ok(req);
 }
 
+
+/* ---- WireGuard tunnel ---- */
+
+/* Number value, plain or quoted: "key": 123 / "key": "123" */
+static bool json_get_uint(const char *json, const char *key, unsigned *out)
+{
+    char search[64];
+    snprintf(search, sizeof(search), "\"%s\"", key);
+    const char *p = strstr(json, search);
+    if (!p) return false;
+    p += strlen(search);
+    while (*p == ' ' || *p == ':' || *p == '\t' || *p == '"') p++;
+    if (*p < '0' || *p > '9') return false;
+    unsigned long v = strtoul(p, NULL, 10);
+    if (v > 65535) return false;
+    *out = (unsigned)v;
+    return true;
+}
+
+static esp_err_t handle_api_settings_wireguard_get(httpd_req_t *req)
+{
+    if (!webui_check_auth(req)) return webui_reject_auth(req);
+
+    wg_tunnel_config_t c;
+    wg_tunnel_status_t st;
+    wg_tunnel_get_config(&c);
+    wg_tunnel_get_status(&st);
+
+    long ago = -1;
+    if (st.last_handshake > 0) {
+        time_t now = time(NULL);
+        ago = (long)(now - st.last_handshake);
+        if (ago < 0) ago = 0;
+    }
+    char buf[768];
+    int n = snprintf(buf, sizeof(buf),
+        "{\"enabled\":%s,\"state\":\"%s\",\"error\":\"%s\",\"handshake_ago\":%ld,"
+        "\"public_key\":\"%s\",\"has_private_key\":%s,\"peer_public_key\":\"%s\","
+        "\"has_psk\":%s,\"address\":\"%s\",\"netmask\":\"%s\",\"endpoint\":\"%s\","
+        "\"port\":%u,\"keepalive\":%u}",
+        c.enabled ? "true" : "false", wg_tunnel_state_str(st.state), st.last_error, ago,
+        st.public_key, c.private_key[0] ? "true" : "false", c.peer_public_key,
+        c.preshared_key[0] ? "true" : "false", c.address, c.netmask, c.endpoint,
+        c.port, c.keepalive);
+    memset(&c, 0, sizeof(c));   /* contains the private key */
+    return send_json(req, buf, n);
+}
+
+static esp_err_t handle_api_settings_wireguard_post(httpd_req_t *req)
+{
+    if (!webui_check_auth(req)) return webui_reject_auth(req);
+
+    char body[768];
+    if (read_body(req, body, sizeof(body)) < 0) {
+        return send_json_error(req, 400, "missing body");
+    }
+
+    wg_tunnel_config_t c;
+    memset(&c, 0, sizeof(c));
+    unsigned v;
+    json_get_bool(body, "enabled", &c.enabled);
+    json_get_string(body, "private_key", c.private_key, sizeof(c.private_key));
+    json_get_string(body, "preshared_key", c.preshared_key, sizeof(c.preshared_key));
+    json_get_string(body, "peer_public_key", c.peer_public_key, sizeof(c.peer_public_key));
+    json_get_string(body, "address", c.address, sizeof(c.address));
+    json_get_string(body, "netmask", c.netmask, sizeof(c.netmask));
+    json_get_string(body, "endpoint", c.endpoint, sizeof(c.endpoint));
+    c.port = json_get_uint(body, "port", &v) ? (uint16_t)v : 51820;
+    c.keepalive = json_get_uint(body, "keepalive", &v) ? (uint16_t)v : 25;
+    memset(body, 0, sizeof(body));
+
+    const char *why = NULL;
+    esp_err_t err = wg_tunnel_set_config(&c, &why);
+    memset(&c, 0, sizeof(c));
+    if (err != ESP_OK) {
+        return send_json_error(req, err == ESP_ERR_INVALID_ARG ? 400 : 500,
+                               why ? why : "saving failed");
+    }
+    return send_json_ok(req);
+}
+
+static esp_err_t handle_api_settings_wireguard_genkey(httpd_req_t *req)
+{
+    if (!webui_check_auth(req)) return webui_reject_auth(req);
+
+    char pub[WG_KEY_LEN] = "";
+    if (wg_tunnel_generate_key(pub, sizeof(pub)) != ESP_OK) {
+        return send_json_error(req, 500, "key generation failed");
+    }
+    char buf[128];
+    int n = snprintf(buf, sizeof(buf), "{\"ok\":true,\"public_key\":\"%s\"}", pub);
+    return send_json(req, buf, n);
+}
+
 /* ---- System info ---- */
 
 static esp_err_t handle_api_system_info(httpd_req_t *req)
@@ -720,5 +816,23 @@ void webui_api_register(httpd_handle_t server)
     };
     httpd_register_uri_handler(server, &uri_devfilter_post);
 
-    ESP_LOGI(TAG, "API endpoints registered (15 routes)");
+    const httpd_uri_t uri_wg_get = {
+        .uri = "/api/settings/wireguard", .method = HTTP_GET,
+        .handler = handle_api_settings_wireguard_get, .user_ctx = NULL
+    };
+    httpd_register_uri_handler(server, &uri_wg_get);
+
+    const httpd_uri_t uri_wg_post = {
+        .uri = "/api/settings/wireguard", .method = HTTP_POST,
+        .handler = handle_api_settings_wireguard_post, .user_ctx = NULL
+    };
+    httpd_register_uri_handler(server, &uri_wg_post);
+
+    const httpd_uri_t uri_wg_genkey = {
+        .uri = "/api/settings/wireguard/genkey", .method = HTTP_POST,
+        .handler = handle_api_settings_wireguard_genkey, .user_ctx = NULL
+    };
+    httpd_register_uri_handler(server, &uri_wg_genkey);
+
+    ESP_LOGI(TAG, "API endpoints registered (18 routes)");
 }

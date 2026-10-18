@@ -1051,6 +1051,7 @@
         loadAuthSettings();
         loadAclSettings();
         loadDevFilter();
+        loadWireguard();
         loadSystemInfo();
     }
 
@@ -1212,6 +1213,110 @@
             }
         })
         .catch(function() { toast('Request failed', 'error'); });
+    };
+
+    /* --- WireGuard tunnel --- */
+
+    function $id(x) { return document.getElementById(x); }
+
+    function wgAgo(s) {
+        if (s < 0) return 'never';
+        if (s < 60) return s + ' s ago';
+        if (s < 3600) return Math.floor(s / 60) + ' min ago';
+        return Math.floor(s / 3600) + ' h ago';
+    }
+
+    function wgStatus(data) {
+        var $st = $id('wg-state');
+        if (!$st) return;
+        var txt = data.state + (data.state === 'connected' || data.handshake_ago >= 0
+            ? ' · last handshake ' + wgAgo(data.handshake_ago) : '');
+        if (data.error) txt += ' · ' + data.error;
+        $st.textContent = txt;
+        $st.className = 'wg-state ' + (data.state === 'connected' ? 'ok'
+            : (data.state === 'disabled' ? '' : (data.error ? 'err' : 'busy')));
+        $id('wg-pubkey').value = data.public_key || '';
+    }
+
+    function loadWireguard(statusOnly) {
+        if (!$id('wg-enabled')) return;
+        fetch('/api/settings/wireguard')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                wgStatus(data);
+                if (statusOnly) return;
+                $id('wg-enabled').checked = !!data.enabled;
+                $id('wg-peer').value = data.peer_public_key || '';
+                $id('wg-endpoint').value = data.endpoint || '';
+                $id('wg-port').value = data.port || 51820;
+                $id('wg-address').value = data.address || '';
+                $id('wg-netmask').value = data.netmask || '255.255.255.0';
+                $id('wg-keepalive').value = (data.keepalive != null) ? data.keepalive : 25;
+                $id('wg-psk').value = '';
+                $id('wg-psk').placeholder = data.has_psk ? '(stored - empty = keep, "-" = remove)' : 'optional';
+                $id('wg-privkey').value = '';
+            })
+            .catch(function() { /* ignore */ });
+    }
+
+    /* Refresh the tunnel status while the settings page is open */
+    setInterval(function() {
+        var sec = $id('sec-settings');
+        if (sec && sec.classList.contains('active') && !document.hidden) loadWireguard(true);
+    }, 5000);
+
+    window.wgCopyPub = function() {
+        var v = $id('wg-pubkey').value;
+        if (!v) { toast('Generate a key pair first', 'error'); return; }
+        if (navigator.clipboard) navigator.clipboard.writeText(v).then(function() { toast('Public key copied', 'success'); });
+        else { $id('wg-pubkey').select(); document.execCommand('copy'); toast('Public key copied', 'success'); }
+    };
+
+    window.wgGenKey = function() {
+        if ($id('wg-pubkey').value &&
+            !confirm('Create a NEW key pair? The old key stops working - the public key must be updated on the peer.')) return;
+        fetch('/api/settings/wireguard/genkey', { method: 'POST' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.ok) { $id('wg-pubkey').value = data.public_key; toast('Key pair generated', 'success'); }
+                else toast(data.error || 'Key generation failed', 'error');
+            })
+            .catch(function() { toast('Request failed', 'error'); });
+    };
+
+    window.saveWireguard = function() {
+        var body = {
+            enabled: $id('wg-enabled').checked,
+            peer_public_key: $id('wg-peer').value.trim(),
+            endpoint: $id('wg-endpoint').value.trim(),
+            port: parseInt($id('wg-port').value, 10) || 51820,
+            address: $id('wg-address').value.trim(),
+            netmask: $id('wg-netmask').value.trim(),
+            keepalive: parseInt($id('wg-keepalive').value, 10) || 0,
+            preshared_key: $id('wg-psk').value.trim(),
+            private_key: $id('wg-privkey').value.trim()
+        };
+        fetch('/api/settings/wireguard', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.ok) { toast('WireGuard settings saved', 'success'); loadWireguard(); }
+            else toast(data.error || 'Save failed', 'error');
+        })
+        .catch(function() { toast('Request failed', 'error'); });
+    };
+
+    window.wgShowConfig = function() {
+        var pub = $id('wg-pubkey').value, addr = $id('wg-address').value.trim();
+        if (!pub || !addr) { toast('Generate a key and set the tunnel address first', 'error'); return; }
+        var cfg = '[Peer]\n# usbip-esp32p4\nPublicKey = ' + pub + '\nAllowedIPs = ' + addr + '/32\n';
+        if ($id('wg-psk').placeholder.indexOf('stored') === 0 || $id('wg-psk').value)
+            cfg += 'PresharedKey = <same preshared key>\n';
+        $id('wg-peercfg').value = cfg;
+        $id('wg-peercfg').style.display = 'block';
     };
 
     /* --- ACL --- */

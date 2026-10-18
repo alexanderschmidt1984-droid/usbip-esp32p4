@@ -1015,3 +1015,6 @@ body {
 }
 
 .hint { font-size: 12px; opacity: .75; margin: 6px 0 10px; }
+.wg-state.ok { color: #2e9d57; font-weight: 600; }
+.wg-state.busy { color: #c98a10; }
+.wg-state.err { color: #d04040; }
