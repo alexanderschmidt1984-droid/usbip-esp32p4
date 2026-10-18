@@ -27,6 +27,7 @@
 #include "sdkconfig.h"
 #include "sec_tls.h"
 #include "esp_https_server.h"
+#include "esp_app_desc.h"
 
 static const char *TAG = "webui";
 
@@ -401,6 +402,30 @@ extern const uint8_t style_css_start[] asm("_binary_style_css_start");
 extern const uint8_t style_css_end[]   asm("_binary_style_css_end");
 extern const uint8_t app_js_start[] asm("_binary_app_js_start");
 extern const uint8_t app_js_end[]   asm("_binary_app_js_end");
+extern const uint8_t lang_de_start[] asm("_binary_de_json_start");
+extern const uint8_t lang_de_end[]   asm("_binary_de_json_end");
+extern const uint8_t lang_en_start[] asm("_binary_en_json_start");
+extern const uint8_t lang_en_end[]   asm("_binary_en_json_end");
+extern const uint8_t lang_fr_start[] asm("_binary_fr_json_start");
+extern const uint8_t lang_fr_end[]   asm("_binary_fr_json_end");
+extern const uint8_t lang_es_start[] asm("_binary_es_json_start");
+extern const uint8_t lang_es_end[]   asm("_binary_es_json_end");
+extern const uint8_t lang_it_start[] asm("_binary_it_json_start");
+extern const uint8_t lang_it_end[]   asm("_binary_it_json_end");
+extern const uint8_t lang_pt_start[] asm("_binary_pt_json_start");
+extern const uint8_t lang_pt_end[]   asm("_binary_pt_json_end");
+extern const uint8_t lang_da_start[] asm("_binary_da_json_start");
+extern const uint8_t lang_da_end[]   asm("_binary_da_json_end");
+extern const uint8_t lang_sv_start[] asm("_binary_sv_json_start");
+extern const uint8_t lang_sv_end[]   asm("_binary_sv_json_end");
+extern const uint8_t lang_ru_start[] asm("_binary_ru_json_start");
+extern const uint8_t lang_ru_end[]   asm("_binary_ru_json_end");
+extern const uint8_t lang_uk_start[] asm("_binary_uk_json_start");
+extern const uint8_t lang_uk_end[]   asm("_binary_uk_json_end");
+extern const uint8_t lang_tr_start[] asm("_binary_tr_json_start");
+extern const uint8_t lang_tr_end[]   asm("_binary_tr_json_end");
+extern const uint8_t lang_ar_start[] asm("_binary_ar_json_start");
+extern const uint8_t lang_ar_end[]   asm("_binary_ar_json_end");
 
 /* Declarations from ws_handler.c */
 extern void ws_handler_init(httpd_handle_t server);
@@ -448,6 +473,41 @@ static esp_err_t handle_app_js(httpd_req_t *req)
     httpd_resp_send(req, (const char *)app_js_start,
                     app_js_end - app_js_start);
     return ESP_OK;
+}
+
+/* UI language files (frontend/lang/xx.json), fetched by the page on demand */
+static const struct { const char *code; const uint8_t *start, *end; } s_langs[] = {
+    { "de", lang_de_start, lang_de_end },
+    { "en", lang_en_start, lang_en_end },
+    { "fr", lang_fr_start, lang_fr_end },
+    { "es", lang_es_start, lang_es_end },
+    { "it", lang_it_start, lang_it_end },
+    { "pt", lang_pt_start, lang_pt_end },
+    { "da", lang_da_start, lang_da_end },
+    { "sv", lang_sv_start, lang_sv_end },
+    { "ru", lang_ru_start, lang_ru_end },
+    { "uk", lang_uk_start, lang_uk_end },
+    { "tr", lang_tr_start, lang_tr_end },
+    { "ar", lang_ar_start, lang_ar_end },
+};
+
+static esp_err_t handle_lang(httpd_req_t *req)
+{
+    if (!auth_check_request(req)) return auth_reject(req);
+    char q[16], code[4] = "";
+    if (httpd_req_get_url_query_str(req, q, sizeof(q)) == ESP_OK) {
+        httpd_query_key_value(q, "l", code, sizeof(code));
+    }
+    for (size_t i = 0; i < sizeof(s_langs) / sizeof(s_langs[0]); i++) {
+        if (strcmp(code, s_langs[i].code) == 0) {
+            httpd_resp_set_type(req, "application/json; charset=utf-8");
+            httpd_resp_set_hdr(req, "Cache-Control", "no-cache");   /* new firmware = new texts */
+            return httpd_resp_send(req, (const char *)s_langs[i].start,
+                                   s_langs[i].end - s_langs[i].start);
+        }
+    }
+    httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "unknown language");
+    return ESP_FAIL;
 }
 
 /* ---- JSON API handlers ---- */
@@ -553,6 +613,110 @@ static esp_err_t handle_api_logs(httpd_req_t *req)
     httpd_resp_send(req, json_buf, pos);
     return ESP_OK;
 }
+
+/* ---- Log export (download as .txt) ---- */
+
+/* Drop ANSI colour sequences (ESC [ ... m) from the system log; the state
+ * carries over chunk borders. Returns the new length. */
+static size_t strip_ansi(char *buf, size_t len, int *state)
+{
+    size_t o = 0;
+    for (size_t i = 0; i < len; i++) {
+        char c = buf[i];
+        if (*state == 0) {
+            if (c == 0x1b) { *state = 1; continue; }
+            buf[o++] = c;
+        } else if (*state == 1) {
+            *state = (c == '[') ? 2 : 0;
+        } else if (c >= 0x40 && c <= 0x7e) {
+            *state = 0;                      /* final byte of the sequence */
+        }
+    }
+    return o;
+}
+
+/* type=events (default) | system | previous (log tail before the last restart) */
+static esp_err_t handle_api_logs_export(httpd_req_t *req)
+{
+    if (!auth_check_request(req)) return auth_reject(req);
+
+    char type[12] = "events";
+    char q[32];
+    if (httpd_req_get_url_query_str(req, q, sizeof(q)) == ESP_OK) {
+        httpd_query_key_value(q, "type", type, sizeof(type));
+    }
+    bool system = strcmp(type, "system") == 0;
+    bool previous = strcmp(type, "previous") == 0;
+    const char *kind = system ? "system" : previous ? "before-restart" : "events";
+
+    char host[32] = "usbip";
+    network_mgr_get_hostname(host, sizeof(host));
+    int64_t up = esp_timer_get_time() / 1000000;
+    char disp[112];
+    snprintf(disp, sizeof(disp), "attachment; filename=\"%s-%s-log-%llds.txt\"",
+             host, kind, (long long)up);
+    httpd_resp_set_type(req, "text/plain; charset=utf-8");
+    httpd_resp_set_hdr(req, "Content-Disposition", disp);
+    httpd_resp_set_hdr(req, "Cache-Control", "no-store");
+
+    const size_t bufsz = 4096;
+    char *buf = malloc(bufsz);
+    if (!buf) {
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "out of memory");
+        return ESP_FAIL;
+    }
+    int n = snprintf(buf, bufsz,
+        "# %s %s log - firmware %s, ESP-IDF %s\n"
+        "# uptime %lld s, free heap %lu bytes, last restart: %s\n"
+        "# Timestamps: time since boot%s.\n\n",
+        host, kind, esp_app_get_description()->version, esp_get_idf_version(),
+        (long long)up, (unsigned long)esp_get_free_heap_size(), event_log_reset_reason_str(),
+        previous ? " of the previous run" : "");
+    esp_err_t err = httpd_resp_send_chunk(req, buf, n);
+
+    if (system || previous) {
+        uint64_t pos = 0;
+        int ansi = 0;
+        size_t got;
+        while (err == ESP_OK &&
+               (got = previous ? event_log_previous_read(&pos, buf, bufsz)
+                               : event_log_syslog_read(&pos, buf, bufsz)) > 0) {
+            size_t len = strip_ansi(buf, got, &ansi);
+            if (len) err = httpd_resp_send_chunk(req, buf, len);
+        }
+    } else {
+        static const char *lvl[] = { "DEBUG", "INFO ", "WARN ", "ERROR" };
+        event_log_entry_t *e = malloc(sizeof(event_log_entry_t) * 16);
+        size_t skip = 0, cnt = 0;
+        while (e && err == ESP_OK && event_log_get_oldest(skip, e, 16, &cnt) == ESP_OK && cnt > 0) {
+            size_t o = 0;
+            for (size_t i = 0; i < cnt; i++) {
+                int64_t ms = e[i].timestamp_us / 1000;
+                o += snprintf(buf + o, bufsz - o, "%6lld.%03lld  %s  %s\n",
+                              (long long)(ms / 1000), (long long)(ms % 1000),
+                              lvl[e[i].level & 3], e[i].message);
+            }
+            err = httpd_resp_send_chunk(req, buf, o);
+            skip += cnt;
+        }
+        free(e);
+    }
+    free(buf);
+    if (err == ESP_OK) {
+        httpd_resp_send_chunk(req, NULL, 0);
+    }
+    return err;
+}
+
+#if !CONFIG_CAPTURE_ENABLED
+/* Capture not compiled in: answer the UI's status check instead of a 404
+ * (which logged a warning on every page load). */
+static esp_err_t handle_capture_unavailable(httpd_req_t *req)
+{
+    httpd_resp_set_type(req, "application/json");
+    return httpd_resp_sendstr(req, "{\"available\":false}");
+}
+#endif
 
 static esp_err_t handle_api_restart(httpd_req_t *req)
 {
@@ -719,6 +883,12 @@ esp_err_t webui_init(void)
     };
     httpd_register_uri_handler(s_server, &uri_css);
 
+    const httpd_uri_t uri_lang = {
+        .uri = "/lang", .method = HTTP_GET,
+        .handler = handle_lang, .user_ctx = NULL
+    };
+    httpd_register_uri_handler(s_server, &uri_lang);
+
     const httpd_uri_t uri_app_js = {
         .uri = "/app.js", .method = HTTP_GET,
         .handler = handle_app_js, .user_ctx = NULL
@@ -744,6 +914,12 @@ esp_err_t webui_init(void)
     };
     httpd_register_uri_handler(s_server, &uri_api_logs);
 
+    const httpd_uri_t uri_api_logs_export = {
+        .uri = "/api/logs/export", .method = HTTP_GET,
+        .handler = handle_api_logs_export, .user_ctx = NULL
+    };
+    httpd_register_uri_handler(s_server, &uri_api_logs_export);
+
     const httpd_uri_t uri_api_restart = {
         .uri = "/api/restart", .method = HTTP_POST,
         .handler = handle_api_restart, .user_ctx = NULL
@@ -761,6 +937,13 @@ esp_err_t webui_init(void)
     /* Register REST API endpoints */
     webui_api_register(s_server);
 
+#if !CONFIG_CAPTURE_ENABLED
+    const httpd_uri_t uri_cap_status = {
+        .uri = "/api/capture/status", .method = HTTP_GET,
+        .handler = handle_capture_unavailable, .user_ctx = NULL
+    };
+    httpd_register_uri_handler(s_server, &uri_cap_status);
+#endif
 #if CONFIG_CAPTURE_ENABLED
     /* Register capture API endpoints */
     capture_api_register(s_server);

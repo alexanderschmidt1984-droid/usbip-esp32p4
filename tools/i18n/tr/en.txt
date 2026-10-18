@@ -1,0 +1,341 @@
+U0|USB/IP Server
+U1|Dashboard
+U2|Devices
+U3|Topology
+U4|Settings
+U5|Connecting…
+U6|Power save: the CPU clocks down while idle and runs at full speed while a device is attached
+U7|Power save on
+U8|Change theme
+U9|Auto
+U10|Language
+U11|Clients
+U12|Throughput
+U13|Memory
+U14|Uptime
+U15|Bandwidth
+U16|Recent Events
+U17|Export events
+U18|Export system log
+U19|Log before last restart
+U20|Up to 2048 events and 1 MB system log in RAM (no flash wear, lost on restart). After a crash the last 4 KB are kept as "Log before last restart".
+U21|Packet Capture
+U22|SD Card
+U23|Status
+U24|File
+U25|Size
+U26|Packets
+U27|Dropped
+U28|Start Capture
+U29|Download
+U30|Delete
+U31|USB Bus
+U32|Reset USB Bus
+U33|USB Devices
+U34|No USB devices connected
+U35|USB Topology
+U36|Getting started: use a USB device on your PC
+U37|The board shares plugged-in USB devices over the network via USB/IP. On the PC a device is attached as if it were plugged in there. A device can only be used by one PC at a time.
+U38|Network
+U39|Hostname
+U40|IP Address
+U41|Subnet Mask
+U42|Gateway
+U43|Current IP
+U44|Save Network Settings
+U45|Authentication
+U46|Enable WebUI Password
+U47|Username
+U48|Password
+U49|Repeat password
+U50|No password set: settings cannot be changed until a WebUI password is configured. Leave the password field empty to keep the current one.
+U51|Save Auth Settings
+U52|Access Control
+U53|Open
+U54|Closed (Allowlist)
+U55|Comment, e.g. Alex laptop
+U56|Add
+U57|Add this PC
+U58|Save ACL
+U59|USB hub
+U60|Hub compatibility (all devices at Full Speed)
+U61|Save & Restart
+U62|Device Filter (VID:PID)
+U63|Only export listed devices
+U64|Allowed devices (comma separated, hex, * = any PID)
+U65|Hubs are always allowed. Other devices are ignored at enumeration.
+U66|Save Device Filter
+U67|Encryption (local network)
+U68|USB/IP over TLS (pre-shared key, PC uses stunnel)
+U69|Off
+U70|Additional (plain 3240 + TLS)
+U71|TLS only
+U72|Show key & stunnel config
+U73|New key
+U74|TLS key (secret)
+U75|HTTPS for this web UI (self-signed, after restart)
+U76|Certificate SHA-256:
+U77|Save Encryption
+U78|New certificate
+U79|WireGuard Tunnel
+U80|Enable WireGuard tunnel
+U81|Status:
+U82|This board's public key (enter on the peer)
+U83|no key yet
+U84|Copy
+U85|Generate
+U86|Peer public key
+U87|base64, 44 chars
+U88|Peer endpoint (host name or IP)
+U89|Peer port
+U90|Tunnel address of this board
+U91|Tunnel netmask
+U92|Persistent keepalive (s, 0 = off)
+U93|Advanced
+U94|Preshared key
+U95|optional
+U96|Import private key (instead of Generate)
+U97|empty = keep
+U98|The board dials out - no port forwarding needed at its site. USB/IP (port 3240) and this web UI are then reachable at the tunnel address. In closed ACL mode, add the tunnel IPs of your clients.
+U99|Save WireGuard
+U100|Peer config snippet
+U101|System
+U102|Firmware
+U103|Chip
+U104|Free Heap
+U105|Last restart
+U106|Crashes (since factory reset)
+U107|Power save (CPU clocks down while idle)
+U108|Restart
+U109|Factory Reset
+U110|Encrypted via HTTPS
+U111|This web UI session is encrypted with HTTPS (TLS).
+U112|Protected by WireGuard
+U113|This web UI session runs through the WireGuard tunnel
+U114|WireGuard active · session via LAN
+U115|The tunnel is up, but this session does not use it. Protected:
+U116|Tunnel enabled but not connected.
+U117|USB/IP connection runs through the WireGuard tunnel
+U118|USB/IP connection is encrypted with TLS (stunnel)
+U119|Unencrypted USB/IP connection
+U120|Connected
+U121|Disconnected
+U122|Unknown Device
+U123|Loading...
+U124|Failed to load details
+U125|Bus ID
+U126|BCD Device
+U127|Class
+U128|Speed
+U129|State
+U130|Client
+U131|Manufacturer
+U132|Product
+U133|Serial
+U134|Bytes In
+U135|Bytes Out
+U136|URBs OK
+U137|URBs Failed
+U138|Interfaces
+U139|Sub
+U140|Proto
+U141|EPs
+U142|Endpoints
+U143|Addr
+U144|Dir
+U145|Type
+U146|MaxPkt
+U147|Interval
+U148|Disconnect Client
+U149|Toggle Export
+U150|Eject
+U151|Eject this device?
+U152|Action completed
+U153|Action failed
+U154|Request failed
+U155|No devices connected
+U156|Network settings saved. Reboot to apply.
+U157|Save failed
+U158|(unchanged)
+U159|required
+U160|Passwords do not match
+U161|Auth settings saved
+U162|Apply device filter? The USB bus is reset and attached clients are dropped.
+U163|Device filter saved
+U164|Active: USB runs at Full Speed.
+U165|Active: USB runs at High Speed.
+U166|The new setting applies after the restart.
+U167|Save the setting and restart the board? Attached devices will be disconnected.
+U168|Saved - board is restarting
+U169|Power save off - full performance
+U170|never
+U171|{n} s ago
+U172|{n} min ago
+U173|{n} h ago
+U174|last handshake
+U175|(stored - empty = keep, "-" = remove)
+U176|Generate a key pair first
+U177|Public key copied
+U178|Create a NEW key pair? The old key stops working - the public key must be updated on the peer.
+U179|Key pair generated
+U180|Key generation failed
+U181|WireGuard settings saved
+U182|Generate a key and set the tunnel address first
+U183|(no certificate yet)
+U184|Restart required to apply.
+U185|Active
+U186|active TLS sessions
+U187|TLS only: plain USB/IP connections (port 3240) will be refused. Clients need stunnel. Continue?
+U188|HTTPS change takes effect after a restart. The web UI will then be at
+U189|Encryption settings saved
+U190|Failed
+U191|Create a new TLS key? Existing stunnel configurations stop working.
+U192|New TLS key created
+U193|Create a new HTTPS certificate? It is used after the next restart; browsers will warn again.
+U194|New certificate created (active after restart)
+U195|This PC
+U196|MAC unknown, not in the same LAN
+U197|No entries in allowlist
+U198|Remove
+U199|Invalid MAC address (aa:bb:cc:dd:ee:ff)
+U200|Invalid IP address
+U201|Already in list
+U202|List full (max 32)
+U203|MAC of this PC unknown (not in the same LAN) - use the IP
+U204|ACL settings saved
+U205|Erase all settings and restart?
+U206|Restart the board?
+U207|Factory reset - board is restarting…
+U208|Board is restarting…
+U209|Error
+U210|please log in again
+U211|No response - the board is probably restarting
+U212|Present
+U213|Not Found
+U214|Recording
+U215|Idle
+U216|Stop Capture
+U217|Capture stopped
+U218|Capture started
+U219|Capture error
+U220|Delete the capture file?
+U221|Capture file deleted
+U222|Delete failed
+U223|Available
+U224|Exported
+U225|Error
+U226|Unknown
+U227|Dark
+U228|Light
+H0|Help: set up USB/IP on the PC
+H1|Install the program:{P0}<span class="note">Ubuntu: <code>sudo apt install linux-tools-generic</code> (contains usbip).</span>
+H2|Load the kernel module, now and on every boot:{P0}
+H3|Show the offered devices:{P0}
+H4|Attach a device (bus ID from the list, e.g. <code>1-1</code>):{P0}
+H5|Check: <code>usbip port</code> shows the attached device, <code>lsusb</code> lists it like a local one.
+H6|Detach it again (port number from <code>usbip port</code>, the first device is port 0):{P0}
+H7|Install the program:{P0}
+H8|Install <b>usbip-win2</b>: download the installer from <code>github.com/vadimgrn/usbip-win2/releases</code> and run it as administrator.
+H9|Open Command Prompt or PowerShell <b>as administrator</b>.
+H10|Check: <code>usbip port</code> shows the device, Device Manager lists it like a local one.
+H11|Detach it again (port number from <code>usbip port</code>):{P0}
+H12|The PC opens the connection to the board (TCP 3240), so no firewall rule is needed on the PC. If the device is unplugged at the board, the PC drops the connection. After plugging it in again, run <code>attach</code> again.
+H13|Help
+H14|<b>Hostname</b>: name of the board on the network. It also announces itself via mDNS as <code>&lt;hostname&gt;.local</code> and advertises the service <code>_usbip._tcp</code>.
+H15|<b>DHCP</b> (default): the router assigns the address. To keep it the same, set up a fixed assignment in the router (Fritzbox: Home Network → Network → edit device → "Always assign this network device the same IPv4 address").
+H16|<b>Static IP</b>: untick DHCP, enter address, mask, gateway and DNS. The address must be free and outside the router's DHCP range.
+H17|Changes apply only <b>after a restart</b> (System → Restart). Then open the page at the new address.
+H18|Resolve <code>.local</code> names on the PC:
+H19|Usually already set up on desktop systems (avahi). Otherwise:
+H20|In <code>/etc/nsswitch.conf</code>, add <code>mdns_minimal [NOTFOUND=return]</code> to the <code>hosts:</code> line before <code>resolve</code>.
+H21|Windows 10/11 resolves <code>.local</code> names by itself. If not, use the IP address.
+H22|Without a password the web UI is read-only. Settings can only be changed once a password is set.
+H23|Tick the box, enter a user name and the password <b>twice</b> (against typos), then <b>Save Auth Settings</b>. The browser will then ask for the credentials when opening the page.
+H24|Change the password: enter the new one in both fields. Leave both empty = the current password stays.
+H25|After 5 wrong attempts the board blocks further logins from this PC for 30 seconds.
+H26|Without HTTPS the password crosses the LAN unencrypted. Protection: HTTPS (panel "Encryption") or open the web UI via WireGuard.
+H27|<b>Forgot the password</b>: press <b>RESET 5 times in a row</b> on the board (less than 5&nbsp;s between presses) – this resets everything to factory settings. Or erase only the settings over the USB cable, the firmware stays: <code>idf.py -p /dev/ttyACM0 erase-region 0x9000 0x6000</code> (Windows: <code>-p COM3</code> or similar). All settings are lost (including WireGuard and TLS keys).
+H28|<b>Open</b>: everyone on the network may use USB/IP and this web UI.
+H29|<b>Closed (Allowlist)</b>: only listed participants get access, both to USB/IP <b>and</b> to this web UI. An entry is either an <b>IP</b> or a <b>MAC address</b>, plus a <b>comment</b> so it stays clear whom you gave access.
+H30|<b>MAC instead of IP</b>: handy if the PC sometimes gets a different IP via DHCP. Works only for PCs in the <b>same LAN</b> (the board reads the MAC from its ARP table), not across WireGuard or a router. A MAC can be spoofed – it is a convenience, not strong protection. For real protection: password, TLS or WireGuard.
+H31|<b>Add this PC</b> takes the IP or MAC of the PC you are sitting at (choose the type first).
+H32|The PC you save from is added to the list automatically, so you cannot lock yourself out.
+H33|With WireGuard, enter the PC's <b>tunnel IP</b> (e.g. <code>10.8.0.1</code>), not its LAN address.
+H34|Find your own IP or MAC address:
+H35|"IPv4 Address" or "Physical Address" (MAC) of the Ethernet or Wi-Fi adapter.
+H36|This panel appears as soon as the board has detected a <b>USB hub</b>.
+H37|<b>Problem</b>: slow devices (Full/Low Speed) such as a <b>YubiKey</b>, keyboard, mouse or many USB serial adapters do not work behind a USB 2.0 hub. The ESP32-P4's USB library would need a "transaction translator" for that, which it does not have yet. The event log then shows "FS/LS device rejected (no TT support)".
+H38|<b>Hub compatibility on</b>: the board's USB port works at Full Speed only (12&nbsp;Mbit/s). Then the hub and all devices behind it run at Full Speed too, and YubiKey &amp; co. work on the hub.
+H39|<b>Drawback</b>: USB sticks and card readers then also run at Full Speed only – about <b>1&nbsp;MB/s instead of 5–6&nbsp;MB/s</b>. Without a hub or with only fast devices on the hub: leave it off.
+H40|Takes effect only after a <b>restart</b> (Save &amp; Restart). All attached devices are disconnected.
+H41|Hub without its own power supply: devices may drop out briefly or be detected slowly. For several devices use a powered hub.
+H42|When enabled, the board only offers the listed devices. It ignores all others as soon as they are plugged in.
+H43|Format <code>VID:PID</code> in hex, separated by commas. <code>*</code> stands for all products of a vendor, e.g. <code>1050:*</code> = all YubiKeys.
+H44|The list applies when a device is plugged in. Unplug devices that are already connected and plug them in again.
+H45|Find VID and PID (or on any system: <code>usbip list -r <span class="h-host"></span></code> shows them in brackets):
+H46|Plug the device into the PC, then:
+H47|Example: <code>ID 1050:0407 Yubico.com Yubikey 4/5</code>
+H48|Plug the device into the PC, then (package <code>usbutils</code>):
+H49|Device Manager → device → Properties → Details → "Hardware Ids". <code>VID_1050&amp;PID_0407</code> corresponds to <code>1050:0407</code>.
+H50|There are two separate functions for the local network here. Via WireGuard both are already encrypted, so these functions are not needed then.
+H51|<b>1. USB/IP over TLS</b>: the board additionally accepts encrypted connections on port 3241. On the PC <b>stunnel</b> does the encryption, and usbip only talks to <code>127.0.0.1</code>.
+H52|<b>Additional</b>: unencrypted (3240) and TLS (3241) at the same time, good for switching over.
+H53|<b>TLS only</b>: the board refuses unencrypted connections, all PCs need stunnel. Connections through the <b>WireGuard tunnel</b> stay allowed, they are already encrypted. A refused PC reports <code>Exported Device List Request failed - Unknown Op Common Status</code>.
+H54|In the device list a lock with "TLS" or "WireGuard" marks encrypted USB/IP connections.
+H55|Select <b>Additional</b> above, <b>Save Encryption</b>.
+H56|Install stunnel:{P0}
+H57|<b>Show key &amp; stunnel config</b> → Linux. Save the block up to the line <code>ciphers</code> as <code>/etc/stunnel/usbip.conf</code>, and the line <code>Kennung:Schlüssel</code> as <code>/etc/stunnel/usbip.psk</code>:{P0}
+H58|Start stunnel (keeps running in the background, stop it with <code>sudo pkill stunnel</code>):{P0}<span class="note">Permanently: <code>systemctl list-unit-files 'stunnel*'</code>. If the template <code>stunnel@.service</code> exists, <code>sudo systemctl enable --now stunnel@usbip</code> starts exactly this file.</span>
+H59|Use devices via stunnel:{P0}
+H60|If that works, switch to <b>TLS only</b>.
+H61|Start stunnel (keeps running in the background, stop it with <code>sudo pkill stunnel</code>):{P0}<span class="note">Permanently: the service <code>stunnel.service</code> starts <code>/etc/stunnel/stunnel.conf</code>. Rename the file and enable the service: <code>sudo mv /etc/stunnel/usbip.conf /etc/stunnel/stunnel.conf &amp;&amp; sudo systemctl enable --now stunnel</code></span>
+H62|Install stunnel for Windows: <code>stunnel.org</code> → Downloads → Windows installer.
+H63|<b>Show key &amp; stunnel config</b> → Windows 10/11. Copy the content as shown into <code>stunnel.conf</code> (replacing the example services in it) and create <code>usbip.psk</code>, both in the <code>config</code> folder of the stunnel installation.
+H64|As administrator, install and start stunnel as a service:{P0}
+H65|Use devices via stunnel (Command Prompt as administrator):{P0}
+H66|<b>New key</b> creates a new TLS key. Then replace the <code>.psk</code> file on all PCs.
+H67|<b>2. HTTPS for this web UI</b> (all systems):
+H68|Tick "HTTPS for this web UI", <b>Save Encryption</b>, then System → <b>Restart</b>.
+H69|Open the page at <code>https://<span class="h-host"></span>/</code>. The browser warns once because the certificate is self-signed.
+H70|In the browser's certificate details, compare the SHA-256 fingerprint with the value above. If it matches, confirm the exception (Firefox: "Advanced…" → "Accept the Risk and Continue", error code <code>MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT</code> is normal here).
+H71|With HTTPS, <code>http://</code> redirects to <code>https://</code> automatically. With tools like curl: <code>curl -k https://…</code>
+H72|<b>New certificate</b> creates a new certificate. It applies after the next restart, then the browser warns again.
+H73|The board itself builds the tunnel to a <b>peer</b>: this PC, your own server or a router such as a Fritzbox. Then USB/IP and this web UI are reachable encrypted at the tunnel address <code><span class="h-wgaddr"></span></code>. When the page is opened that way, "Protected by WireGuard" is shown at the bottom left, and devices with tunnel clients carry a lock.
+H74|This guide sets up <b>this PC as the peer</b>, in the same network. PC: <code>10.8.0.1</code>, board: <code>10.8.0.2</code>, UDP port 51820.
+H75|Install:{P0}
+H76|Click <b>Generate</b> here. The private key stays on the board, only the public one is shown.
+H77|Create a key for the PC and show its public key:{P0}
+H78|Create the configuration with <code>sudoedit /etc/wireguard/wg-usbip.conf</code>:{P0}
+H79|Open the firewall for UDP 51820 (ufw):{P0}<span class="note">With firewalld: <code>sudo firewall-cmd --permanent --add-port=51820/udp &amp;&amp; sudo firewall-cmd --reload</code>. Without a firewall this step is not needed.</span>
+H80|Start the tunnel and start it automatically at boot:{P0}
+H81|Enter here: <b>Peer public key</b> = output of step 3, <b>Peer endpoint</b> = IP of the PC (<code>ip -4 -br addr</code>), <b>Peer port</b> 51820, <b>Tunnel address</b> 10.8.0.2, <b>Netmask</b> 255.255.255.0, <b>Keepalive</b> 25, tick <b>Enable</b>, then <b>Save WireGuard</b>.
+H82|Check:{P0}
+H83|Open the web UI protected: <code>http://<span class="h-wgaddr"></span>/</code>
+H84|Install <b>WireGuard for Windows</b>: <code>wireguard.com/install</code>.
+H85|In the WireGuard app: arrow next to "Add Tunnel" → "Add empty tunnel…", name <code>wg-usbip</code>. The app creates a key by itself. Note the displayed <b>public key</b>. Below the given line <code>PrivateKey = …</code> add:{P0}Save, then <b>Activate</b>.
+H86|Open the firewall for UDP 51820 (PowerShell as administrator):{P0}
+H87|Enter here: <b>Peer public key</b> = key from step 3, <b>Peer endpoint</b> = IP of the PC (<code>ipconfig</code>), <b>Peer port</b> 51820, <b>Tunnel address</b> 10.8.0.2, <b>Netmask</b> 255.255.255.0, <b>Keepalive</b> 25, tick <b>Enable</b>, then <b>Save WireGuard</b>.
+H88|Check: the app shows "Latest handshake". Then (as administrator):{P0}
+H89|<b>Over the internet</b>: the peer is then a server or router with a public address. Peer endpoint is its domain or IP, e.g. the Fritzbox VPN under Internet → Permit Access → VPN (WireGuard). <b>Peer config snippet</b> shows the matching <code>[Peer]</code> block for the peer. The tunnel network must not overlap with the local networks. In ACL mode "Closed", allow the PC's tunnel IP. Status "waiting for time sync" means: the board cannot reach an NTP server yet (internet required).
+H90|<b>No handshake</b> ("connecting · no handshake"): usually the PC's firewall blocks UDP 51820 or a key is mixed up. Check with <code>sudo tcpdump -ni any udp port 51820</code>: if packets from the board arrive, the keys are the problem. After restarting the tunnel <b>on the PC</b>, the board reconnects only after up to about 2 minutes. It is faster to switch Enable off and on again here.
+H91|<b>Power save</b> (on by default): without an attached device the CPU runs at 100&nbsp;MHz instead of 400&nbsp;MHz. As soon as a device is attached it goes to full clock, so transfers do not get slower. Unticked, the board runs at 400&nbsp;MHz all the time. Takes effect immediately, without a restart. When it is on, the green leaf is shown at the bottom left.
+H92|<b>Restart</b>: restarts the board. Attached USB devices are disconnected on all PCs and must be attached again with <code>attach</code> afterwards.
+H93|<b>Factory Reset</b>: erases <b>all</b> settings (network, password, ACL, device filter, WireGuard and TLS keys) and restarts. Afterwards DHCP without a password applies.
+H94|<b>Reset without the web UI</b>: press the <b>RESET</b> button on the board <b>5 times in a row</b>, less than 5&nbsp;s between two presses (good: about once per second). On the 5th start the board erases all settings like Factory Reset. Power off/on counts the same. A single reset or power failure does nothing; crashes are not counted. The BOOT button cannot be used for this (pressed at power-on = flash mode, in operation Ethernet uses the pin).
+H95|<b>Firmware update</b>: over the USB cable with <code>idf.py -p /dev/ttyACM0 flash</code> (Windows: <code>-p COM3</code> or similar). The settings are kept.
+U229|Reset the USB bus? This disconnects and re-enumerates ALL devices and drops any attached clients.
+U230|Software components
+U231|On the board
+U232|Component
+U233|Version
+U234|License
+U235|Tested on the PC with
+U236|Program
+U237|Use
+U238|USB/IP client
+U239|not tested yet
+U240|USB/IP client (Windows)
+U241|USB/IP over TLS
+U242|WireGuard peer
+U243|Web UI, HTTPS
+U244|Test PC

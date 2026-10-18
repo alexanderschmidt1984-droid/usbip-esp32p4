@@ -45,16 +45,28 @@ static vprintf_like_t s_orig_vprintf = NULL;
 
 static int custom_vprintf(const char *fmt, va_list args)
 {
-    /* Call original handler first */
+    /* Keep a copy in the PSRAM system log ring (web UI export). The line is
+     * formatted on the caller's stack; longer lines are cut. */
+    char line[256];
+    va_list copy;
+    va_copy(copy, args);
+    int n = vsnprintf(line, sizeof(line), fmt, copy);
+    va_end(copy);
+    if (n > 0) {
+        event_log_syslog_write(line, n < (int)sizeof(line) ? (size_t)n : sizeof(line) - 1);
+    }
+
+    /* Call original handler */
     int ret = s_orig_vprintf(fmt, args);
 
     /* Check for known USB hub/enum error patterns in the format string */
     if (fmt) {
-        if (strstr(fmt, "transaction translator") || strstr(fmt, "TT") ) {
+        /* esp-usb: "Connected device is FS, transaction translator (TT) is not
+         * supported". Not just "TT": that also matched "HTTPS" in other lines. */
+        if (strstr(fmt, "transaction translator (TT) is not supported")) {
             usb_host_mgr_note_tt_reject();
             event_log_add(EVENT_LOG_LEVEL_WARN,
-                "USB hub: FS/LS device rejected (no TT support). Connect it directly to the board, "
-                "or enable Settings -> USB -> hub compatibility.");
+                "USB hub: slow (FS/LS) device rejected, no TT support - connect it to the board directly");
         } else if (strstr(fmt, "CHECK_SHORT_DEV_DESC FAILED") ||
                    strstr(fmt, "CHECK_FULL_CONFIG_DESC FAILED")) {
             event_log_add(EVENT_LOG_LEVEL_WARN,

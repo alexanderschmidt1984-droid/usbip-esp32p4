@@ -1,0 +1,341 @@
+U0|USB/IP-server
+U1|Oversigt
+U2|Enheder
+U3|Topologi
+U4|Indstillinger
+U5|Forbinder…
+U6|Strømbesparelse: CPU'en sænker takten i tomgang og kører fuld hastighed, når en enhed er tilsluttet
+U7|Strømbesparelse til
+U8|Skift tema
+U9|Auto
+U10|Sprog
+U11|Klienter
+U12|Gennemløb
+U13|Hukommelse
+U14|Oppetid
+U15|Båndbredde
+U16|Seneste hændelser
+U17|Eksportér hændelser
+U18|Eksportér systemlog
+U19|Log før seneste genstart
+U20|Op til 2048 hændelser og 1 MB systemlog i RAM (ingen flash-slid, forsvinder ved genstart). Efter et nedbrud bevares de sidste 4 KB som "Log før seneste genstart".
+U21|Pakkeopsamling
+U22|SD-kort
+U23|Status
+U24|Fil
+U25|Størrelse
+U26|Pakker
+U27|Tabt
+U28|Start opsamling
+U29|Download
+U30|Slet
+U31|USB-bus
+U32|Nulstil USB-bus
+U33|USB-enheder
+U34|Ingen USB-enheder tilsluttet
+U35|USB-topologi
+U36|Kom i gang: brug en USB-enhed på din pc
+U37|Boardet deler tilsluttede USB-enheder på netværket via USB/IP. På pc'en tilknyttes en enhed, som om den sad i pc'en. En enhed kan kun bruges af én pc ad gangen.
+U38|Netværk
+U39|Værtsnavn
+U40|IP-adresse
+U41|Undernetmaske
+U42|Gateway
+U43|Aktuel IP
+U44|Gem netværk
+U45|Godkendelse
+U46|Aktivér adgangskode til web-UI
+U47|Brugernavn
+U48|Adgangskode
+U49|Gentag adgangskode
+U50|Ingen adgangskode: indstillinger kan først ændres, når der er angivet en adgangskode. Lad feltet stå tomt for at beholde den nuværende.
+U51|Gem godkendelse
+U52|Adgangskontrol
+U53|Åben
+U54|Lukket (tilladelsesliste)
+U55|Kommentar, f.eks. Alex' laptop
+U56|Tilføj
+U57|Tilføj denne pc
+U58|Gem adgangsliste
+U59|USB-hub
+U60|Hub-kompatibilitet (alle enheder med Full Speed)
+U61|Gem og genstart
+U62|Enhedsfilter (VID:PID)
+U63|Eksportér kun de angivne enheder
+U64|Tilladte enheder (kommasepareret, hex, * = enhver PID)
+U65|Hubs er altid tilladt. Andre enheder ignoreres ved tilslutning.
+U66|Gem filter
+U67|Kryptering (lokalt netværk)
+U68|USB/IP over TLS (forhåndsdelt nøgle, pc'en bruger stunnel)
+U69|Fra
+U70|Ekstra (ukrypteret 3240 + TLS)
+U71|Kun TLS
+U72|Vis nøgle og stunnel-konfiguration
+U73|Ny nøgle
+U74|TLS-nøgle (hemmelig)
+U75|HTTPS til dette web-UI (selvsigneret, efter genstart)
+U76|Certifikat SHA-256:
+U77|Gem kryptering
+U78|Nyt certifikat
+U79|WireGuard-tunnel
+U80|Aktivér WireGuard-tunnel
+U81|Status:
+U82|Dette boards offentlige nøgle (indtast hos modparten)
+U83|ingen nøgle endnu
+U84|Kopiér
+U85|Generér
+U86|Modpartens offentlige nøgle
+U87|base64, 44 tegn
+U88|Modpartens adresse (værtsnavn eller IP)
+U89|Modpartens port
+U90|Dette boards tunneladresse
+U91|Tunnelens netmaske
+U92|Keepalive (s, 0 = fra)
+U93|Avanceret
+U94|Forhåndsdelt nøgle
+U95|valgfri
+U96|Importér privat nøgle (i stedet for Generér)
+U97|tom = behold
+U98|Boardet ringer selv ud – der kræves ingen portvideresendelse på dets placering. USB/IP (port 3240) og dette web-UI kan derefter nås på tunneladressen. I adgangstilstand "Lukket" skal klienternes tunnel-IP'er tilføjes.
+U99|Gem WireGuard
+U100|Konfiguration til modparten
+U101|System
+U102|Firmware
+U103|Chip
+U104|Fri hukommelse
+U105|Seneste genstart
+U106|Nedbrud (siden fabriksnulstilling)
+U107|Strømbesparelse (CPU'en sænker takten i tomgang)
+U108|Genstart
+U109|Fabriksnulstilling
+U110|Krypteret via HTTPS
+U111|Denne web-UI-session er krypteret med HTTPS (TLS).
+U112|Beskyttet af WireGuard
+U113|Denne web-UI-session går gennem WireGuard-tunnelen
+U114|WireGuard aktiv · session via LAN
+U115|Tunnelen er oppe, men denne session bruger den ikke. Beskyttet:
+U116|Tunnel aktiveret, men ikke forbundet.
+U117|USB/IP-forbindelsen går gennem WireGuard-tunnelen
+U118|USB/IP-forbindelsen er krypteret med TLS (stunnel)
+U119|Ukrypteret USB/IP-forbindelse
+U120|Forbundet
+U121|Afbrudt
+U122|Ukendt enhed
+U123|Indlæser…
+U124|Detaljer kunne ikke indlæses
+U125|Bus-ID
+U126|BCD-version
+U127|Klasse
+U128|Hastighed
+U129|Tilstand
+U130|Klient
+U131|Producent
+U132|Produkt
+U133|Serienummer
+U134|Bytes ind
+U135|Bytes ud
+U136|URB'er ok
+U137|URB'er fejlet
+U138|Grænseflader
+U139|Sub
+U140|Proto
+U141|EPs
+U142|Endepunkter
+U143|Adr
+U144|Retning
+U145|Type
+U146|MaxPkt
+U147|Interval
+U148|Afbryd klient
+U149|Skift eksport
+U150|Skub ud
+U151|Skub denne enhed ud?
+U152|Handling udført
+U153|Handlingen mislykkedes
+U154|Anmodningen mislykkedes
+U155|Ingen enheder tilsluttet
+U156|Netværk gemt. Træder i kraft efter genstart.
+U157|Kunne ikke gemme
+U158|(uændret)
+U159|påkrævet
+U160|Adgangskoderne er ikke ens
+U161|Godkendelse gemt
+U162|Anvend filteret? USB-bussen nulstilles, og tilsluttede klienter afbrydes.
+U163|Filter gemt
+U164|Aktiv: USB kører med Full Speed.
+U165|Aktiv: USB kører med High Speed.
+U166|Den nye indstilling gælder efter genstart.
+U167|Gem indstillingen og genstart boardet? Tilknyttede enheder bliver afbrudt.
+U168|Gemt - boardet genstarter
+U169|Strømbesparelse fra - fuld ydelse
+U170|aldrig
+U171|for {n} s siden
+U172|for {n} min siden
+U173|for {n} t siden
+U174|seneste handshake
+U175|(gemt – tom = behold, "-" = fjern)
+U176|Generér først et nøglepar
+U177|Offentlig nøgle kopieret
+U178|Opret et NYT nøglepar? Den gamle nøgle holder op med at virke – den offentlige nøgle skal opdateres hos modparten.
+U179|Nøglepar genereret
+U180|Generering af nøgle mislykkedes
+U181|WireGuard gemt
+U182|Generér først en nøgle og angiv tunneladressen
+U183|(intet certifikat endnu)
+U184|Genstart kræves for at anvende.
+U185|Aktiv
+U186|aktive TLS-sessioner
+U187|Kun TLS: ukrypterede USB/IP-forbindelser (port 3240) afvises. Klienter skal bruge stunnel. Fortsæt?
+U188|HTTPS-ændringen træder i kraft efter en genstart. Web-UI'et findes derefter på
+U189|Kryptering gemt
+U190|Mislykkedes
+U191|Opret en ny TLS-nøgle? Eksisterende stunnel-konfigurationer holder op med at virke.
+U192|Ny TLS-nøgle oprettet
+U193|Opret et nyt HTTPS-certifikat? Det bruges efter næste genstart; browsere advarer igen.
+U194|Nyt certifikat oprettet (aktivt efter genstart)
+U195|Denne pc
+U196|MAC ukendt, ikke i samme LAN
+U197|Ingen poster i tilladelseslisten
+U198|Fjern
+U199|Ugyldig MAC-adresse (aa:bb:cc:dd:ee:ff)
+U200|Ugyldig IP-adresse
+U201|Allerede på listen
+U202|Listen er fuld (maks. 32)
+U203|MAC for denne pc ukendt (ikke i samme LAN) - brug IP'en
+U204|Adgangsliste gemt
+U205|Slet alle indstillinger og genstart?
+U206|Genstart boardet?
+U207|Fabriksnulstilling - boardet genstarter…
+U208|Boardet genstarter…
+U209|Fejl
+U210|log ind igen
+U211|Intet svar - boardet genstarter sandsynligvis
+U212|Til stede
+U213|Ikke fundet
+U214|Optager
+U215|Inaktiv
+U216|Stop opsamling
+U217|Opsamling stoppet
+U218|Opsamling startet
+U219|Opsamlingsfejl
+U220|Slet opsamlingsfilen?
+U221|Opsamlingsfil slettet
+U222|Sletning mislykkedes
+U223|Tilgængelig
+U224|Eksporteret
+U225|Fejl
+U226|Ukendt
+U227|Mørk
+U228|Lys
+H0|Hjælp: opsæt USB/IP på pc'en
+H1|Installér programmet:{P0}<span class="note">Ubuntu: <code>sudo apt install linux-tools-generic</code> (indeholder usbip).</span>
+H2|Indlæs kernemodulet, nu og ved hver opstart:{P0}
+H3|Vis de tilbudte enheder:{P0}
+H4|Tilknyt en enhed (bus-ID fra listen, f.eks. <code>1-1</code>):{P0}
+H5|Kontrollér: <code>usbip port</code> viser den tilknyttede enhed, <code>lsusb</code> viser den som en lokal.
+H6|Frakobl den igen (portnummer fra <code>usbip port</code>, den første enhed er port 0):{P0}
+H7|Installér programmet:{P0}
+H8|Installér <b>usbip-win2</b>: hent installationsprogrammet fra <code>github.com/vadimgrn/usbip-win2/releases</code> og kør det som administrator.
+H9|Åbn Kommandoprompt eller PowerShell <b>som administrator</b>.
+H10|Kontrollér: <code>usbip port</code> viser enheden, Enhedshåndtering viser den som en lokal.
+H11|Frakobl den igen (portnummer fra <code>usbip port</code>):{P0}
+H12|Det er pc'en, der opretter forbindelsen til boardet (TCP 3240), så der kræves ingen firewallregel på pc'en. Hvis enheden tages ud af boardet, afbryder pc'en forbindelsen. Kør <code>attach</code> igen, når den er sat i igen.
+H13|Hjælp
+H14|<b>Værtsnavn</b>: boardets navn på netværket. Det annoncerer sig også via mDNS som <code>&lt;hostname&gt;.local</code> og udbyder tjenesten <code>_usbip._tcp</code>.
+H15|<b>DHCP</b> (standard): routeren tildeler adressen. For at den forbliver den samme, opret en fast tildeling i routeren (Fritzbox: Hjemmenetværk → Netværk → rediger enhed → "Tildel altid denne enhed den samme IPv4-adresse").
+H16|<b>Statisk IP</b>: fjern fluebenet ved DHCP, angiv adresse, maske, gateway og DNS. Adressen skal være ledig og uden for routerens DHCP-område.
+H17|Ændringer træder først i kraft <b>efter en genstart</b> (System → Genstart). Åbn derefter siden på den nye adresse.
+H18|Opslag af <code>.local</code>-navne på pc'en:
+H19|Normalt allerede sat op på desktopsystemer (avahi). Ellers:
+H20|I <code>/etc/nsswitch.conf</code> tilføjes <code>mdns_minimal [NOTFOUND=return]</code> til linjen <code>hosts:</code> før <code>resolve</code>.
+H21|Windows 10/11 slår selv <code>.local</code>-navne op. Ellers brug IP-adressen.
+H22|Uden adgangskode er web-UI'et skrivebeskyttet. Indstillinger kan først ændres, når der er angivet en adgangskode.
+H23|Sæt flueben, angiv brugernavn og adgangskoden <b>to gange</b> (mod tastefejl), og klik så på <b>Gem godkendelse</b>. Derefter beder browseren om loginoplysninger, når siden åbnes.
+H24|Skift adgangskode: skriv den nye i begge felter. Lad begge stå tomme = den nuværende adgangskode bevares.
+H25|Efter 5 forkerte forsøg blokerer boardet yderligere login fra denne pc i 30 sekunder.
+H26|Uden HTTPS sendes adgangskoden ukrypteret over LAN'et. Beskyttelse: HTTPS (afsnittet "Kryptering") eller åbn web-UI'et via WireGuard.
+H27|<b>Glemt adgangskode</b>: tryk <b>RESET 5 gange i træk</b> på boardet (under 5&nbsp;s mellem hvert tryk) – alt nulstilles til fabriksindstillinger. Eller slet kun indstillingerne via USB-kablet, firmwaren bliver: <code>idf.py -p /dev/ttyACM0 erase-region 0x9000 0x6000</code> (Windows: <code>-p COM3</code> el.&nbsp;lign.). Alle indstillinger går tabt (også WireGuard- og TLS-nøgler).
+H28|<b>Åben</b>: alle på netværket må bruge USB/IP og dette web-UI.
+H29|<b>Lukket (tilladelsesliste)</b>: kun angivne deltagere får adgang, både til USB/IP <b>og</b> til dette web-UI. En post er enten en <b>IP</b> eller en <b>MAC-adresse</b>, plus en <b>kommentar</b>, så det er klart, hvem du har givet adgang.
+H30|<b>MAC i stedet for IP</b>: praktisk, hvis pc'en nogle gange får en anden IP via DHCP. Virker kun for pc'er på <b>samme LAN</b> (boardet læser MAC'en fra sin ARP-tabel), ikke på tværs af WireGuard eller en router. En MAC kan forfalskes – det er en bekvemmelighed, ikke stærk beskyttelse. For reel beskyttelse: adgangskode, TLS eller WireGuard.
+H31|<b>Tilføj denne pc</b> overtager IP eller MAC fra den pc, du sidder ved (vælg typen først).
+H32|Den pc, du gemmer fra, tilføjes automatisk til listen, så du ikke kan låse dig selv ude.
+H33|Med WireGuard angives pc'ens <b>tunnel-IP</b> (f.eks. <code>10.8.0.1</code>), ikke dens LAN-adresse.
+H34|Find din egen IP- eller MAC-adresse:
+H35|"IPv4-adresse" eller "Fysisk adresse" (MAC) for Ethernet- eller Wi-Fi-adapteren.
+H36|Dette panel vises, så snart boardet har registreret en <b>USB-hub</b>.
+H37|<b>Problem</b>: langsomme enheder (Full/Low Speed) som en <b>YubiKey</b>, tastatur, mus eller mange USB-seriel-adaptere virker ikke bag en USB 2.0-hub. Det ville kræve en "transaction translator" i ESP32-P4's USB-bibliotek, som det endnu ikke har. Hændelsesloggen viser så "FS/LS device rejected (no TT support)".
+H38|<b>Hub-kompatibilitet til</b>: boardets USB-port kører kun med Full Speed (12&nbsp;Mbit/s). Så kører hubben og alle enheder bag den også med Full Speed, og YubiKey &amp; co. virker på hubben.
+H39|<b>Ulempe</b>: USB-sticks og kortlæsere kører så også kun med Full Speed – ca. <b>1&nbsp;MB/s i stedet for 5–6&nbsp;MB/s</b>. Uden hub eller med kun hurtige enheder på hubben: lad den være slået fra.
+H40|Træder først i kraft efter en <b>genstart</b> (Gem &amp; genstart). Alle tilknyttede enheder afbrydes.
+H41|Hub uden egen strømforsyning: enheder kan forsvinde kortvarigt eller blive registreret langsomt. Brug en hub med strømforsyning til flere enheder.
+H42|Når den er slået til, tilbyder boardet kun de angivne enheder. Alle andre ignoreres, så snart de sættes i.
+H43|Format <code>VID:PID</code> i hex, adskilt med kommaer. <code>*</code> betyder alle produkter fra en producent, f.eks. <code>1050:*</code> = alle YubiKeys.
+H44|Listen gælder ved tilslutning. Tag allerede tilsluttede enheder ud og sæt dem i igen.
+H45|Find VID og PID (eller på ethvert system: <code>usbip list -r <span class="h-host"></span></code> viser dem i parentes):
+H46|Sæt enheden i pc'en, derefter:
+H47|Eksempel: <code>ID 1050:0407 Yubico.com Yubikey 4/5</code>
+H48|Sæt enheden i pc'en, derefter (pakken <code>usbutils</code>):
+H49|Enhedshåndtering → enhed → Egenskaber → Detaljer → "Hardware-id'er". <code>VID_1050&amp;PID_0407</code> svarer til <code>1050:0407</code>.
+H50|Her er to adskilte funktioner til det lokale netværk. Via WireGuard er begge allerede krypteret, og så behøves disse funktioner ikke.
+H51|<b>1. USB/IP over TLS</b>: boardet accepterer derudover krypterede forbindelser på port 3241. På pc'en står <b>stunnel</b> for krypteringen, og usbip taler kun med <code>127.0.0.1</code>.
+H52|<b>Ekstra</b>: ukrypteret (3240) og TLS (3241) samtidig, godt til omstillingen.
+H53|<b>Kun TLS</b>: boardet afviser ukrypterede forbindelser, alle pc'er skal bruge stunnel. Forbindelser gennem <b>WireGuard-tunnelen</b> er stadig tilladt, de er allerede krypteret. En afvist pc melder <code>Exported Device List Request failed - Unknown Op Common Status</code>.
+H54|I enhedslisten markerer en hængelås med "TLS" eller "WireGuard" krypterede USB/IP-forbindelser.
+H55|Vælg <b>Ekstra</b> ovenfor og <b>Gem kryptering</b>.
+H56|Installér stunnel:{P0}
+H57|<b>Vis nøgle og stunnel-konfiguration</b> → Linux. Gem blokken til og med linjen <code>ciphers</code> som <code>/etc/stunnel/usbip.conf</code> og linjen <code>Kennung:Schlüssel</code> som <code>/etc/stunnel/usbip.psk</code>:{P0}
+H58|Start stunnel (kører videre i baggrunden, stoppes med <code>sudo pkill stunnel</code>):{P0}<span class="note">Permanent: <code>systemctl list-unit-files 'stunnel*'</code>. Findes skabelonen <code>stunnel@.service</code>, starter <code>sudo systemctl enable --now stunnel@usbip</code> netop denne fil.</span>
+H59|Brug enheder via stunnel:{P0}
+H60|Virker det, så skift til <b>Kun TLS</b>.
+H61|Start stunnel (kører videre i baggrunden, stoppes med <code>sudo pkill stunnel</code>):{P0}<span class="note">Permanent: tjenesten <code>stunnel.service</code> starter <code>/etc/stunnel/stunnel.conf</code>. Omdøb filen og aktivér tjenesten: <code>sudo mv /etc/stunnel/usbip.conf /etc/stunnel/stunnel.conf &amp;&amp; sudo systemctl enable --now stunnel</code></span>
+H62|Installér stunnel til Windows: <code>stunnel.org</code> → Downloads → Windows-installationsprogram.
+H63|<b>Vis nøgle og stunnel-konfiguration</b> → Windows 10/11. Overfør indholdet som vist til <code>stunnel.conf</code> (erstat eksempeltjenesterne i den) og opret <code>usbip.psk</code>, begge i mappen <code>config</code> i stunnel-installationen.
+H64|Opsæt og start stunnel som tjeneste som administrator:{P0}
+H65|Brug enheder via stunnel (Kommandoprompt som administrator):{P0}
+H66|<b>Ny nøgle</b> opretter en ny TLS-nøgle. Udskift derefter <code>.psk</code>-filen på alle pc'er.
+H67|<b>2. HTTPS til dette web-UI</b> (alle systemer):
+H68|Sæt flueben ved "HTTPS til dette web-UI", <b>Gem kryptering</b>, og derefter System → <b>Genstart</b>.
+H69|Åbn siden på <code>https://<span class="h-host"></span>/</code>. Browseren advarer én gang, fordi certifikatet er selvsigneret.
+H70|Sammenlign SHA-256-fingeraftrykket i browserens certifikatdetaljer med værdien ovenfor. Stemmer det, så bekræft undtagelsen (Firefox: "Avanceret…" → "Accepter risikoen og fortsæt", fejlkoden <code>MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT</code> er normal her).
+H71|Med HTTPS omdirigerer <code>http://</code> automatisk til <code>https://</code>. Med værktøjer som curl: <code>curl -k https://…</code>
+H72|<b>Nyt certifikat</b> opretter et nyt certifikat. Det gælder efter næste genstart, hvorefter browseren advarer igen.
+H73|Boardet opbygger selv tunnelen til en <b>modpart</b>: denne pc, din egen server eller en router som en Fritzbox. Derefter kan USB/IP og dette web-UI nås krypteret på tunneladressen <code><span class="h-wgaddr"></span></code>. Åbnes siden den vej, står der "Beskyttet af WireGuard" nederst til venstre, og enheder med tunnelklienter har en hængelås.
+H74|Vejledningen opsætter <b>denne pc som modpart</b> på samme netværk. Pc: <code>10.8.0.1</code>, board: <code>10.8.0.2</code>, UDP-port 51820.
+H75|Installér:{P0}
+H76|Klik på <b>Generér</b> her. Den private nøgle bliver på boardet, kun den offentlige vises.
+H77|Opret en nøgle til pc'en, og vis dens offentlige nøgle:{P0}
+H78|Opret konfigurationen med <code>sudoedit /etc/wireguard/wg-usbip.conf</code>:{P0}
+H79|Åbn firewallen for UDP 51820 (ufw):{P0}<span class="note">Med firewalld: <code>sudo firewall-cmd --permanent --add-port=51820/udp &amp;&amp; sudo firewall-cmd --reload</code>. Uden firewall er trinnet unødvendigt.</span>
+H80|Start tunnelen, og start den automatisk ved opstart:{P0}
+H81|Indtast her: <b>Modpartens offentlige nøgle</b> = output fra trin 3, <b>Modpartens adresse</b> = pc'ens IP (<code>ip -4 -br addr</code>), <b>Modpartens port</b> 51820, <b>Tunneladresse</b> 10.8.0.2, <b>Netmaske</b> 255.255.255.0, <b>Keepalive</b> 25, sæt flueben ved <b>Aktivér WireGuard-tunnel</b>, og derefter <b>Gem WireGuard</b>.
+H82|Kontrollér:{P0}
+H83|Åbn web-UI'et beskyttet: <code>http://<span class="h-wgaddr"></span>/</code>
+H84|Installér <b>WireGuard til Windows</b>: <code>wireguard.com/install</code>.
+H85|I WireGuard-appen: pilen ved siden af "Tilføj tunnel" → "Tilføj tom tunnel…", navn <code>wg-usbip</code>. Appen opretter selv en nøgle. Notér den viste <b>offentlige nøgle</b>. Under den eksisterende linje <code>PrivateKey = …</code> tilføjes:{P0}Gem, og klik derefter på <b>Aktivér</b>.
+H86|Åbn firewallen for UDP 51820 (PowerShell som administrator):{P0}
+H87|Indtast her: <b>Modpartens offentlige nøgle</b> = nøglen fra trin 3, <b>Modpartens adresse</b> = pc'ens IP (<code>ipconfig</code>), <b>Modpartens port</b> 51820, <b>Tunneladresse</b> 10.8.0.2, <b>Netmaske</b> 255.255.255.0, <b>Keepalive</b> 25, sæt flueben ved <b>Aktivér WireGuard-tunnel</b>, og derefter <b>Gem WireGuard</b>.
+H88|Kontrollér: appen viser "Seneste handshake". Derefter (som administrator):{P0}
+H89|<b>Over internettet</b>: modparten er så en server eller router med offentlig adresse. Modpartens adresse er dens domæne eller IP, f.eks. Fritzbox-VPN under Internet → Frigivelser → VPN (WireGuard). <b>Konfiguration til modparten</b> viser den passende <code>[Peer]</code>-blok. Tunnelnetværket må ikke overlappe de lokale netværk. I adgangstilstand "Lukket" skal pc'ens tunnel-IP tillades. Status "waiting for time sync" betyder: boardet kan endnu ikke nå en NTP-server (internet påkrævet).
+H90|<b>Intet handshake</b> ("connecting · no handshake"): typisk blokerer pc'ens firewall UDP 51820, eller en nøgle er byttet om. Kontrollér med <code>sudo tcpdump -ni any udp port 51820</code>: kommer der pakker fra boardet, er det nøglerne. Efter en genstart af tunnelen <b>på pc'en</b> melder boardet sig først igen efter op til ca. 2 minutter. Det går hurtigere, hvis du slår tunnelen fra og til igen her.
+H91|<b>Strømbesparelse</b> (slået til fra fabrikken): uden tilknyttet enhed kører CPU'en med 100&nbsp;MHz i stedet for 400&nbsp;MHz. Så snart en enhed er tilknyttet, går den op på fuld takt, så overførslerne bliver ikke langsommere. Uden flueben kører boardet hele tiden med 400&nbsp;MHz. Virker med det samme, uden genstart. Når den er slået til, vises det grønne blad nederst til venstre.
+H92|<b>Genstart</b>: genstarter boardet. Tilknyttede USB-enheder afbrydes på alle pc'er og skal derefter tilknyttes igen med <code>attach</code>.
+H93|<b>Fabriksnulstilling</b>: sletter <b>alle</b> indstillinger (netværk, adgangskode, adgangsliste, enhedsfilter, WireGuard- og TLS-nøgler) og genstarter. Derefter gælder DHCP uden adgangskode.
+H94|<b>Nulstil uden web-UI</b>: tryk på <b>RESET</b>-knappen på boardet <b>5 gange i træk</b>, under 5&nbsp;s mellem to tryk (godt: ca. én gang i sekundet). Ved 5. opstart sletter boardet alle indstillinger som ved fabriksnulstilling. Strøm fra/til tæller på samme måde. En enkelt nulstilling eller strømafbrydelse udløser intet; nedbrud tælles ikke med. BOOT-knappen kan ikke bruges til dette (trykket ved opstart = flash-tilstand, under drift bruger Ethernet benet).
+H95|<b>Firmwareopdatering</b>: via USB-kablet med <code>idf.py -p /dev/ttyACM0 flash</code> (Windows: <code>-p COM3</code> el.&nbsp;lign.). Indstillingerne bevares.
+U229|Nulstil USB-bussen? Alle enheder afbrydes og registreres igen, og tilsluttede klienter afbrydes.
+U230|Softwarekomponenter
+U231|På boardet
+U232|Komponent
+U233|Version
+U234|Licens
+U235|Testet på pc'en med
+U236|Program
+U237|Formål
+U238|USB/IP-klient
+U239|ikke testet endnu
+U240|USB/IP-klient (Windows)
+U241|USB/IP over TLS
+U242|WireGuard-modpart
+U243|Web-UI, HTTPS
+U244|Test-pc

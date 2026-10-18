@@ -1,0 +1,341 @@
+U0|USB/IP-server
+U1|Översikt
+U2|Enheter
+U3|Topologi
+U4|Inställningar
+U5|Ansluter…
+U6|Energisparläge: CPU:n sänker takten vid vila och kör på full hastighet när en enhet är ansluten
+U7|Energisparläge på
+U8|Byt tema
+U9|Auto
+U10|Språk
+U11|Klienter
+U12|Genomströmning
+U13|Minne
+U14|Drifttid
+U15|Bandbredd
+U16|Senaste händelser
+U17|Exportera händelser
+U18|Exportera systemlogg
+U19|Logg före senaste omstart
+U20|Upp till 2048 händelser och 1 MB systemlogg i RAM (inget flash-slitage, försvinner vid omstart). Efter en krasch sparas de sista 4 KB som "Logg före senaste omstart".
+U21|Paketfångst
+U22|SD-kort
+U23|Status
+U24|Fil
+U25|Storlek
+U26|Paket
+U27|Tappade
+U28|Starta fångst
+U29|Ladda ned
+U30|Ta bort
+U31|USB-buss
+U32|Återställ USB-buss
+U33|USB-enheter
+U34|Inga USB-enheter anslutna
+U35|USB-topologi
+U36|Kom igång: använd en USB-enhet på din dator
+U37|Kortet delar anslutna USB-enheter i nätverket via USB/IP. På datorn ansluts en enhet som om den satt i datorn. En enhet kan bara användas av en dator åt gången.
+U38|Nätverk
+U39|Värdnamn
+U40|IP-adress
+U41|Nätmask
+U42|Gateway
+U43|Aktuell IP
+U44|Spara nätverk
+U45|Autentisering
+U46|Aktivera lösenord för webbgränssnittet
+U47|Användarnamn
+U48|Lösenord
+U49|Upprepa lösenord
+U50|Inget lösenord: inställningar kan bara ändras när ett lösenord har angetts. Lämna fältet tomt för att behålla det nuvarande.
+U51|Spara autentisering
+U52|Åtkomstkontroll
+U53|Öppen
+U54|Stängd (tillåtelselista)
+U55|Kommentar, t.ex. Alex bärbara
+U56|Lägg till
+U57|Lägg till den här datorn
+U58|Spara åtkomstlista
+U59|USB-hubb
+U60|Hubbkompatibilitet (alla enheter med Full Speed)
+U61|Spara och starta om
+U62|Enhetsfilter (VID:PID)
+U63|Exportera bara listade enheter
+U64|Tillåtna enheter (kommaseparerade, hex, * = valfritt PID)
+U65|Hubbar är alltid tillåtna. Andra enheter ignoreras vid anslutning.
+U66|Spara filter
+U67|Kryptering (lokalt nätverk)
+U68|USB/IP över TLS (fördelad nyckel, datorn använder stunnel)
+U69|Av
+U70|Extra (okrypterat 3240 + TLS)
+U71|Endast TLS
+U72|Visa nyckel och stunnel-konfiguration
+U73|Ny nyckel
+U74|TLS-nyckel (hemlig)
+U75|HTTPS för detta webbgränssnitt (självsignerat, efter omstart)
+U76|Certifikat SHA-256:
+U77|Spara kryptering
+U78|Nytt certifikat
+U79|WireGuard-tunnel
+U80|Aktivera WireGuard-tunnel
+U81|Status:
+U82|Kortets publika nyckel (anges hos motparten)
+U83|ingen nyckel ännu
+U84|Kopiera
+U85|Generera
+U86|Motpartens publika nyckel
+U87|base64, 44 tecken
+U88|Motpartens adress (värdnamn eller IP)
+U89|Motpartens port
+U90|Kortets tunneladress
+U91|Tunnelns nätmask
+U92|Keepalive (s, 0 = av)
+U93|Avancerat
+U94|Fördelad nyckel
+U95|valfritt
+U96|Importera privat nyckel (i stället för Generera)
+U97|tomt = behåll
+U98|Kortet ringer själv upp – ingen portvidarebefordran behövs där det står. USB/IP (port 3240) och detta webbgränssnitt nås sedan på tunneladressen. I åtkomstläget "Stängd" lägger du till klienternas tunnel-IP-adresser.
+U99|Spara WireGuard
+U100|Konfiguration för motparten
+U101|System
+U102|Firmware
+U103|Chip
+U104|Ledigt minne
+U105|Senaste omstart
+U106|Krascher (sedan fabriksåterställning)
+U107|Energisparläge (CPU:n sänker takten vid vila)
+U108|Starta om
+U109|Fabriksåterställning
+U110|Krypterad via HTTPS
+U111|Denna session i webbgränssnittet är krypterad med HTTPS (TLS).
+U112|Skyddad av WireGuard
+U113|Denna session i webbgränssnittet går genom WireGuard-tunneln
+U114|WireGuard aktiv · session via LAN
+U115|Tunneln är uppe, men denna session använder den inte. Skyddad:
+U116|Tunneln är aktiverad men inte ansluten.
+U117|USB/IP-anslutningen går genom WireGuard-tunneln
+U118|USB/IP-anslutningen är krypterad med TLS (stunnel)
+U119|Okrypterad USB/IP-anslutning
+U120|Ansluten
+U121|Frånkopplad
+U122|Okänd enhet
+U123|Läser in…
+U124|Kunde inte läsa in detaljer
+U125|Buss-ID
+U126|BCD-version
+U127|Klass
+U128|Hastighet
+U129|Tillstånd
+U130|Klient
+U131|Tillverkare
+U132|Produkt
+U133|Serienummer
+U134|Byte in
+U135|Byte ut
+U136|URB:er ok
+U137|URB:er misslyckade
+U138|Gränssnitt
+U139|Sub
+U140|Proto
+U141|EPs
+U142|Slutpunkter
+U143|Adr
+U144|Riktning
+U145|Typ
+U146|MaxPkt
+U147|Intervall
+U148|Koppla från klient
+U149|Växla export
+U150|Mata ut
+U151|Mata ut den här enheten?
+U152|Åtgärd klar
+U153|Åtgärden misslyckades
+U154|Begäran misslyckades
+U155|Inga enheter anslutna
+U156|Nätverk sparat. Gäller efter omstart.
+U157|Kunde inte spara
+U158|(oförändrat)
+U159|krävs
+U160|Lösenorden stämmer inte överens
+U161|Autentisering sparad
+U162|Tillämpa filtret? USB-bussen återställs och anslutna klienter kopplas från.
+U163|Filter sparat
+U164|Aktivt: USB kör med Full Speed.
+U165|Aktivt: USB kör med High Speed.
+U166|Den nya inställningen gäller efter omstart.
+U167|Spara inställningen och starta om kortet? Anslutna enheter kopplas från.
+U168|Sparat - kortet startar om
+U169|Energisparläge av - full prestanda
+U170|aldrig
+U171|för {n} s sedan
+U172|för {n} min sedan
+U173|för {n} h sedan
+U174|senaste handskakning
+U175|(sparad – tomt = behåll, "-" = ta bort)
+U176|Generera först ett nyckelpar
+U177|Publik nyckel kopierad
+U178|Skapa ett NYTT nyckelpar? Den gamla nyckeln slutar fungera – den publika nyckeln måste uppdateras hos motparten.
+U179|Nyckelpar genererat
+U180|Nyckelgenereringen misslyckades
+U181|WireGuard sparat
+U182|Generera först en nyckel och ange tunneladressen
+U183|(inget certifikat ännu)
+U184|Omstart krävs för att tillämpa.
+U185|Aktiv
+U186|aktiva TLS-sessioner
+U187|Endast TLS: okrypterade USB/IP-anslutningar (port 3240) nekas. Klienter behöver stunnel. Fortsätta?
+U188|HTTPS-ändringen gäller efter en omstart. Webbgränssnittet finns då på
+U189|Kryptering sparad
+U190|Misslyckades
+U191|Skapa en ny TLS-nyckel? Befintliga stunnel-konfigurationer slutar fungera.
+U192|Ny TLS-nyckel skapad
+U193|Skapa ett nytt HTTPS-certifikat? Det används efter nästa omstart; webbläsare varnar igen.
+U194|Nytt certifikat skapat (aktivt efter omstart)
+U195|Den här datorn
+U196|MAC okänd, inte i samma LAN
+U197|Inga poster i tillåtelselistan
+U198|Ta bort
+U199|Ogiltig MAC-adress (aa:bb:cc:dd:ee:ff)
+U200|Ogiltig IP-adress
+U201|Finns redan i listan
+U202|Listan är full (max 32)
+U203|MAC för den här datorn okänd (inte i samma LAN) - använd IP
+U204|Åtkomstlista sparad
+U205|Radera alla inställningar och starta om?
+U206|Starta om kortet?
+U207|Fabriksåterställning - kortet startar om…
+U208|Kortet startar om…
+U209|Fel
+U210|logga in igen
+U211|Inget svar - kortet startar troligen om
+U212|Finns
+U213|Hittades inte
+U214|Spelar in
+U215|Vilar
+U216|Stoppa fångst
+U217|Fångst stoppad
+U218|Fångst startad
+U219|Fångstfel
+U220|Ta bort fångstfilen?
+U221|Fångstfil borttagen
+U222|Kunde inte ta bort
+U223|Tillgänglig
+U224|Exporterad
+U225|Fel
+U226|Okänd
+U227|Mörkt
+U228|Ljust
+H0|Hjälp: konfigurera USB/IP på datorn
+H1|Installera programmet:{P0}<span class="note">Ubuntu: <code>sudo apt install linux-tools-generic</code> (innehåller usbip).</span>
+H2|Ladda kärnmodulen, nu och vid varje start:{P0}
+H3|Visa erbjudna enheter:{P0}
+H4|Anslut en enhet (buss-ID från listan, t.ex. <code>1-1</code>):{P0}
+H5|Kontrollera: <code>usbip port</code> visar den anslutna enheten, <code>lsusb</code> listar den som en lokal.
+H6|Koppla från den igen (portnummer från <code>usbip port</code>, första enheten är port 0):{P0}
+H7|Installera programmet:{P0}
+H8|Installera <b>usbip-win2</b>: hämta installationsprogrammet från <code>github.com/vadimgrn/usbip-win2/releases</code> och kör det som administratör.
+H9|Öppna Kommandotolken eller PowerShell <b>som administratör</b>.
+H10|Kontrollera: <code>usbip port</code> visar enheten, Enhetshanteraren listar den som en lokal.
+H11|Koppla från den igen (portnummer från <code>usbip port</code>):{P0}
+H12|Det är datorn som öppnar anslutningen till kortet (TCP 3240), så ingen brandväggsregel behövs på datorn. Om enheten dras ut ur kortet bryter datorn anslutningen. Kör <code>attach</code> igen när den har satts i igen.
+H13|Hjälp
+H14|<b>Värdnamn</b>: kortets namn i nätverket. Det annonserar sig också via mDNS som <code>&lt;hostname&gt;.local</code> och erbjuder tjänsten <code>_usbip._tcp</code>.
+H15|<b>DHCP</b> (standard): routern tilldelar adressen. För att den ska förbli densamma, ställ in en fast tilldelning i routern (Fritzbox: Hemnätverk → Nätverk → redigera enhet → "Tilldela alltid denna enhet samma IPv4-adress").
+H16|<b>Statisk IP</b>: avmarkera DHCP, ange adress, mask, gateway och DNS. Adressen måste vara ledig och utanför routerns DHCP-intervall.
+H17|Ändringar gäller först <b>efter en omstart</b> (System → Starta om). Öppna sedan sidan på den nya adressen.
+H18|Slå upp <code>.local</code>-namn på datorn:
+H19|Oftast redan konfigurerat på skrivbordssystem (avahi). Annars:
+H20|I <code>/etc/nsswitch.conf</code>, lägg till <code>mdns_minimal [NOTFOUND=return]</code> på raden <code>hosts:</code> före <code>resolve</code>.
+H21|Windows 10/11 slår upp <code>.local</code>-namn själv. Annars använder du IP-adressen.
+H22|Utan lösenord är webbgränssnittet skrivskyddat. Inställningar kan bara ändras när ett lösenord har angetts.
+H23|Markera rutan, ange användarnamn och lösenordet <b>två gånger</b> (mot skrivfel) och klicka sedan på <b>Spara autentisering</b>. Därefter frågar webbläsaren efter inloggningsuppgifter när sidan öppnas.
+H24|Byt lösenord: ange det nya i båda fälten. Lämna båda tomma = nuvarande lösenord behålls.
+H25|Efter 5 felaktiga försök blockerar kortet fler inloggningar från den här datorn i 30 sekunder.
+H26|Utan HTTPS skickas lösenordet okrypterat över LAN:et. Skydd: HTTPS (avsnittet "Kryptering") eller öppna webbgränssnittet via WireGuard.
+H27|<b>Glömt lösenord</b>: tryck <b>RESET 5 gånger i rad</b> på kortet (under 5&nbsp;s mellan varje tryck) – allt återställs till fabriksinställningar. Eller radera bara inställningarna via USB-kabeln, firmware finns kvar: <code>idf.py -p /dev/ttyACM0 erase-region 0x9000 0x6000</code> (Windows: <code>-p COM3</code> el.&nbsp;likn.). Alla inställningar går förlorade (även WireGuard- och TLS-nycklar).
+H28|<b>Öppen</b>: alla i nätverket får använda USB/IP och detta webbgränssnitt.
+H29|<b>Stängd (tillåtelselista)</b>: bara listade deltagare får åtkomst, både till USB/IP <b>och</b> till detta webbgränssnitt. En post är antingen en <b>IP</b> eller en <b>MAC-adress</b>, plus en <b>kommentar</b> så att det är tydligt vem du gav åtkomst.
+H30|<b>MAC i stället för IP</b>: praktiskt om datorn ibland får en annan IP via DHCP. Fungerar bara för datorer i <b>samma LAN</b> (kortet läser MAC-adressen från sin ARP-tabell), inte via WireGuard eller en router. En MAC kan förfalskas – det är en bekvämlighet, inte ett starkt skydd. För verkligt skydd: lösenord, TLS eller WireGuard.
+H31|<b>Lägg till den här datorn</b> tar IP eller MAC från datorn du sitter vid (välj typ först).
+H32|Datorn du sparar från läggs automatiskt till i listan, så du kan inte låsa ute dig själv.
+H33|Med WireGuard anger du datorns <b>tunnel-IP</b> (t.ex. <code>10.8.0.1</code>), inte dess LAN-adress.
+H34|Ta reda på din egen IP- eller MAC-adress:
+H35|"IPv4-adress" eller "Fysisk adress" (MAC) för Ethernet- eller Wi-Fi-adaptern.
+H36|Den här panelen visas så snart kortet har upptäckt en <b>USB-hubb</b>.
+H37|<b>Problem</b>: långsamma enheter (Full/Low Speed) som en <b>YubiKey</b>, tangentbord, mus eller många USB-seriella adaptrar fungerar inte bakom en USB 2.0-hubb. ESP32-P4:s USB-bibliotek skulle behöva en "transaction translator" för det, vilket det inte har ännu. Händelseloggen visar då "FS/LS device rejected (no TT support)".
+H38|<b>Hubbkompatibilitet på</b>: kortets USB-port arbetar bara med Full Speed (12&nbsp;Mbit/s). Då kör även hubben och alla enheter bakom den med Full Speed, och YubiKey &amp; co. fungerar på hubben.
+H39|<b>Nackdel</b>: USB-minnen och kortläsare kör då också bara med Full Speed – cirka <b>1&nbsp;MB/s i stället för 5–6&nbsp;MB/s</b>. Utan hubb eller med bara snabba enheter på hubben: låt den vara av.
+H40|Gäller först efter en <b>omstart</b> (Spara &amp; starta om). Alla anslutna enheter kopplas från.
+H41|Hubb utan egen strömförsörjning: enheter kan försvinna kort eller upptäckas långsamt. Använd en hubb med nätadapter för flera enheter.
+H42|När det är på erbjuder kortet bara de listade enheterna. Alla andra ignoreras så snart de ansluts.
+H43|Format <code>VID:PID</code> i hex, separerade med kommatecken. <code>*</code> står för alla produkter från en tillverkare, t.ex. <code>1050:*</code> = alla YubiKeys.
+H44|Listan gäller vid anslutning. Dra ut redan anslutna enheter och sätt i dem igen.
+H45|Ta reda på VID och PID (eller på alla system: <code>usbip list -r <span class="h-host"></span></code> visar dem inom parentes):
+H46|Anslut enheten till datorn, sedan:
+H47|Exempel: <code>ID 1050:0407 Yubico.com Yubikey 4/5</code>
+H48|Anslut enheten till datorn, sedan (paketet <code>usbutils</code>):
+H49|Enhetshanteraren → enhet → Egenskaper → Information → "Maskinvaru-ID". <code>VID_1050&amp;PID_0407</code> motsvarar <code>1050:0407</code>.
+H50|Här finns två separata funktioner för det lokala nätverket. Via WireGuard är båda redan krypterade, och då behövs inte dessa funktioner.
+H51|<b>1. USB/IP över TLS</b>: kortet tar dessutom emot krypterade anslutningar på port 3241. På datorn sköter <b>stunnel</b> krypteringen, och usbip pratar bara med <code>127.0.0.1</code>.
+H52|<b>Extra</b>: okrypterat (3240) och TLS (3241) samtidigt, bra under övergången.
+H53|<b>Endast TLS</b>: kortet nekar okrypterade anslutningar, alla datorer behöver stunnel. Anslutningar genom <b>WireGuard-tunneln</b> är fortfarande tillåtna, de är redan krypterade. En nekad dator rapporterar <code>Exported Device List Request failed - Unknown Op Common Status</code>.
+H54|I enhetslistan markerar ett hänglås med "TLS" eller "WireGuard" krypterade USB/IP-anslutningar.
+H55|Välj <b>Extra</b> ovan och <b>Spara kryptering</b>.
+H56|Installera stunnel:{P0}
+H57|<b>Visa nyckel och stunnel-konfiguration</b> → Linux. Spara blocket fram till raden <code>ciphers</code> som <code>/etc/stunnel/usbip.conf</code> och raden <code>Kennung:Schlüssel</code> som <code>/etc/stunnel/usbip.psk</code>:{P0}
+H58|Starta stunnel (fortsätter i bakgrunden, stoppas med <code>sudo pkill stunnel</code>):{P0}<span class="note">Permanent: <code>systemctl list-unit-files 'stunnel*'</code>. Finns mallen <code>stunnel@.service</code> startar <code>sudo systemctl enable --now stunnel@usbip</code> just den här filen.</span>
+H59|Använd enheter via stunnel:{P0}
+H60|Fungerar det, byt till <b>Endast TLS</b>.
+H61|Starta stunnel (fortsätter i bakgrunden, stoppas med <code>sudo pkill stunnel</code>):{P0}<span class="note">Permanent: tjänsten <code>stunnel.service</code> startar <code>/etc/stunnel/stunnel.conf</code>. Byt namn på filen och aktivera tjänsten: <code>sudo mv /etc/stunnel/usbip.conf /etc/stunnel/stunnel.conf &amp;&amp; sudo systemctl enable --now stunnel</code></span>
+H62|Installera stunnel för Windows: <code>stunnel.org</code> → Downloads → Windows-installationsprogram.
+H63|<b>Visa nyckel och stunnel-konfiguration</b> → Windows 10/11. För över innehållet som det visas till <code>stunnel.conf</code> (ersätt exempeltjänsterna i den) och skapa <code>usbip.psk</code>, båda i mappen <code>config</code> i stunnel-installationen.
+H64|Konfigurera och starta stunnel som tjänst som administratör:{P0}
+H65|Använd enheter via stunnel (Kommandotolken som administratör):{P0}
+H66|<b>Ny nyckel</b> skapar en ny TLS-nyckel. Byt sedan ut <code>.psk</code>-filen på alla datorer.
+H67|<b>2. HTTPS för detta webbgränssnitt</b> (alla system):
+H68|Markera "HTTPS för detta webbgränssnitt", <b>Spara kryptering</b> och sedan System → <b>Starta om</b>.
+H69|Öppna sidan på <code>https://<span class="h-host"></span>/</code>. Webbläsaren varnar en gång eftersom certifikatet är självsignerat.
+H70|Jämför SHA-256-fingeravtrycket i webbläsarens certifikatinformation med värdet ovan. Stämmer det, bekräfta undantaget (Firefox: "Avancerat…" → "Acceptera risken och fortsätt", felkoden <code>MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT</code> är normal här).
+H71|Med HTTPS omdirigerar <code>http://</code> automatiskt till <code>https://</code>. Med verktyg som curl: <code>curl -k https://…</code>
+H72|<b>Nytt certifikat</b> skapar ett nytt certifikat. Det gäller efter nästa omstart, då varnar webbläsaren igen.
+H73|Kortet bygger själv upp tunneln till en <b>motpart</b>: den här datorn, din egen server eller en router som en Fritzbox. Sedan nås USB/IP och detta webbgränssnitt krypterat på tunneladressen <code><span class="h-wgaddr"></span></code>. Öppnas sidan den vägen står "Skyddad av WireGuard" längst ned till vänster, och enheter med tunnelklienter har ett hänglås.
+H74|Guiden konfigurerar <b>den här datorn som motpart</b> i samma nätverk. Dator: <code>10.8.0.1</code>, kort: <code>10.8.0.2</code>, UDP-port 51820.
+H75|Installera:{P0}
+H76|Klicka på <b>Generera</b> här. Den privata nyckeln stannar på kortet, bara den publika visas.
+H77|Skapa en nyckel för datorn och visa dess publika nyckel:{P0}
+H78|Skapa konfigurationen med <code>sudoedit /etc/wireguard/wg-usbip.conf</code>:{P0}
+H79|Öppna brandväggen för UDP 51820 (ufw):{P0}<span class="note">Med firewalld: <code>sudo firewall-cmd --permanent --add-port=51820/udp &amp;&amp; sudo firewall-cmd --reload</code>. Utan brandvägg behövs inte steget.</span>
+H80|Starta tunneln och starta den automatiskt vid uppstart:{P0}
+H81|Ange här: <b>Motpartens publika nyckel</b> = utdata från steg 3, <b>Motpartens adress</b> = datorns IP (<code>ip -4 -br addr</code>), <b>Motpartens port</b> 51820, <b>Tunneladress</b> 10.8.0.2, <b>Nätmask</b> 255.255.255.0, <b>Keepalive</b> 25, markera <b>Aktivera WireGuard-tunnel</b> och sedan <b>Spara WireGuard</b>.
+H82|Kontrollera:{P0}
+H83|Öppna webbgränssnittet skyddat: <code>http://<span class="h-wgaddr"></span>/</code>
+H84|Installera <b>WireGuard för Windows</b>: <code>wireguard.com/install</code>.
+H85|I WireGuard-appen: pilen bredvid "Lägg till tunnel" → "Lägg till tom tunnel…", namn <code>wg-usbip</code>. Appen skapar själv en nyckel. Anteckna den visade <b>publika nyckeln</b>. Under den befintliga raden <code>PrivateKey = …</code> lägger du till:{P0}Spara och klicka sedan på <b>Aktivera</b>.
+H86|Öppna brandväggen för UDP 51820 (PowerShell som administratör):{P0}
+H87|Ange här: <b>Motpartens publika nyckel</b> = nyckeln från steg 3, <b>Motpartens adress</b> = datorns IP (<code>ipconfig</code>), <b>Motpartens port</b> 51820, <b>Tunneladress</b> 10.8.0.2, <b>Nätmask</b> 255.255.255.0, <b>Keepalive</b> 25, markera <b>Aktivera WireGuard-tunnel</b> och sedan <b>Spara WireGuard</b>.
+H88|Kontrollera: appen visar "Senaste handskakning". Sedan (som administratör):{P0}
+H89|<b>Över internet</b>: motparten är då en server eller router med publik adress. Motpartens adress är dess domän eller IP, t.ex. Fritzbox-VPN under Internet → Frigivningar → VPN (WireGuard). <b>Konfiguration för motparten</b> visar det passande <code>[Peer]</code>-blocket. Tunnelnätet får inte överlappa de lokala näten. I åtkomstläget "Stängd" tillåter du datorns tunnel-IP. Statusen "waiting for time sync" betyder: kortet når ännu ingen NTP-server (internet krävs).
+H90|<b>Ingen handskakning</b> ("connecting · no handshake"): oftast blockerar datorns brandvägg UDP 51820 eller så är en nyckel förväxlad. Kontrollera med <code>sudo tcpdump -ni any udp port 51820</code>: kommer paket från kortet beror det på nycklarna. Efter en omstart av tunneln <b>på datorn</b> ansluter kortet först igen efter upp till cirka 2 minuter. Det går snabbare om du stänger av och slår på tunneln här.
+H91|<b>Energisparläge</b> (på från fabrik): utan ansluten enhet kör CPU:n med 100&nbsp;MHz i stället för 400&nbsp;MHz. Så snart en enhet ansluts går den upp till full takt, så överföringar blir inte långsammare. Avmarkerat kör kortet hela tiden med 400&nbsp;MHz. Gäller direkt, utan omstart. När det är på visas det gröna lövet längst ned till vänster.
+H92|<b>Starta om</b>: startar om kortet. Anslutna USB-enheter kopplas från på alla datorer och måste sedan anslutas igen med <code>attach</code>.
+H93|<b>Fabriksåterställning</b>: raderar <b>alla</b> inställningar (nätverk, lösenord, åtkomstlista, enhetsfilter, WireGuard- och TLS-nycklar) och startar om. Därefter gäller DHCP utan lösenord.
+H94|<b>Återställ utan webbgränssnittet</b>: tryck på kortets <b>RESET</b>-knapp <b>5 gånger i rad</b>, under 5&nbsp;s mellan två tryck (bra: ungefär en gång per sekund). Vid 5:e starten raderar kortet alla inställningar som vid fabriksåterställning. Ström av/på räknas likadant. En enstaka återställning eller ett strömavbrott gör ingenting; krascher räknas inte. BOOT-knappen kan inte användas för detta (intryckt vid start = flash-läge, under drift använder Ethernet stiftet).
+H95|<b>Firmwareuppdatering</b>: via USB-kabeln med <code>idf.py -p /dev/ttyACM0 flash</code> (Windows: <code>-p COM3</code> el.&nbsp;likn.). Inställningarna behålls.
+U229|Återställa USB-bussen? Alla enheter kopplas från och identifieras igen, och anslutna klienter kopplas från.
+U230|Programvarukomponenter
+U231|På kortet
+U232|Komponent
+U233|Version
+U234|Licens
+U235|Testat på datorn med
+U236|Program
+U237|Användning
+U238|USB/IP-klient
+U239|inte testat ännu
+U240|USB/IP-klient (Windows)
+U241|USB/IP över TLS
+U242|WireGuard-motpart
+U243|Webbgränssnitt, HTTPS
+U244|Testdator

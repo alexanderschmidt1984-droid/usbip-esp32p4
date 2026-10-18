@@ -1,0 +1,269 @@
+U0|USB/IP-Server
+U1|Übersicht
+U2|Geräte
+U3|Topologie
+U4|Einstellungen
+U5|Verbinde…
+U6|Stromsparen: im Leerlauf taktet die CPU herunter, mit angehängtem Gerät läuft sie voll
+U7|Energiesparen an
+U8|Design wechseln
+U9|Auto
+U10|Sprache
+U11|Clients
+U12|Durchsatz
+U13|Speicher
+U14|Laufzeit
+U15|Bandbreite
+U16|Letzte Ereignisse
+U17|Ereignisse exportieren
+U18|System-Log exportieren
+U19|Log vor letztem Neustart
+U20|Bis zu 2048 Ereignisse und 1 MB System-Log im RAM (kein Flash-Verschleiß, beim Neustart weg). Nach einem Absturz bleiben die letzten 4 KB als „Log vor letztem Neustart“ erhalten.
+U21|Paketmitschnitt
+U22|SD-Karte
+U23|Status
+U24|Datei
+U25|Größe
+U26|Pakete
+U27|Verworfen
+U28|Mitschnitt starten
+U29|Herunterladen
+U30|Löschen
+U31|USB-Bus
+U32|USB-Bus zurücksetzen
+U33|USB-Geräte
+U34|Keine USB-Geräte angeschlossen
+U35|USB-Topologie
+U36|Erste Schritte: USB-Gerät am PC nutzen
+U37|Das Board stellt angesteckte USB-Geräte per USB/IP im Netz bereit. Am PC wird ein Gerät eingebunden, als stecke es direkt dort. Ein Gerät kann immer nur ein PC gleichzeitig nutzen.
+U38|Netzwerk
+U39|Hostname
+U40|IP-Adresse
+U41|Subnetzmaske
+U42|Gateway
+U43|Aktuelle IP
+U44|Netzwerk speichern
+U45|Anmeldung
+U46|Web-UI-Passwort aktivieren
+U47|Benutzername
+U48|Passwort
+U49|Passwort wiederholen
+U50|Kein Passwort gesetzt: Einstellungen lassen sich erst ändern, wenn ein Web-UI-Passwort vergeben ist. Feld leer lassen = bisheriges Passwort bleibt.
+U51|Anmeldung speichern
+U52|Zugriffskontrolle
+U53|Offen
+U54|Geschlossen (Freigabeliste)
+U55|Kommentar, z. B. Alex Laptop
+U56|Hinzufügen
+U57|Diesen PC eintragen
+U58|Zugriffsliste speichern
+U59|USB-Hub
+U60|Hub-Kompatibilität (alle Geräte mit Full Speed)
+U61|Speichern & Neustart
+U62|Gerätefilter (VID:PID)
+U63|Nur aufgeführte Geräte anbieten
+U64|Erlaubte Geräte (kommagetrennt, hex, * = jede PID)
+U65|Hubs sind immer erlaubt. Andere Geräte werden beim Anstecken ignoriert.
+U66|Gerätefilter speichern
+U67|Verschlüsselung (lokales Netz)
+U68|USB/IP über TLS (Pre-Shared Key, PC nutzt stunnel)
+U69|Aus
+U70|Zusätzlich (unverschlüsselt 3240 + TLS)
+U71|Nur TLS
+U72|Schlüssel & stunnel-Konfiguration anzeigen
+U73|Neuer Schlüssel
+U74|TLS-Schlüssel (geheim)
+U75|HTTPS für diese Oberfläche (selbstsigniert, nach Neustart)
+U76|Zertifikat SHA-256:
+U77|Verschlüsselung speichern
+U78|Neues Zertifikat
+U79|WireGuard-Tunnel
+U80|WireGuard-Tunnel einschalten
+U81|Status:
+U82|Öffentlicher Schlüssel dieses Boards (bei der Gegenstelle eintragen)
+U83|noch kein Schlüssel
+U84|Kopieren
+U85|Erzeugen
+U86|Öffentlicher Schlüssel der Gegenstelle
+U87|Base64, 44 Zeichen
+U88|Adresse der Gegenstelle (Hostname oder IP)
+U89|Port der Gegenstelle
+U90|Tunnel-Adresse dieses Boards
+U91|Tunnel-Netzmaske
+U92|Keepalive (s, 0 = aus)
+U93|Erweitert
+U94|Preshared Key
+U95|optional
+U96|Privaten Schlüssel importieren (statt Erzeugen)
+U97|leer = behalten
+U98|Das Board wählt sich selbst ein – an seinem Standort ist keine Portfreigabe nötig. USB/IP (Port 3240) und diese Oberfläche sind dann unter der Tunnel-Adresse erreichbar. Im Zugriffsmodus „Geschlossen“ die Tunnel-IPs der Clients eintragen.
+U99|WireGuard speichern
+U100|Konfiguration für die Gegenstelle
+U101|System
+U102|Firmware
+U103|Chip
+U104|Freier Speicher
+U105|Letzter Neustart
+U106|Abstürze (seit Werksreset)
+U107|Energiesparen (CPU taktet im Leerlauf herunter)
+U108|Neustart
+U109|Werksreset
+U110|Über HTTPS verschlüsselt
+U111|Diese Web-UI-Sitzung ist per HTTPS (TLS) verschlüsselt.
+U112|Über WireGuard geschützt
+U113|Diese Web-UI-Sitzung läuft durch den WireGuard-Tunnel
+U114|WireGuard aktiv · Sitzung über LAN
+U115|Der Tunnel steht, diese Sitzung nutzt ihn aber nicht. Geschützt:
+U116|Tunnel eingeschaltet, aber nicht verbunden.
+U117|USB/IP-Verbindung läuft durch den WireGuard-Tunnel
+U118|USB/IP-Verbindung ist per TLS verschlüsselt (stunnel)
+U119|Unverschlüsselte USB/IP-Verbindung
+U120|Verbunden
+U121|Getrennt
+U122|Unbekanntes Gerät
+U123|Lade…
+U124|Details konnten nicht geladen werden
+U125|Bus-ID
+U126|BCD-Version
+U127|Klasse
+U128|Geschwindigkeit
+U129|Zustand
+U130|Client
+U131|Hersteller
+U132|Produkt
+U133|Seriennummer
+U134|Bytes rein
+U135|Bytes raus
+U136|URBs ok
+U137|URBs fehlgeschlagen
+U138|Schnittstellen
+U139|Sub
+U140|Proto
+U141|EPs
+U142|Endpunkte
+U143|Adr
+U144|Richtung
+U145|Typ
+U146|MaxPkt
+U147|Intervall
+U148|Client trennen
+U149|Export umschalten
+U150|Auswerfen
+U151|Dieses Gerät auswerfen?
+U152|Erledigt
+U153|Aktion fehlgeschlagen
+U154|Anfrage fehlgeschlagen
+U155|Keine Geräte angeschlossen
+U156|Netzwerk gespeichert. Gilt nach dem Neustart.
+U157|Speichern fehlgeschlagen
+U158|(unverändert)
+U159|erforderlich
+U160|Passwörter stimmen nicht überein
+U161|Anmeldung gespeichert
+U162|Gerätefilter anwenden? Der USB-Bus wird zurückgesetzt, verbundene Clients werden getrennt.
+U163|Gerätefilter gespeichert
+U164|Aktiv: USB läuft mit Full Speed.
+U165|Aktiv: USB läuft mit High Speed.
+U166|Neue Einstellung gilt nach dem Neustart.
+U167|Einstellung speichern und Board neu starten? Eingebundene Geräte werden getrennt.
+U168|Gespeichert - Board startet neu
+U169|Energiesparen aus - volle Leistung
+U170|nie
+U171|vor {n} s
+U172|vor {n} min
+U173|vor {n} h
+U174|letzter Handshake
+U175|(gespeichert – leer = behalten, „-“ = entfernen)
+U176|Zuerst ein Schlüsselpaar erzeugen
+U177|Öffentlicher Schlüssel kopiert
+U178|NEUES Schlüsselpaar erzeugen? Der alte Schlüssel funktioniert dann nicht mehr – der öffentliche Schlüssel muss bei der Gegenstelle aktualisiert werden.
+U179|Schlüsselpaar erzeugt
+U180|Schlüsselerzeugung fehlgeschlagen
+U181|WireGuard gespeichert
+U182|Zuerst Schlüssel erzeugen und Tunnel-Adresse eintragen
+U183|(noch kein Zertifikat)
+U184|Gilt nach einem Neustart.
+U185|Aktiv
+U186|aktive TLS-Sitzungen
+U187|Nur TLS: unverschlüsselte USB/IP-Verbindungen (Port 3240) werden abgelehnt. Clients brauchen stunnel. Fortfahren?
+U188|Die HTTPS-Änderung gilt nach einem Neustart. Die Oberfläche ist dann erreichbar unter
+U189|Verschlüsselung gespeichert
+U190|Fehlgeschlagen
+U191|Neuen TLS-Schlüssel erzeugen? Bestehende stunnel-Konfigurationen funktionieren dann nicht mehr.
+U192|Neuer TLS-Schlüssel erzeugt
+U193|Neues HTTPS-Zertifikat erzeugen? Es gilt nach dem nächsten Neustart, Browser warnen dann erneut.
+U194|Neues Zertifikat erzeugt (gilt nach Neustart)
+U195|Dieser PC
+U196|MAC unbekannt, nicht im selben LAN
+U197|Keine Einträge in der Freigabeliste
+U198|Entfernen
+U199|Ungültige MAC-Adresse (aa:bb:cc:dd:ee:ff)
+U200|Ungültige IP-Adresse
+U201|Schon in der Liste
+U202|Liste voll (max. 32)
+U203|MAC dieses PCs unbekannt (nicht im selben LAN) - IP verwenden
+U204|Zugriffsliste gespeichert
+U205|Alle Einstellungen löschen und neu starten?
+U206|Board neu starten?
+U207|Werksreset - Board startet neu…
+U208|Board startet neu…
+U209|Fehler
+U210|bitte neu anmelden
+U211|Keine Antwort - Board startet vermutlich neu
+U212|Vorhanden
+U213|Nicht gefunden
+U214|Zeichnet auf
+U215|Bereit
+U216|Mitschnitt stoppen
+U217|Mitschnitt gestoppt
+U218|Mitschnitt gestartet
+U219|Mitschnitt-Fehler
+U220|Mitschnitt-Datei löschen?
+U221|Mitschnitt-Datei gelöscht
+U222|Löschen fehlgeschlagen
+U223|Verfügbar
+U224|Exportiert
+U225|Fehler
+U226|Unbekannt
+U227|Dunkel
+U228|Hell
+H17|Änderungen gelten erst <b>nach einem Neustart</b> (System → Neustart). Danach die Seite unter der neuen Adresse öffnen.
+H23|Haken setzen, Benutzername eintragen und das Passwort <b>zweimal</b> (gegen Tippfehler), dann <b>Anmeldung speichern</b>. Danach fragt der Browser beim Öffnen nach den Zugangsdaten.
+H26|Ohne HTTPS geht das Passwort unverschlüsselt durchs LAN. Schutz: HTTPS (Bereich „Verschlüsselung“) oder die Oberfläche über WireGuard öffnen.
+H28|<b>Offen</b>: Jeder im Netz darf USB/IP und diese Oberfläche nutzen.
+H29|<b>Geschlossen (Freigabeliste)</b>: Nur eingetragene Teilnehmer dürfen zugreifen, und zwar auf USB/IP <b>und</b> auf diese Oberfläche. Ein Eintrag ist entweder eine <b>IP</b> oder eine <b>MAC-Adresse</b>, dazu ein <b>Kommentar</b>, damit klar bleibt, wem du den Zugang gegeben hast.
+H40|Wirkt erst nach einem <b>Neustart</b> (Speichern &amp; Neustart). Alle eingebundenen Geräte werden dabei getrennt.
+H51|<b>1. USB/IP über TLS</b>: Das Board nimmt zusätzlich verschlüsselte Verbindungen auf Port 3241 an. Am PC übernimmt <b>stunnel</b> die Verschlüsselung, und usbip spricht nur mit <code>127.0.0.1</code>.
+H52|<b>Zusätzlich</b>: unverschlüsselt (3240) und TLS (3241) gleichzeitig, gut zum Umstellen.
+H53|<b>Nur TLS</b>: Das Board lehnt unverschlüsselte Verbindungen ab, alle PCs brauchen stunnel. Verbindungen über den <b>WireGuard-Tunnel</b> bleiben erlaubt, sie sind bereits verschlüsselt. Ein abgelehnter PC meldet <code>Exported Device List Request failed - Unknown Op Common Status</code>.
+H55|Oben <b>Zusätzlich</b> wählen, <b>Verschlüsselung speichern</b>.
+H57|<b>Schlüssel &amp; stunnel-Konfiguration anzeigen</b> → Linux. Den Block bis zur Zeile <code>ciphers</code> als <code>/etc/stunnel/usbip.conf</code> speichern, die Zeile <code>Kennung:Schlüssel</code> als <code>/etc/stunnel/usbip.psk</code>:{P0}
+H60|Klappt das, auf <b>Nur TLS</b> umstellen.
+H63|<b>Schlüssel &amp; stunnel-Konfiguration anzeigen</b> → Windows 10/11. Den Inhalt wie angezeigt in <code>stunnel.conf</code> übernehmen (die Beispiel-Dienste darin ersetzen) und <code>usbip.psk</code> anlegen, beides im Ordner <code>config</code> der stunnel-Installation.
+H66|<b>Neuer Schlüssel</b> erzeugt einen neuen TLS-Schlüssel. Danach die <code>.psk</code>-Datei auf allen PCs ersetzen.
+H68|Haken bei „HTTPS für diese Oberfläche“, <b>Verschlüsselung speichern</b>, dann System → <b>Neustart</b>.
+H72|<b>Neues Zertifikat</b> erzeugt ein neues Zertifikat. Es gilt nach dem nächsten Neustart, dann warnt der Browser erneut.
+H76|Hier <b>Erzeugen</b> klicken. Der private Schlüssel bleibt auf dem Board, angezeigt wird nur der öffentliche.
+H81|Hier eintragen: <b>Öffentlicher Schlüssel der Gegenstelle</b> = Ausgabe aus Schritt 3, <b>Adresse der Gegenstelle</b> = IP des PCs (<code>ip -4 -br addr</code>), <b>Port der Gegenstelle</b> 51820, <b>Tunnel-Adresse</b> 10.8.0.2, <b>Netzmaske</b> 255.255.255.0, <b>Keepalive</b> 25, Haken bei <b>WireGuard-Tunnel einschalten</b>, dann <b>WireGuard speichern</b>.
+H87|Hier eintragen: <b>Öffentlicher Schlüssel der Gegenstelle</b> = Schlüssel aus Schritt 3, <b>Adresse der Gegenstelle</b> = IP des PCs (<code>ipconfig</code>), <b>Port der Gegenstelle</b> 51820, <b>Tunnel-Adresse</b> 10.8.0.2, <b>Netzmaske</b> 255.255.255.0, <b>Keepalive</b> 25, Haken bei <b>WireGuard-Tunnel einschalten</b>, dann <b>WireGuard speichern</b>.
+H89|<b>Über das Internet</b>: Als Gegenstelle dient dann ein Server oder Router mit öffentlicher Adresse. Die Adresse der Gegenstelle ist dessen Domain oder IP, z.&nbsp;B. das Fritzbox-VPN unter Internet → Freigaben → VPN (WireGuard). <b>Konfiguration für die Gegenstelle</b> zeigt den passenden <code>[Peer]</code>-Block. Das Tunnel-Netz darf sich nicht mit den lokalen Netzen überschneiden. Im Zugriffsmodus „Geschlossen“ die Tunnel-IP des PCs freigeben. Status „waiting for time sync“ heißt: Das Board erreicht noch keinen NTP-Server (Internet nötig).
+H90|<b>Kein Handshake</b> („connecting · no handshake“): meist blockiert die Firewall des PCs UDP 51820 oder ein Schlüssel ist vertauscht. Prüfen mit <code>sudo tcpdump -ni any udp port 51820</code>: Kommen Pakete vom Board an, liegt es an den Schlüsseln. Nach einem Neustart des Tunnels <b>am PC</b> meldet sich das Board erst nach bis zu ca. 2 Minuten neu an. Schneller geht es, wenn man hier den Tunnel aus- und wieder einschaltet.
+H92|<b>Neustart</b>: startet das Board neu. Eingebundene USB-Geräte werden dabei an allen PCs getrennt und müssen danach neu mit <code>attach</code> eingebunden werden.
+H93|<b>Werksreset</b>: löscht <b>alle</b> Einstellungen (Netzwerk, Passwort, Zugriffsliste, Gerätefilter, WireGuard- und TLS-Schlüssel) und startet neu. Danach gilt DHCP ohne Passwort.
+H94|<b>Ohne Web-UI zurücksetzen</b>: die <b>RESET</b>-Taste am Board <b>5× hintereinander</b> drücken, zwischen zwei Drückern jeweils weniger als 5&nbsp;s (gut: etwa einmal pro Sekunde). Beim 5. Start löscht das Board alle Einstellungen wie der Werksreset. Strom aus/ein zählt genauso. Ein einzelner Reset oder Stromausfall löst nichts aus; Abstürze zählen nicht mit. Die BOOT-Taste geht dafür nicht (beim Einschalten gedrückt = Flash-Modus, im Betrieb belegt Ethernet den Pin).
+U229|USB-Bus zurücksetzen? Alle Geräte werden getrennt und neu erkannt, verbundene Clients fallen weg.
+U230|Softwarekomponenten
+U231|Auf dem Board
+U232|Komponente
+U233|Version
+U234|Lizenz
+U235|Am PC getestet mit
+U236|Programm
+U237|Zweck
+U238|USB/IP-Client
+U239|noch nicht getestet
+U240|USB/IP-Client (Windows)
+U241|USB/IP über TLS
+U242|WireGuard-Gegenstelle
+U243|Web-UI, HTTPS
+U244|Test-PC

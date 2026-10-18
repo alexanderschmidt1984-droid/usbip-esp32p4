@@ -8,6 +8,7 @@ Branch `improvements` = Bugfixes, Sicherheits-Paket, Geräte-Filter, Stromsparen
 | [ANLEITUNG-verbesserungen.md](ANLEITUNG-verbesserungen.md) | Bugfixes, Sicherheits-Paket, Geräte-Filter, Stromsparen |
 | [ANLEITUNG-wireguard.md](ANLEITUNG-wireguard.md) | WireGuard-Tunnel, Fritzbox / Linux-Server, Bibliotheks-Fixes |
 | [ANLEITUNG-verschluesselung.md](ANLEITUNG-verschluesselung.md) | USB/IP über TLS (stunnel, Linux + Windows), HTTPS |
+| [KOMPONENTEN.md](KOMPONENTEN.md) | Verwendete Komponenten, Versionen, Lizenzen, getestete PC-Programme |
 
 ## Bauen (CachyOS, fish)
 ```fish
@@ -19,7 +20,7 @@ idf.py -p /dev/ttyACM0 flash monitor
 ```
 
 ## Status / Lizenz
-- Auf Hardware noch **nicht** getestet (nur Build mit ESP-IDF v6.0.2, ESP32-P4 Rev 3.x).
+- Auf Hardware getestet (ESP32-P4 Rev 3.2, ESP-IDF v6.0.2) – Stand siehe CLAUDE.md.
 - Das Original-Projekt hat derzeit **keine Lizenz** → dieses Repo bleibt privat, bis der Autor eine Lizenz ergänzt.
 - Fremdkomponenten: ESP-IDF/esp-usb/mdns/ip101 (Apache-2.0), mbedTLS (Apache-2.0 OR GPL-2.0+),
   lwIP (BSD-3), WireGuard-Bibliothek in `components/wireguard` (BSD-3, mit Fixes, siehe `PATCHED.md`),

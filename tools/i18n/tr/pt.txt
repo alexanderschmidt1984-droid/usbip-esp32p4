@@ -1,0 +1,341 @@
+U0|Servidor USB/IP
+U1|Painel
+U2|Dispositivos
+U3|Topologia
+U4|Definições
+U5|A ligar…
+U6|Poupança de energia: a CPU reduz a frequência em repouso e funciona à velocidade máxima com um dispositivo ligado
+U7|Poupança de energia ativa
+U8|Mudar tema
+U9|Auto
+U10|Idioma
+U11|Clientes
+U12|Débito
+U13|Memória
+U14|Tempo ativo
+U15|Largura de banda
+U16|Eventos recentes
+U17|Exportar eventos
+U18|Exportar registo do sistema
+U19|Registo antes do último reinício
+U20|Até 2048 eventos e 1 MB de registo do sistema em RAM (sem desgaste da flash, perde-se ao reiniciar). Após uma falha, os últimos 4 KB ficam guardados como «Registo antes do último reinício».
+U21|Captura de pacotes
+U22|Cartão SD
+U23|Estado
+U24|Ficheiro
+U25|Tamanho
+U26|Pacotes
+U27|Descartados
+U28|Iniciar captura
+U29|Transferir
+U30|Eliminar
+U31|Barramento USB
+U32|Repor barramento USB
+U33|Dispositivos USB
+U34|Nenhum dispositivo USB ligado
+U35|Topologia USB
+U36|Primeiros passos: usar um dispositivo USB no PC
+U37|A placa partilha na rede, via USB/IP, os dispositivos USB ligados. No PC, um dispositivo é ligado como se estivesse ali. Um dispositivo só pode ser usado por um PC de cada vez.
+U38|Rede
+U39|Nome do anfitrião
+U40|Endereço IP
+U41|Máscara de sub-rede
+U42|Gateway
+U43|IP atual
+U44|Guardar rede
+U45|Autenticação
+U46|Ativar palavra-passe da interface
+U47|Utilizador
+U48|Palavra-passe
+U49|Repetir palavra-passe
+U50|Sem palavra-passe: as definições só podem ser alteradas depois de definir uma palavra-passe. Deixar o campo vazio mantém a palavra-passe atual.
+U51|Guardar autenticação
+U52|Controlo de acesso
+U53|Aberto
+U54|Fechado (lista de permitidos)
+U55|Comentário, p. ex. portátil do Alex
+U56|Adicionar
+U57|Adicionar este PC
+U58|Guardar lista de acesso
+U59|Hub USB
+U60|Compatibilidade com hubs (todos os dispositivos em Full Speed)
+U61|Guardar e reiniciar
+U62|Filtro de dispositivos (VID:PID)
+U63|Exportar apenas os dispositivos listados
+U64|Dispositivos permitidos (separados por vírgulas, hex, * = qualquer PID)
+U65|Os hubs são sempre permitidos. Os outros dispositivos são ignorados ao ligar.
+U66|Guardar filtro
+U67|Encriptação (rede local)
+U68|USB/IP sobre TLS (chave pré-partilhada, o PC usa stunnel)
+U69|Desligado
+U70|Adicional (sem encriptação 3240 + TLS)
+U71|Só TLS
+U72|Mostrar chave e configuração do stunnel
+U73|Nova chave
+U74|Chave TLS (secreta)
+U75|HTTPS para esta interface (autoassinado, após reiniciar)
+U76|Certificado SHA-256:
+U77|Guardar encriptação
+U78|Novo certificado
+U79|Túnel WireGuard
+U80|Ativar túnel WireGuard
+U81|Estado:
+U82|Chave pública desta placa (introduzir no outro lado)
+U83|ainda sem chave
+U84|Copiar
+U85|Gerar
+U86|Chave pública do outro lado
+U87|base64, 44 caracteres
+U88|Endereço do outro lado (anfitrião ou IP)
+U89|Porta do outro lado
+U90|Endereço do túnel desta placa
+U91|Máscara do túnel
+U92|Keepalive (s, 0 = desligado)
+U93|Avançado
+U94|Chave pré-partilhada
+U95|opcional
+U96|Importar chave privada (em vez de Gerar)
+U97|vazio = manter
+U98|A placa liga-se por si própria – não é preciso reencaminhar portas no seu local. O USB/IP (porta 3240) e esta interface ficam acessíveis no endereço do túnel. No modo de acesso «Fechado», adicione os IP de túnel dos seus clientes.
+U99|Guardar WireGuard
+U100|Configuração para o outro lado
+U101|Sistema
+U102|Firmware
+U103|Chip
+U104|Memória livre
+U105|Último reinício
+U106|Falhas (desde a reposição)
+U107|Poupança de energia (a CPU reduz a frequência em repouso)
+U108|Reiniciar
+U109|Repor de fábrica
+U110|Encriptado por HTTPS
+U111|Esta sessão da interface está encriptada com HTTPS (TLS).
+U112|Protegido por WireGuard
+U113|Esta sessão da interface passa pelo túnel WireGuard
+U114|WireGuard ativo · sessão pela LAN
+U115|O túnel está ativo, mas esta sessão não o usa. Protegido:
+U116|Túnel ativado, mas não ligado.
+U117|A ligação USB/IP passa pelo túnel WireGuard
+U118|A ligação USB/IP está encriptada com TLS (stunnel)
+U119|Ligação USB/IP não encriptada
+U120|Ligado
+U121|Desligado
+U122|Dispositivo desconhecido
+U123|A carregar…
+U124|Não foi possível carregar os detalhes
+U125|ID do barramento
+U126|Versão BCD
+U127|Classe
+U128|Velocidade
+U129|Estado
+U130|Cliente
+U131|Fabricante
+U132|Produto
+U133|N.º de série
+U134|Bytes recebidos
+U135|Bytes enviados
+U136|URB com êxito
+U137|URB falhados
+U138|Interfaces
+U139|Sub
+U140|Proto
+U141|EPs
+U142|Endpoints
+U143|End.
+U144|Sentido
+U145|Tipo
+U146|MaxPkt
+U147|Intervalo
+U148|Desligar cliente
+U149|Alternar exportação
+U150|Ejetar
+U151|Ejetar este dispositivo?
+U152|Ação concluída
+U153|A ação falhou
+U154|O pedido falhou
+U155|Nenhum dispositivo ligado
+U156|Rede guardada. Aplica-se após reiniciar.
+U157|Falha ao guardar
+U158|(inalterada)
+U159|obrigatória
+U160|As palavras-passe não coincidem
+U161|Autenticação guardada
+U162|Aplicar o filtro? O barramento USB é reposto e os clientes ligados são desligados.
+U163|Filtro guardado
+U164|Ativo: o USB funciona em Full Speed.
+U165|Ativo: o USB funciona em High Speed.
+U166|A nova definição aplica-se após o reinício.
+U167|Guardar a definição e reiniciar a placa? Os dispositivos ligados serão desligados.
+U168|Guardado - a placa está a reiniciar
+U169|Poupança de energia desligada - desempenho máximo
+U170|nunca
+U171|há {n} s
+U172|há {n} min
+U173|há {n} h
+U174|último handshake
+U175|(guardada – vazio = manter, «-» = remover)
+U176|Gere primeiro um par de chaves
+U177|Chave pública copiada
+U178|Criar um NOVO par de chaves? A chave antiga deixa de funcionar – a chave pública tem de ser atualizada no outro lado.
+U179|Par de chaves gerado
+U180|Falha ao gerar a chave
+U181|WireGuard guardado
+U182|Gere primeiro uma chave e defina o endereço do túnel
+U183|(ainda sem certificado)
+U184|É necessário reiniciar para aplicar.
+U185|Ativo
+U186|sessões TLS ativas
+U187|Só TLS: as ligações USB/IP não encriptadas (porta 3240) serão recusadas. Os clientes precisam do stunnel. Continuar?
+U188|A alteração de HTTPS aplica-se após um reinício. A interface ficará então em
+U189|Encriptação guardada
+U190|Falhou
+U191|Criar uma nova chave TLS? As configurações do stunnel existentes deixam de funcionar.
+U192|Nova chave TLS criada
+U193|Criar um novo certificado HTTPS? É usado após o próximo reinício; os navegadores voltam a avisar.
+U194|Novo certificado criado (ativo após reiniciar)
+U195|Este PC
+U196|MAC desconhecido, não está na mesma LAN
+U197|Sem entradas na lista de permitidos
+U198|Remover
+U199|Endereço MAC inválido (aa:bb:cc:dd:ee:ff)
+U200|Endereço IP inválido
+U201|Já está na lista
+U202|Lista cheia (máx. 32)
+U203|MAC deste PC desconhecido (não está na mesma LAN) - use o IP
+U204|Lista de acesso guardada
+U205|Apagar todas as definições e reiniciar?
+U206|Reiniciar a placa?
+U207|Reposição de fábrica - a placa está a reiniciar…
+U208|A placa está a reiniciar…
+U209|Erro
+U210|inicie sessão novamente
+U211|Sem resposta - a placa deve estar a reiniciar
+U212|Presente
+U213|Não encontrado
+U214|A gravar
+U215|Inativo
+U216|Parar captura
+U217|Captura parada
+U218|Captura iniciada
+U219|Erro de captura
+U220|Eliminar o ficheiro de captura?
+U221|Ficheiro de captura eliminado
+U222|Falha ao eliminar
+U223|Disponível
+U224|Exportado
+U225|Erro
+U226|Desconhecido
+U227|Escuro
+U228|Claro
+H0|Ajuda: configurar o USB/IP no PC
+H1|Instalar o programa:{P0}<span class="note">Ubuntu: <code>sudo apt install linux-tools-generic</code> (inclui o usbip).</span>
+H2|Carregar o módulo do kernel, agora e em cada arranque:{P0}
+H3|Mostrar os dispositivos disponíveis:{P0}
+H4|Ligar um dispositivo (ID do barramento da lista, p.&nbsp;ex. <code>1-1</code>):{P0}
+H5|Verificar: <code>usbip port</code> mostra o dispositivo ligado, <code>lsusb</code> lista-o como um local.
+H6|Desligá-lo novamente (número da porta em <code>usbip port</code>, o primeiro dispositivo é a porta 0):{P0}
+H7|Instalar o programa:{P0}
+H8|Instalar o <b>usbip-win2</b>: transferir o instalador de <code>github.com/vadimgrn/usbip-win2/releases</code> e executá-lo como administrador.
+H9|Abrir a Linha de comandos ou o PowerShell <b>como administrador</b>.
+H10|Verificar: <code>usbip port</code> mostra o dispositivo, o Gestor de dispositivos lista-o como um local.
+H11|Desligá-lo novamente (número da porta em <code>usbip port</code>):{P0}
+H12|É o PC que abre a ligação à placa (TCP 3240), por isso não é necessária nenhuma regra de firewall no PC. Se o dispositivo for desligado da placa, o PC corta a ligação. Depois de o voltar a ligar, execute <code>attach</code> de novo.
+H13|Ajuda
+H14|<b>Nome do anfitrião</b>: nome da placa na rede. Também se anuncia via mDNS como <code>&lt;hostname&gt;.local</code> e publica o serviço <code>_usbip._tcp</code>.
+H15|<b>DHCP</b> (predefinição): o router atribui o endereço. Para se manter igual, configure uma atribuição fixa no router (Fritzbox: Rede doméstica → Rede → editar dispositivo → «Atribuir sempre o mesmo endereço IPv4 a este dispositivo»).
+H16|<b>IP estático</b>: desmarcar DHCP e introduzir endereço, máscara, gateway e DNS. O endereço tem de estar livre e fora do intervalo DHCP do router.
+H17|As alterações só se aplicam <b>após um reinício</b> (Sistema → Reiniciar). Depois abra a página no novo endereço.
+H18|Resolver nomes <code>.local</code> no PC:
+H19|Nos sistemas de ambiente de trabalho costuma estar já configurado (avahi). Caso contrário:
+H20|Em <code>/etc/nsswitch.conf</code>, acrescentar <code>mdns_minimal [NOTFOUND=return]</code> à linha <code>hosts:</code> antes de <code>resolve</code>.
+H21|O Windows 10/11 resolve os nomes <code>.local</code> sozinho. Se não, use o endereço IP.
+H22|Sem palavra-passe a interface é só de leitura. As definições só podem ser alteradas depois de definida uma palavra-passe.
+H23|Marcar a caixa, introduzir um utilizador e a palavra-passe <b>duas vezes</b> (contra erros de escrita) e depois <b>Guardar autenticação</b>. O navegador pedirá então as credenciais ao abrir a página.
+H24|Alterar a palavra-passe: introduzir a nova nos dois campos. Deixar ambos vazios = a palavra-passe atual mantém-se.
+H25|Após 5 tentativas erradas, a placa bloqueia os inícios de sessão deste PC durante 30 segundos.
+H26|Sem HTTPS a palavra-passe atravessa a LAN sem encriptação. Proteção: HTTPS (secção «Encriptação») ou abrir a interface através do WireGuard.
+H27|<b>Esqueceu a palavra-passe</b>: premir <b>RESET 5 vezes seguidas</b> na placa (menos de 5&nbsp;s entre cada) – tudo volta às definições de fábrica. Ou apagar só as definições pelo cabo USB, o firmware mantém-se: <code>idf.py -p /dev/ttyACM0 erase-region 0x9000 0x6000</code> (Windows: <code>-p COM3</code> ou semelhante). Todas as definições se perdem (incluindo as chaves WireGuard e TLS).
+H28|<b>Aberto</b>: qualquer pessoa na rede pode usar o USB/IP e esta interface.
+H29|<b>Fechado (lista de permitidos)</b>: só os participantes listados têm acesso, ao USB/IP <b>e</b> a esta interface. Uma entrada é um <b>IP</b> ou um <b>endereço MAC</b>, com um <b>comentário</b> para saber a quem deu acesso.
+H30|<b>MAC em vez de IP</b>: útil se o PC às vezes recebe outro IP por DHCP. Só funciona para PC na <b>mesma LAN</b> (a placa lê o MAC da sua tabela ARP), não através do WireGuard ou de um router. Um MAC pode ser falsificado – é uma conveniência, não uma proteção forte. Para proteção real: palavra-passe, TLS ou WireGuard.
+H31|<b>Adicionar este PC</b> usa o IP ou o MAC do PC em que está (escolha antes o tipo).
+H32|O PC a partir do qual guarda é adicionado automaticamente à lista, para não ficar bloqueado.
+H33|Com WireGuard, introduza o <b>IP do túnel</b> do PC (p.&nbsp;ex. <code>10.8.0.1</code>), não o seu endereço LAN.
+H34|Descobrir o próprio endereço IP ou MAC:
+H35|«Endereço IPv4» ou «Endereço físico» (MAC) do adaptador Ethernet ou Wi-Fi.
+H36|Este painel aparece assim que a placa deteta um <b>hub USB</b>.
+H37|<b>Problema</b>: dispositivos lentos (Full/Low Speed) como uma <b>YubiKey</b>, teclado, rato ou muitos adaptadores série USB não funcionam atrás de um hub USB 2.0. Para isso a biblioteca USB do ESP32-P4 precisaria de um «transaction translator», que ainda não tem. O registo de eventos mostra então «FS/LS device rejected (no TT support)».
+H38|<b>Compatibilidade com hubs ativa</b>: a porta USB da placa funciona apenas em Full Speed (12&nbsp;Mbit/s). Assim o hub e todos os dispositivos atrás dele também funcionam em Full Speed, e a YubiKey &amp; cia. funcionam no hub.
+H39|<b>Desvantagem</b>: pens USB e leitores de cartões também passam a funcionar só em Full Speed – cerca de <b>1&nbsp;MB/s em vez de 5–6&nbsp;MB/s</b>. Sem hub ou só com dispositivos rápidos no hub: deixe desligado.
+H40|Só se aplica após um <b>reinício</b> (Guardar &amp; reiniciar). Todos os dispositivos ligados são desligados.
+H41|Hub sem alimentação própria: os dispositivos podem cair brevemente ou ser detetados lentamente. Para vários dispositivos use um hub alimentado.
+H42|Quando ativo, a placa só disponibiliza os dispositivos listados. Ignora todos os outros assim que são ligados.
+H43|Formato <code>VID:PID</code> em hexadecimal, separados por vírgulas. <code>*</code> representa todos os produtos de um fabricante, p.&nbsp;ex. <code>1050:*</code> = todas as YubiKey.
+H44|A lista aplica-se ao ligar. Desligue e volte a ligar os dispositivos já ligados.
+H45|Descobrir VID e PID (ou em qualquer sistema: <code>usbip list -r <span class="h-host"></span></code> mostra-os entre parênteses):
+H46|Ligar o dispositivo ao PC e depois:
+H47|Exemplo: <code>ID 1050:0407 Yubico.com Yubikey 4/5</code>
+H48|Ligar o dispositivo ao PC e depois (pacote <code>usbutils</code>):
+H49|Gestor de dispositivos → dispositivo → Propriedades → Detalhes → «IDs de hardware». <code>VID_1050&amp;PID_0407</code> corresponde a <code>1050:0407</code>.
+H50|Há aqui duas funções separadas para a rede local. Através do WireGuard tudo já vai encriptado e estas funções não são necessárias.
+H51|<b>1. USB/IP sobre TLS</b>: a placa aceita também ligações encriptadas na porta 3241. No PC, o <b>stunnel</b> trata da encriptação e o usbip só fala com <code>127.0.0.1</code>.
+H52|<b>Adicional</b>: sem encriptação (3240) e TLS (3241) ao mesmo tempo, útil para a transição.
+H53|<b>Só TLS</b>: a placa recusa ligações não encriptadas, todos os PC precisam do stunnel. As ligações pelo <b>túnel WireGuard</b> continuam permitidas, já são encriptadas. Um PC recusado mostra <code>Exported Device List Request failed - Unknown Op Common Status</code>.
+H54|Na lista de dispositivos, um cadeado com «TLS» ou «WireGuard» assinala as ligações USB/IP encriptadas.
+H55|Escolher <b>Adicional</b> acima e <b>Guardar encriptação</b>.
+H56|Instalar o stunnel:{P0}
+H57|<b>Mostrar chave e configuração do stunnel</b> → Linux. Guardar o bloco até à linha <code>ciphers</code> como <code>/etc/stunnel/usbip.conf</code> e a linha <code>Kennung:Schlüssel</code> como <code>/etc/stunnel/usbip.psk</code>:{P0}
+H58|Iniciar o stunnel (continua em segundo plano, para-se com <code>sudo pkill stunnel</code>):{P0}<span class="note">De forma permanente: <code>systemctl list-unit-files 'stunnel*'</code>. Se existir o modelo <code>stunnel@.service</code>, <code>sudo systemctl enable --now stunnel@usbip</code> inicia exatamente este ficheiro.</span>
+H59|Usar dispositivos através do stunnel:{P0}
+H60|Se funcionar, mude para <b>Só TLS</b>.
+H61|Iniciar o stunnel (continua em segundo plano, para-se com <code>sudo pkill stunnel</code>):{P0}<span class="note">De forma permanente: o serviço <code>stunnel.service</code> inicia <code>/etc/stunnel/stunnel.conf</code>. Mude o nome do ficheiro e ative o serviço: <code>sudo mv /etc/stunnel/usbip.conf /etc/stunnel/stunnel.conf &amp;&amp; sudo systemctl enable --now stunnel</code></span>
+H62|Instalar o stunnel para Windows: <code>stunnel.org</code> → Downloads → instalador Windows.
+H63|<b>Mostrar chave e configuração do stunnel</b> → Windows 10/11. Copiar o conteúdo tal como mostrado para <code>stunnel.conf</code> (substituindo os serviços de exemplo) e criar <code>usbip.psk</code>, ambos na pasta <code>config</code> da instalação do stunnel.
+H64|Como administrador, instalar e iniciar o stunnel como serviço:{P0}
+H65|Usar dispositivos através do stunnel (Linha de comandos como administrador):{P0}
+H66|<b>Nova chave</b> cria uma nova chave TLS. Depois substitua o ficheiro <code>.psk</code> em todos os PC.
+H67|<b>2. HTTPS para esta interface</b> (todos os sistemas):
+H68|Marcar «HTTPS para esta interface», <b>Guardar encriptação</b> e depois Sistema → <b>Reiniciar</b>.
+H69|Abrir a página em <code>https://<span class="h-host"></span>/</code>. O navegador avisa uma vez porque o certificado é autoassinado.
+H70|Nos detalhes do certificado no navegador, compare a impressão digital SHA-256 com o valor acima. Se coincidir, confirme a exceção (Firefox: «Avançado…» → «Aceitar o risco e continuar»; o código de erro <code>MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT</code> é normal aqui).
+H71|Com HTTPS, <code>http://</code> redireciona automaticamente para <code>https://</code>. Com ferramentas como o curl: <code>curl -k https://…</code>
+H72|<b>Novo certificado</b> cria um novo certificado. Aplica-se após o próximo reinício e o navegador volta a avisar.
+H73|A própria placa estabelece o túnel para um <b>outro lado</b>: este PC, um servidor seu ou um router como uma Fritzbox. Depois o USB/IP e esta interface ficam acessíveis encriptados no endereço do túnel <code><span class="h-wgaddr"></span></code>. Se a página for aberta assim, aparece «Protegido por WireGuard» em baixo à esquerda e os dispositivos com clientes do túnel têm um cadeado.
+H74|Este guia configura <b>este PC como o outro lado</b>, na mesma rede. PC: <code>10.8.0.1</code>, placa: <code>10.8.0.2</code>, porta UDP 51820.
+H75|Instalar:{P0}
+H76|Clique aqui em <b>Gerar</b>. A chave privada fica na placa, só a pública é mostrada.
+H77|Criar uma chave para o PC e mostrar a sua chave pública:{P0}
+H78|Criar a configuração com <code>sudoedit /etc/wireguard/wg-usbip.conf</code>:{P0}
+H79|Abrir a firewall para UDP 51820 (ufw):{P0}<span class="note">Com firewalld: <code>sudo firewall-cmd --permanent --add-port=51820/udp &amp;&amp; sudo firewall-cmd --reload</code>. Sem firewall este passo não é necessário.</span>
+H80|Iniciar o túnel e arrancá-lo automaticamente no arranque:{P0}
+H81|Introduzir aqui: <b>Chave pública do outro lado</b> = resultado do passo 3, <b>Endereço do outro lado</b> = IP do PC (<code>ip -4 -br addr</code>), <b>Porta do outro lado</b> 51820, <b>Endereço do túnel</b> 10.8.0.2, <b>Máscara</b> 255.255.255.0, <b>Keepalive</b> 25, marcar <b>Ativar túnel WireGuard</b> e depois <b>Guardar WireGuard</b>.
+H82|Verificar:{P0}
+H83|Abrir a interface de forma protegida: <code>http://<span class="h-wgaddr"></span>/</code>
+H84|Instalar o <b>WireGuard para Windows</b>: <code>wireguard.com/install</code>.
+H85|Na aplicação WireGuard: seta ao lado de «Adicionar túnel» → «Adicionar túnel vazio…», nome <code>wg-usbip</code>. A aplicação cria uma chave sozinha. Anote a <b>chave pública</b> mostrada. Por baixo da linha existente <code>PrivateKey = …</code> acrescente:{P0}Guardar e depois <b>Ativar</b>.
+H86|Abrir a firewall para UDP 51820 (PowerShell como administrador):{P0}
+H87|Introduzir aqui: <b>Chave pública do outro lado</b> = chave do passo 3, <b>Endereço do outro lado</b> = IP do PC (<code>ipconfig</code>), <b>Porta do outro lado</b> 51820, <b>Endereço do túnel</b> 10.8.0.2, <b>Máscara</b> 255.255.255.0, <b>Keepalive</b> 25, marcar <b>Ativar túnel WireGuard</b> e depois <b>Guardar WireGuard</b>.
+H88|Verificar: a aplicação mostra «Último handshake». Depois (como administrador):{P0}
+H89|<b>Pela Internet</b>: o outro lado é então um servidor ou router com endereço público. O endereço do outro lado é o seu domínio ou IP, p.&nbsp;ex. a VPN da Fritzbox em Internet → Partilhas → VPN (WireGuard). <b>Configuração para o outro lado</b> mostra o bloco <code>[Peer]</code> adequado. A rede do túnel não pode sobrepor-se às redes locais. No modo de acesso «Fechado», permita o IP do túnel do PC. O estado «waiting for time sync» significa: a placa ainda não alcança nenhum servidor NTP (é necessária Internet).
+H90|<b>Sem handshake</b> («connecting · no handshake»): normalmente a firewall do PC bloqueia UDP 51820 ou uma chave está trocada. Verifique com <code>sudo tcpdump -ni any udp port 51820</code>: se chegarem pacotes da placa, o problema são as chaves. Depois de reiniciar o túnel <b>no PC</b>, a placa só volta a ligar após cerca de 2 minutos no máximo. É mais rápido desligar e voltar a ligar o túnel aqui.
+H91|<b>Poupança de energia</b> (ativa de fábrica): sem dispositivo ligado a CPU funciona a 100&nbsp;MHz em vez de 400&nbsp;MHz. Assim que um dispositivo é ligado passa à frequência máxima, por isso as transferências não ficam mais lentas. Desmarcada, a placa funciona sempre a 400&nbsp;MHz. Efeito imediato, sem reiniciar. Quando ativa, aparece a folha verde em baixo à esquerda.
+H92|<b>Reiniciar</b>: reinicia a placa. Os dispositivos USB ligados são desligados em todos os PC e têm de ser ligados de novo com <code>attach</code>.
+H93|<b>Repor de fábrica</b>: apaga <b>todas</b> as definições (rede, palavra-passe, lista de acesso, filtro, chaves WireGuard e TLS) e reinicia. Depois aplica-se DHCP sem palavra-passe.
+H94|<b>Repor sem a interface</b>: premir o botão <b>RESET</b> da placa <b>5 vezes seguidas</b>, com menos de 5&nbsp;s entre duas pressões (ideal: cerca de uma vez por segundo). No 5.º arranque a placa apaga todas as definições como a reposição de fábrica. Desligar/ligar a alimentação conta da mesma forma. Um único reset ou uma falha de energia não faz nada; as falhas de software não contam. O botão BOOT não serve (premido ao ligar = modo flash, em funcionamento o pino é usado pela Ethernet).
+H95|<b>Atualização do firmware</b>: pelo cabo USB com <code>idf.py -p /dev/ttyACM0 flash</code> (Windows: <code>-p COM3</code> ou semelhante). As definições mantêm-se.
+U229|Repor o barramento USB? Todos os dispositivos são desligados e enumerados de novo, e os clientes ligados são desligados.
+U230|Componentes de software
+U231|Na placa
+U232|Componente
+U233|Versão
+U234|Licença
+U235|Testado no PC com
+U236|Programa
+U237|Utilização
+U238|Cliente USB/IP
+U239|ainda não testado
+U240|Cliente USB/IP (Windows)
+U241|USB/IP sobre TLS
+U242|Outro lado WireGuard
+U243|Interface web, HTTPS
+U244|PC de teste

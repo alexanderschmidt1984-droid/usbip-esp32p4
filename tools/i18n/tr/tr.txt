@@ -1,0 +1,341 @@
+U0|USB/IP Sunucusu
+U1|Genel bakış
+U2|Cihazlar
+U3|Topoloji
+U4|Ayarlar
+U5|Bağlanıyor…
+U6|Güç tasarrufu: CPU boştayken frekansı düşürür, bir cihaz bağlıyken tam hızda çalışır
+U7|Güç tasarrufu açık
+U8|Temayı değiştir
+U9|Otomatik
+U10|Dil
+U11|İstemciler
+U12|Aktarım hızı
+U13|Bellek
+U14|Çalışma süresi
+U15|Bant genişliği
+U16|Son olaylar
+U17|Olayları dışa aktar
+U18|Sistem günlüğünü dışa aktar
+U19|Son yeniden başlatmadan önceki günlük
+U20|RAM'de 2048 olaya ve 1 MB sistem günlüğüne kadar (flash yıpranmaz, yeniden başlatmada silinir). Bir çökmeden sonra son 4 KB «Son yeniden başlatmadan önceki günlük» olarak korunur.
+U21|Paket yakalama
+U22|SD kart
+U23|Durum
+U24|Dosya
+U25|Boyut
+U26|Paketler
+U27|Düşen
+U28|Yakalamayı başlat
+U29|İndir
+U30|Sil
+U31|USB veriyolu
+U32|USB veriyolunu sıfırla
+U33|USB cihazları
+U34|Bağlı USB cihazı yok
+U35|USB topolojisi
+U36|Başlarken: bir USB cihazını bilgisayarınızda kullanın
+U37|Kart, takılı USB cihazlarını USB/IP ile ağda paylaşır. Bilgisayarda bir cihaz, doğrudan oraya takılıymış gibi bağlanır. Bir cihazı aynı anda yalnızca bir bilgisayar kullanabilir.
+U38|Ağ
+U39|Ana bilgisayar adı
+U40|IP adresi
+U41|Alt ağ maskesi
+U42|Ağ geçidi
+U43|Geçerli IP
+U44|Ağı kaydet
+U45|Kimlik doğrulama
+U46|Arayüz parolasını etkinleştir
+U47|Kullanıcı adı
+U48|Parola
+U49|Parolayı tekrarla
+U50|Parola ayarlanmamış: ayarlar ancak bir parola belirlendikten sonra değiştirilebilir. Mevcut parolayı korumak için alanı boş bırakın.
+U51|Kimlik doğrulamayı kaydet
+U52|Erişim denetimi
+U53|Açık
+U54|Kapalı (izin listesi)
+U55|Yorum, örn. Alex'in dizüstüsü
+U56|Ekle
+U57|Bu bilgisayarı ekle
+U58|Erişim listesini kaydet
+U59|USB hub
+U60|Hub uyumluluğu (tüm cihazlar Full Speed'de)
+U61|Kaydet ve yeniden başlat
+U62|Cihaz filtresi (VID:PID)
+U63|Yalnızca listelenen cihazları dışa aktar
+U64|İzin verilen cihazlar (virgülle ayrılmış, hex, * = herhangi bir PID)
+U65|Hub'lara her zaman izin verilir. Diğer cihazlar takıldığında yok sayılır.
+U66|Filtreyi kaydet
+U67|Şifreleme (yerel ağ)
+U68|TLS üzerinden USB/IP (önceden paylaşılan anahtar, bilgisayar stunnel kullanır)
+U69|Kapalı
+U70|Ek olarak (şifresiz 3240 + TLS)
+U71|Yalnızca TLS
+U72|Anahtarı ve stunnel yapılandırmasını göster
+U73|Yeni anahtar
+U74|TLS anahtarı (gizli)
+U75|Bu arayüz için HTTPS (kendinden imzalı, yeniden başlatmadan sonra)
+U76|Sertifika SHA-256:
+U77|Şifrelemeyi kaydet
+U78|Yeni sertifika
+U79|WireGuard tüneli
+U80|WireGuard tünelini etkinleştir
+U81|Durum:
+U82|Bu kartın genel anahtarı (karşı tarafa girin)
+U83|henüz anahtar yok
+U84|Kopyala
+U85|Oluştur
+U86|Karşı tarafın genel anahtarı
+U87|base64, 44 karakter
+U88|Karşı tarafın adresi (ana bilgisayar adı veya IP)
+U89|Karşı tarafın portu
+U90|Bu kartın tünel adresi
+U91|Tünel ağ maskesi
+U92|Keepalive (sn, 0 = kapalı)
+U93|Gelişmiş
+U94|Önceden paylaşılan anahtar
+U95|isteğe bağlı
+U96|Özel anahtarı içe aktar (Oluştur yerine)
+U97|boş = koru
+U98|Kart bağlantıyı kendisi kurar – bulunduğu yerde port yönlendirme gerekmez. USB/IP (port 3240) ve bu arayüze ardından tünel adresinden erişilebilir. «Kapalı» erişim modunda istemcilerinizin tünel IP'lerini ekleyin.
+U99|WireGuard'ı kaydet
+U100|Karşı taraf için yapılandırma
+U101|Sistem
+U102|Bellenim
+U103|Çip
+U104|Boş bellek
+U105|Son yeniden başlatma
+U106|Çökmeler (fabrika ayarlarından beri)
+U107|Güç tasarrufu (CPU boştayken frekansı düşürür)
+U108|Yeniden başlat
+U109|Fabrika ayarlarına dön
+U110|HTTPS ile şifreli
+U111|Bu arayüz oturumu HTTPS (TLS) ile şifrelenmiştir.
+U112|WireGuard ile korunuyor
+U113|Bu arayüz oturumu WireGuard tünelinden geçiyor
+U114|WireGuard etkin · oturum LAN üzerinden
+U115|Tünel açık ama bu oturum onu kullanmıyor. Korumalı adres:
+U116|Tünel etkin ama bağlı değil.
+U117|USB/IP bağlantısı WireGuard tünelinden geçiyor
+U118|USB/IP bağlantısı TLS ile şifreli (stunnel)
+U119|Şifresiz USB/IP bağlantısı
+U120|Bağlı
+U121|Bağlantı kesildi
+U122|Bilinmeyen cihaz
+U123|Yükleniyor…
+U124|Ayrıntılar yüklenemedi
+U125|Veriyolu kimliği
+U126|BCD sürümü
+U127|Sınıf
+U128|Hız
+U129|Durum
+U130|İstemci
+U131|Üretici
+U132|Ürün
+U133|Seri numarası
+U134|Gelen bayt
+U135|Giden bayt
+U136|Başarılı URB
+U137|Başarısız URB
+U138|Arayüzler
+U139|Sub
+U140|Proto
+U141|EPs
+U142|Uç noktalar
+U143|Adr
+U144|Yön
+U145|Tür
+U146|MaxPkt
+U147|Aralık
+U148|İstemcinin bağlantısını kes
+U149|Dışa aktarmayı değiştir
+U150|Çıkar
+U151|Bu cihaz çıkarılsın mı?
+U152|İşlem tamamlandı
+U153|İşlem başarısız
+U154|İstek başarısız
+U155|Bağlı cihaz yok
+U156|Ağ kaydedildi. Yeniden başlatmadan sonra geçerli olur.
+U157|Kaydetme başarısız
+U158|(değişmedi)
+U159|gerekli
+U160|Parolalar eşleşmiyor
+U161|Kimlik doğrulama kaydedildi
+U162|Filtre uygulansın mı? USB veriyolu sıfırlanır ve bağlı istemcilerin bağlantısı kesilir.
+U163|Filtre kaydedildi
+U164|Şu an: USB Full Speed'de çalışıyor.
+U165|Şu an: USB High Speed'de çalışıyor.
+U166|Yeni ayar yeniden başlatmadan sonra geçerli olur.
+U167|Ayar kaydedilip kart yeniden başlatılsın mı? Bağlı cihazların bağlantısı kesilecek.
+U168|Kaydedildi - kart yeniden başlıyor
+U169|Güç tasarrufu kapalı - tam performans
+U170|hiç
+U171|{n} sn önce
+U172|{n} dk önce
+U173|{n} sa önce
+U174|son el sıkışma
+U175|(kayıtlı – boş = koru, «-» = kaldır)
+U176|Önce bir anahtar çifti oluşturun
+U177|Genel anahtar kopyalandı
+U178|YENİ bir anahtar çifti oluşturulsun mu? Eski anahtar çalışmaz – genel anahtar karşı tarafta güncellenmelidir.
+U179|Anahtar çifti oluşturuldu
+U180|Anahtar oluşturma başarısız
+U181|WireGuard kaydedildi
+U182|Önce bir anahtar oluşturup tünel adresini girin
+U183|(henüz sertifika yok)
+U184|Uygulamak için yeniden başlatma gerekli.
+U185|Etkin
+U186|etkin TLS oturumu
+U187|Yalnızca TLS: şifresiz USB/IP bağlantıları (port 3240) reddedilecek. İstemcilerin stunnel'e ihtiyacı var. Devam edilsin mi?
+U188|HTTPS değişikliği yeniden başlatmadan sonra geçerli olur. Arayüz o zaman şu adreste olacak:
+U189|Şifreleme kaydedildi
+U190|Başarısız
+U191|Yeni bir TLS anahtarı oluşturulsun mu? Mevcut stunnel yapılandırmaları çalışmaz.
+U192|Yeni TLS anahtarı oluşturuldu
+U193|Yeni bir HTTPS sertifikası oluşturulsun mu? Bir sonraki yeniden başlatmadan sonra kullanılır; tarayıcılar yeniden uyarır.
+U194|Yeni sertifika oluşturuldu (yeniden başlatmadan sonra etkin)
+U195|Bu bilgisayar
+U196|MAC bilinmiyor, aynı LAN'da değil
+U197|İzin listesinde kayıt yok
+U198|Kaldır
+U199|Geçersiz MAC adresi (aa:bb:cc:dd:ee:ff)
+U200|Geçersiz IP adresi
+U201|Zaten listede
+U202|Liste dolu (en fazla 32)
+U203|Bu bilgisayarın MAC adresi bilinmiyor (aynı LAN'da değil) - IP kullanın
+U204|Erişim listesi kaydedildi
+U205|Tüm ayarlar silinip yeniden başlatılsın mı?
+U206|Kart yeniden başlatılsın mı?
+U207|Fabrika ayarları - kart yeniden başlıyor…
+U208|Kart yeniden başlıyor…
+U209|Hata
+U210|lütfen yeniden oturum açın
+U211|Yanıt yok - kart muhtemelen yeniden başlıyor
+U212|Var
+U213|Bulunamadı
+U214|Kaydediliyor
+U215|Boşta
+U216|Yakalamayı durdur
+U217|Yakalama durduruldu
+U218|Yakalama başladı
+U219|Yakalama hatası
+U220|Yakalama dosyası silinsin mi?
+U221|Yakalama dosyası silindi
+U222|Silme başarısız
+U223|Kullanılabilir
+U224|Dışa aktarıldı
+U225|Hata
+U226|Bilinmiyor
+U227|Koyu
+U228|Açık
+H0|Yardım: bilgisayarda USB/IP kurulumu
+H1|Programı kurun:{P0}<span class="note">Ubuntu: <code>sudo apt install linux-tools-generic</code> (usbip'i içerir).</span>
+H2|Çekirdek modülünü şimdi ve her açılışta yükleyin:{P0}
+H3|Sunulan cihazları gösterin:{P0}
+H4|Bir cihaz bağlayın (listedeki veriyolu kimliği, örn. <code>1-1</code>):{P0}
+H5|Kontrol: <code>usbip port</code> bağlı cihazı gösterir, <code>lsusb</code> onu yerel bir cihaz gibi listeler.
+H6|Tekrar ayırın (port numarası <code>usbip port</code> çıktısından, ilk cihaz port 0'dır):{P0}
+H7|Programı kurun:{P0}
+H8|<b>usbip-win2</b> kurun: yükleyiciyi <code>github.com/vadimgrn/usbip-win2/releases</code> adresinden indirip yönetici olarak çalıştırın.
+H9|Komut İstemi'ni veya PowerShell'i <b>yönetici olarak</b> açın.
+H10|Kontrol: <code>usbip port</code> cihazı gösterir, Aygıt Yöneticisi onu yerel bir cihaz gibi listeler.
+H11|Tekrar ayırın (port numarası <code>usbip port</code> çıktısından):{P0}
+H12|Bağlantıyı karta bilgisayar açar (TCP 3240), bu yüzden bilgisayarda güvenlik duvarı kuralı gerekmez. Cihaz karttan çıkarılırsa bilgisayar bağlantıyı keser. Yeniden taktıktan sonra <code>attach</code> komutunu tekrar çalıştırın.
+H13|Yardım
+H14|<b>Ana bilgisayar adı</b>: kartın ağdaki adı. Ayrıca mDNS ile <code>&lt;hostname&gt;.local</code> olarak duyurulur ve <code>_usbip._tcp</code> hizmetini yayınlar.
+H15|<b>DHCP</b> (varsayılan): adresi yönlendirici atar. Aynı kalması için yönlendiricide sabit bir atama yapın (Fritzbox: Ev ağı → Ağ → cihazı düzenle → «Bu cihaza her zaman aynı IPv4 adresini ata»).
+H16|<b>Statik IP</b>: DHCP işaretini kaldırın, adres, maske, ağ geçidi ve DNS girin. Adres boş olmalı ve yönlendiricinin DHCP aralığının dışında kalmalıdır.
+H17|Değişiklikler ancak <b>yeniden başlatmadan sonra</b> geçerli olur (Sistem → Yeniden başlat). Ardından sayfayı yeni adreste açın.
+H18|Bilgisayarda <code>.local</code> adlarını çözümleme:
+H19|Masaüstü sistemlerde genellikle zaten ayarlıdır (avahi). Değilse:
+H20|<code>/etc/nsswitch.conf</code> içinde <code>hosts:</code> satırına <code>resolve</code> öncesine <code>mdns_minimal [NOTFOUND=return]</code> ekleyin.
+H21|Windows 10/11 <code>.local</code> adlarını kendisi çözümler. Olmazsa IP adresini kullanın.
+H22|Parola olmadan arayüz salt okunurdur. Ayarlar ancak bir parola belirlendikten sonra değiştirilebilir.
+H23|Kutuyu işaretleyin, kullanıcı adını ve parolayı <b>iki kez</b> girin (yazım hatalarına karşı), ardından <b>Kimlik doğrulamayı kaydet</b>. Tarayıcı bundan sonra sayfayı açarken kimlik bilgilerini ister.
+H24|Parolayı değiştirme: yenisini iki alana da girin. İkisi de boş = mevcut parola kalır.
+H25|5 hatalı denemeden sonra kart bu bilgisayardan girişleri 30 saniye engeller.
+H26|HTTPS olmadan parola LAN'da şifresiz iletilir. Koruma: HTTPS («Şifreleme» bölümü) veya arayüzü WireGuard üzerinden açmak.
+H27|<b>Parolayı unuttum</b>: kart üzerinde <b>RESET'e art arda 5 kez</b> basın (basışlar arası 5&nbsp;sn'den az) – her şey fabrika ayarlarına döner. Ya da USB kablosuyla yalnızca ayarları silin, bellenim kalır: <code>idf.py -p /dev/ttyACM0 erase-region 0x9000 0x6000</code> (Windows: <code>-p COM3</code> vb.). Tüm ayarlar kaybolur (WireGuard ve TLS anahtarları dahil).
+H28|<b>Açık</b>: ağdaki herkes USB/IP'yi ve bu arayüzü kullanabilir.
+H29|<b>Kapalı (izin listesi)</b>: yalnızca listelenenler hem USB/IP'ye <b>hem de</b> bu arayüze erişebilir. Bir kayıt ya bir <b>IP</b> ya da bir <b>MAC adresidir</b>; kime erişim verdiğinizi bilmek için bir <b>yorum</b> eklenir.
+H30|<b>IP yerine MAC</b>: bilgisayar DHCP ile bazen başka bir IP alıyorsa kullanışlıdır. Yalnızca <b>aynı LAN</b>'daki bilgisayarlar için çalışır (kart MAC'i ARP tablosundan okur), WireGuard veya bir yönlendirici üzerinden çalışmaz. MAC taklit edilebilir – bu bir kolaylıktır, güçlü bir koruma değildir. Gerçek koruma için: parola, TLS veya WireGuard.
+H31|<b>Bu bilgisayarı ekle</b>, başında oturduğunuz bilgisayarın IP'sini veya MAC'ini alır (önce türü seçin).
+H32|Kaydettiğiniz bilgisayar listeye otomatik eklenir, böylece kendinizi dışarıda bırakamazsınız.
+H33|WireGuard ile bilgisayarın <b>tünel IP'sini</b> girin (örn. <code>10.8.0.1</code>), LAN adresini değil.
+H34|Kendi IP veya MAC adresinizi bulun:
+H35|Ethernet veya Wi-Fi bağdaştırıcısının «IPv4 Adresi» veya «Fiziksel Adres» (MAC) değeri.
+H36|Bu panel, kart bir <b>USB hub</b> algıladığı anda görünür.
+H37|<b>Sorun</b>: <b>YubiKey</b>, klavye, fare veya birçok USB seri adaptör gibi yavaş cihazlar (Full/Low Speed) bir USB 2.0 hub'ın arkasında çalışmaz. Bunun için ESP32-P4'ün USB kitaplığının bir «transaction translator»a ihtiyacı vardır, bu henüz yoktur. Olay günlüğünde o zaman «FS/LS device rejected (no TT support)» görünür.
+H38|<b>Hub uyumluluğu açık</b>: kartın USB portu yalnızca Full Speed (12&nbsp;Mbit/sn) ile çalışır. Böylece hub ve arkasındaki tüm cihazlar da Full Speed ile çalışır ve YubiKey &amp; benzerleri hub üzerinde çalışır.
+H39|<b>Dezavantaj</b>: USB bellekler ve kart okuyucular da yalnızca Full Speed ile çalışır – <b>5–6&nbsp;MB/sn yerine yaklaşık 1&nbsp;MB/sn</b>. Hub yoksa veya hub'da yalnızca hızlı cihazlar varsa: kapalı bırakın.
+H40|Ancak bir <b>yeniden başlatmadan</b> sonra geçerli olur (Kaydet &amp; yeniden başlat). Tüm bağlı cihazların bağlantısı kesilir.
+H41|Kendi güç kaynağı olmayan hub: cihazlar kısa süre kaybolabilir veya yavaş algılanabilir. Birden çok cihaz için güç adaptörlü bir hub kullanın.
+H42|Açıkken kart yalnızca listelenen cihazları sunar. Diğerlerini takıldıkları anda yok sayar.
+H43|Biçim <code>VID:PID</code>, onaltılık, virgülle ayrılmış. <code>*</code> bir üreticinin tüm ürünleri anlamına gelir, örn. <code>1050:*</code> = tüm YubiKey'ler.
+H44|Liste takma anında geçerlidir. Zaten takılı cihazları çıkarıp yeniden takın.
+H45|VID ve PID'yi bulun (veya her sistemde: <code>usbip list -r <span class="h-host"></span></code> bunları parantez içinde gösterir):
+H46|Cihazı bilgisayara takın, sonra:
+H47|Örnek: <code>ID 1050:0407 Yubico.com Yubikey 4/5</code>
+H48|Cihazı bilgisayara takın, sonra (<code>usbutils</code> paketi):
+H49|Aygıt Yöneticisi → cihaz → Özellikler → Ayrıntılar → «Donanım Kimlikleri». <code>VID_1050&amp;PID_0407</code>, <code>1050:0407</code> karşılığıdır.
+H50|Burada yerel ağ için iki ayrı işlev vardır. WireGuard üzerinden her ikisi de zaten şifrelidir, o zaman bu işlevler gerekmez.
+H51|<b>1. TLS üzerinden USB/IP</b>: kart ayrıca port 3241'de şifreli bağlantıları kabul eder. Bilgisayarda şifrelemeyi <b>stunnel</b> üstlenir ve usbip yalnızca <code>127.0.0.1</code> ile konuşur.
+H52|<b>Ek olarak</b>: şifresiz (3240) ve TLS (3241) aynı anda, geçiş için kullanışlı.
+H53|<b>Yalnızca TLS</b>: kart şifresiz bağlantıları reddeder, tüm bilgisayarların stunnel'e ihtiyacı vardır. <b>WireGuard tüneli</b> üzerinden gelen bağlantılara izin verilmeye devam eder, zaten şifrelidirler. Reddedilen bir bilgisayar <code>Exported Device List Request failed - Unknown Op Common Status</code> bildirir.
+H54|Cihaz listesinde «TLS» veya «WireGuard» yazılı bir kilit, şifreli USB/IP bağlantılarını gösterir.
+H55|Yukarıda <b>Ek olarak</b> seçin, ardından <b>Şifrelemeyi kaydet</b>.
+H56|stunnel kurun:{P0}
+H57|<b>Anahtarı ve stunnel yapılandırmasını göster</b> → Linux. <code>ciphers</code> satırına kadar olan bloğu <code>/etc/stunnel/usbip.conf</code> olarak, <code>Kennung:Schlüssel</code> satırını <code>/etc/stunnel/usbip.psk</code> olarak kaydedin:{P0}
+H58|stunnel'i başlatın (arka planda çalışmaya devam eder, <code>sudo pkill stunnel</code> ile durdurulur):{P0}<span class="note">Kalıcı olarak: <code>systemctl list-unit-files 'stunnel*'</code>. <code>stunnel@.service</code> şablonu varsa <code>sudo systemctl enable --now stunnel@usbip</code> tam olarak bu dosyayı başlatır.</span>
+H59|Cihazları stunnel üzerinden kullanın:{P0}
+H60|Bu çalışırsa <b>Yalnızca TLS</b>'ye geçin.
+H61|stunnel'i başlatın (arka planda çalışmaya devam eder, <code>sudo pkill stunnel</code> ile durdurulur):{P0}<span class="note">Kalıcı olarak: <code>stunnel.service</code> hizmeti <code>/etc/stunnel/stunnel.conf</code> dosyasını başlatır. Dosyayı yeniden adlandırıp hizmeti etkinleştirin: <code>sudo mv /etc/stunnel/usbip.conf /etc/stunnel/stunnel.conf &amp;&amp; sudo systemctl enable --now stunnel</code></span>
+H62|Windows için stunnel kurun: <code>stunnel.org</code> → Downloads → Windows yükleyicisi.
+H63|<b>Anahtarı ve stunnel yapılandırmasını göster</b> → Windows 10/11. İçeriği gösterildiği gibi <code>stunnel.conf</code> içine alın (içindeki örnek hizmetlerin yerine) ve <code>usbip.psk</code> oluşturun; ikisi de stunnel kurulumunun <code>config</code> klasöründe.
+H64|Yönetici olarak stunnel'i hizmet olarak kurup başlatın:{P0}
+H65|Cihazları stunnel üzerinden kullanın (yönetici olarak Komut İstemi):{P0}
+H66|<b>Yeni anahtar</b> yeni bir TLS anahtarı oluşturur. Ardından tüm bilgisayarlardaki <code>.psk</code> dosyasını değiştirin.
+H67|<b>2. Bu arayüz için HTTPS</b> (tüm sistemler):
+H68|«Bu arayüz için HTTPS» kutusunu işaretleyin, <b>Şifrelemeyi kaydet</b>, ardından Sistem → <b>Yeniden başlat</b>.
+H69|Sayfayı <code>https://<span class="h-host"></span>/</code> adresinde açın. Sertifika kendinden imzalı olduğu için tarayıcı bir kez uyarır.
+H70|Tarayıcının sertifika ayrıntılarında SHA-256 parmak izini yukarıdaki değerle karşılaştırın. Eşleşiyorsa istisnayı onaylayın (Firefox: «Gelişmiş…» → «Riski kabul et ve devam et»; <code>MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT</code> hata kodu burada normaldir).
+H71|HTTPS ile <code>http://</code> otomatik olarak <code>https://</code> adresine yönlendirilir. curl gibi araçlarla: <code>curl -k https://…</code>
+H72|<b>Yeni sertifika</b> yeni bir sertifika oluşturur. Bir sonraki yeniden başlatmadan sonra geçerli olur, o zaman tarayıcı yeniden uyarır.
+H73|Kart tüneli bir <b>karşı tarafa</b> kendisi kurar: bu bilgisayar, kendi sunucunuz veya Fritzbox gibi bir yönlendirici. Ardından USB/IP ve bu arayüze tünel adresinden <code><span class="h-wgaddr"></span></code> şifreli olarak erişilebilir. Sayfa bu yolla açıldığında sol altta «WireGuard ile korunuyor» yazar ve tünel istemcisi olan cihazlarda kilit bulunur.
+H74|Bu kılavuz <b>bu bilgisayarı karşı taraf olarak</b> aynı ağda kurar. Bilgisayar: <code>10.8.0.1</code>, kart: <code>10.8.0.2</code>, UDP port 51820.
+H75|Kurun:{P0}
+H76|Burada <b>Oluştur</b>'a tıklayın. Özel anahtar kartta kalır, yalnızca genel anahtar gösterilir.
+H77|Bilgisayar için bir anahtar oluşturup genel anahtarını gösterin:{P0}
+H78|Yapılandırmayı <code>sudoedit /etc/wireguard/wg-usbip.conf</code> ile oluşturun:{P0}
+H79|Güvenlik duvarında UDP 51820'yi açın (ufw):{P0}<span class="note">firewalld ile: <code>sudo firewall-cmd --permanent --add-port=51820/udp &amp;&amp; sudo firewall-cmd --reload</code>. Güvenlik duvarı yoksa bu adım gerekmez.</span>
+H80|Tüneli başlatın ve açılışta otomatik başlatın:{P0}
+H81|Buraya girin: <b>Karşı tarafın genel anahtarı</b> = 3. adımın çıktısı, <b>Karşı tarafın adresi</b> = bilgisayarın IP'si (<code>ip -4 -br addr</code>), <b>Karşı tarafın portu</b> 51820, <b>Tünel adresi</b> 10.8.0.2, <b>Ağ maskesi</b> 255.255.255.0, <b>Keepalive</b> 25, <b>WireGuard tünelini etkinleştir</b> işaretli, ardından <b>WireGuard'ı kaydet</b>.
+H82|Kontrol:{P0}
+H83|Arayüzü korumalı açın: <code>http://<span class="h-wgaddr"></span>/</code>
+H84|<b>Windows için WireGuard</b> kurun: <code>wireguard.com/install</code>.
+H85|WireGuard uygulamasında: «Tünel ekle» yanındaki ok → «Boş tünel ekle…», ad <code>wg-usbip</code>. Uygulama kendisi bir anahtar oluşturur. Gösterilen <b>genel anahtarı</b> not edin. Mevcut <code>PrivateKey = …</code> satırının altına ekleyin:{P0}Kaydedin, ardından <b>Etkinleştir</b>.
+H86|Güvenlik duvarında UDP 51820'yi açın (yönetici olarak PowerShell):{P0}
+H87|Buraya girin: <b>Karşı tarafın genel anahtarı</b> = 3. adımdaki anahtar, <b>Karşı tarafın adresi</b> = bilgisayarın IP'si (<code>ipconfig</code>), <b>Karşı tarafın portu</b> 51820, <b>Tünel adresi</b> 10.8.0.2, <b>Ağ maskesi</b> 255.255.255.0, <b>Keepalive</b> 25, <b>WireGuard tünelini etkinleştir</b> işaretli, ardından <b>WireGuard'ı kaydet</b>.
+H88|Kontrol: uygulamada «Son el sıkışma» görünür. Sonra (yönetici olarak):{P0}
+H89|<b>İnternet üzerinden</b>: karşı taraf o zaman genel adresi olan bir sunucu veya yönlendiricidir. Karşı tarafın adresi onun alan adı veya IP'sidir, örn. Fritzbox VPN'i İnternet → İzinler → VPN (WireGuard) altında. <b>Karşı taraf için yapılandırma</b> uygun <code>[Peer]</code> bloğunu gösterir. Tünel ağı yerel ağlarla çakışmamalıdır. «Kapalı» erişim modunda bilgisayarın tünel IP'sine izin verin. «waiting for time sync» durumu şu demektir: kart henüz bir NTP sunucusuna ulaşamıyor (internet gerekli).
+H90|<b>El sıkışma yok</b> («connecting · no handshake»): genellikle bilgisayarın güvenlik duvarı UDP 51820'yi engeller veya bir anahtar karışmıştır. <code>sudo tcpdump -ni any udp port 51820</code> ile kontrol edin: karttan paket geliyorsa sorun anahtarlardadır. Tünel <b>bilgisayarda</b> yeniden başlatıldıktan sonra kart ancak en fazla yaklaşık 2 dakika sonra yeniden bağlanır. Tüneli burada kapatıp açmak daha hızlıdır.
+H91|<b>Güç tasarrufu</b> (fabrikada açık): bağlı cihaz yokken CPU 400&nbsp;MHz yerine 100&nbsp;MHz'de çalışır. Bir cihaz bağlanır bağlanmaz tam hıza çıkar, böylece aktarımlar yavaşlamaz. İşaret kaldırılırsa kart sürekli 400&nbsp;MHz'de çalışır. Yeniden başlatmadan hemen etkili olur. Açıkken sol altta yeşil yaprak görünür.
+H92|<b>Yeniden başlat</b>: kartı yeniden başlatır. Bağlı USB cihazlarının tüm bilgisayarlarda bağlantısı kesilir ve ardından <code>attach</code> ile yeniden bağlanmaları gerekir.
+H93|<b>Fabrika ayarlarına dön</b>: <b>tüm</b> ayarları siler (ağ, parola, erişim listesi, cihaz filtresi, WireGuard ve TLS anahtarları) ve yeniden başlatır. Ardından parolasız DHCP geçerli olur.
+H94|<b>Arayüz olmadan sıfırlama</b>: karttaki <b>RESET</b> düğmesine <b>art arda 5 kez</b> basın, iki basış arası 5&nbsp;sn'den az (ideal: saniyede yaklaşık bir kez). 5. açılışta kart, fabrika ayarlarına dönüşteki gibi tüm ayarları siler. Gücü kapatıp açmak da aynı şekilde sayılır. Tek bir sıfırlama veya elektrik kesintisi bir şey yapmaz; çökmeler sayılmaz. BOOT düğmesi bunun için kullanılamaz (açılışta basılıysa = flash modu, çalışırken pini Ethernet kullanır).
+H95|<b>Bellenim güncellemesi</b>: USB kablosuyla <code>idf.py -p /dev/ttyACM0 flash</code> (Windows: <code>-p COM3</code> vb.). Ayarlar korunur.
+U229|USB veriyolu sıfırlansın mı? Tüm cihazların bağlantısı kesilip yeniden algılanır, bağlı istemcilerin bağlantısı kesilir.
+U230|Yazılım bileşenleri
+U231|Kart üzerinde
+U232|Bileşen
+U233|Sürüm
+U234|Lisans
+U235|Bilgisayarda test edilen
+U236|Program
+U237|Kullanım
+U238|USB/IP istemcisi
+U239|henüz test edilmedi
+U240|USB/IP istemcisi (Windows)
+U241|TLS üzerinden USB/IP
+U242|WireGuard karşı tarafı
+U243|Web arayüzü, HTTPS
+U244|Test bilgisayarı

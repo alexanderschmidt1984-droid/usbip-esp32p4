@@ -51,10 +51,141 @@
     }
 
     /* ================================================================
+     * Languages. UI strings are looked up by their source text (as written
+     * in index.html / here), help sections are replaced as a whole. The
+     * language files come from /lang?l=xx and are only loaded on demand.
+     * ================================================================ */
+
+    var LANGS = [['de', 'Deutsch'], ['en', 'English'], ['fr', 'Français'], ['es', 'Español'],
+                 ['it', 'Italiano'], ['pt', 'Português'], ['da', 'Dansk'], ['sv', 'Svenska'],
+                 ['ru', 'Русский'], ['uk', 'Українська'], ['tr', 'Türkçe'], ['ar', 'العربية']];
+    var I18N = { lang: '', ui: {}, help: {} };
+    var helpUnits = null;      /* leaf blocks of the help sections, see i18nCaptureHelp */
+    var I18N_SKIP = { SCRIPT: 1, STYLE: 1, PRE: 1, CODE: 1, svg: 1, SVG: 1, TEXTAREA: 1 };
+
+    window._t = function(s) { return t(s); };
+    function t(s) {
+        var v = I18N.ui[s];
+        return v === undefined || v === '' ? s : v;
+    }
+
+    function i18nSkip(el) {
+        for (; el && el !== document.body; el = el.parentNode) {
+            if (I18N_SKIP[el.nodeName] || (el.hasAttribute && el.hasAttribute('data-help'))) return true;
+            if (el.getAttribute && el.getAttribute('translate') === 'no') return true;   /* names, versions */
+            if (el.className && typeof el.className === 'string' && /(^| )h-/.test(el.className)) return true;
+        }
+        return false;
+    }
+
+    /* Help is translated per leaf block (li, p, summary): key = its inner HTML
+     * with <pre> command blocks replaced by {P0}, {P1}... so commands are never
+     * part of a translation. Captured once, before the live values (host
+     * name, tunnel address) are filled into the help. */
+    function i18nCaptureHelp() {
+        if (helpUnits) return;
+        helpUnits = [];
+        var els = document.querySelectorAll('[data-help] li, [data-help] p, [data-help] summary');
+        for (var i = 0; i < els.length; i++) {
+            var el = els[i];
+            if (el.querySelector('li, p')) continue;          /* not a leaf block */
+            el._hsrc = el.innerHTML;
+            el._hpre = [];
+            var pres = el.querySelectorAll('pre');
+            for (var k = 0; k < pres.length; k++) el._hpre.push(pres[k].outerHTML);
+            var n = 0;
+            el._hkey = el.innerHTML.replace(/<pre>[\s\S]*?<\/pre>/g, function() { return '{P' + (n++) + '}'; })
+                                   .replace(/\s+/g, ' ').trim();
+            helpUnits.push(el);
+        }
+    }
+
+    function i18nApplyDom() {
+        var w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+        var n;
+        while ((n = w.nextNode())) {
+            if (n._src === undefined) {
+                if (!/[A-Za-zÀ-ž]{2}/.test(n.nodeValue) || i18nSkip(n.parentNode)) { n._src = null; continue; }
+                n._src = n.nodeValue;
+            }
+            if (n._src === null) continue;
+            var m = /^(\s*)([\s\S]*?)(\s*)$/.exec(n._src);
+            var key = m[2].replace(/\s+/g, ' ');
+            n.nodeValue = m[1] + t(key) + m[3];
+        }
+        var els = document.querySelectorAll('[placeholder],[title]');
+        for (var i = 0; i < els.length; i++) {
+            var el = els[i];
+            if (i18nSkip(el)) continue;
+            if (!el._srcAttr) el._srcAttr = { placeholder: el.getAttribute('placeholder'), title: el.getAttribute('title') };
+            if (el._srcAttr.placeholder) el.setAttribute('placeholder', t(el._srcAttr.placeholder));
+            if (el._srcAttr.title) el.setAttribute('title', t(el._srcAttr.title));
+        }
+        i18nCaptureHelp();
+        for (var j = 0; j < helpUnits.length; j++) {
+            var u = helpUnits[j];
+            var tr = I18N.help[u._hkey];
+            u.innerHTML = tr ? tr.replace(/\{P(\d+)\}/g, function(_, k) { return u._hpre[k] || ''; })
+                             : u._hsrc;
+        }
+        if (typeof setHelpOs === 'function') setHelpOs(helpOs);
+        setAllText('h-host', location.hostname);
+        fillHelpValues(lastWgInfo);
+    }
+
+    function i18nPick() {
+        var saved = null;
+        try { saved = localStorage.getItem('usbip-lang'); } catch (e) { /* storage blocked */ }
+        var codes = LANGS.map(function(l) { return l[0]; });
+        if (saved && codes.indexOf(saved) !== -1) return saved;
+        var prefs = navigator.languages || [navigator.language || 'en'];
+        for (var i = 0; i < prefs.length; i++) {
+            var c = String(prefs[i]).slice(0, 2).toLowerCase();
+            if (codes.indexOf(c) !== -1) return c;
+        }
+        return 'en';
+    }
+
+    function setLanguage(code, remember) {
+        if (remember) {
+            try { localStorage.setItem('usbip-lang', code); } catch (e) { /* storage blocked */ }
+        }
+        document.documentElement.lang = code;
+        document.documentElement.dir = code === 'ar' ? 'rtl' : 'ltr';
+        var $sel = document.getElementById('lang-select');
+        if ($sel) $sel.value = code;
+        /* Apply the last copy of this language at once (no flash of the source
+         * language), then the current file from the board. */
+        var cached = null;
+        try { cached = JSON.parse(localStorage.getItem('usbip-lang-' + code) || 'null'); } catch (e) { /* none */ }
+        if (cached) {
+            I18N = { lang: code, ui: cached.ui || {}, help: cached.help || {} };
+            i18nApplyDom();
+        }
+        return fetch('/lang?l=' + code)
+            .then(function(r) { return r.ok ? r.text() : null; })
+            .catch(function() { return null; })
+            .then(function(txt) {
+                var d = null;
+                try { d = txt ? JSON.parse(txt) : null; } catch (e) { d = null; }
+                if (!d) d = cached || { ui: {}, help: {} };
+                else { try { localStorage.setItem('usbip-lang-' + code, txt); } catch (e) { /* full/blocked */ } }
+                I18N = { lang: code, ui: d.ui || {}, help: d.help || {} };
+                i18nApplyDom();
+                applyTheme(theme);
+                if (activeSection === 'settings') loadAllSettings();
+                if (lastStats) handleStats(lastStats);
+            });
+    }
+
+    /* ================================================================
      * WireGuard status (sidebar badge, device client badges)
      * ================================================================ */
 
+    var lastWgInfo = null;
+
     function updateWgBadge(wg, self) {
+        lastWgInfo = wg;
         var $b = document.getElementById('wg-badge');
         var $t = document.getElementById('wg-badge-text');
         if (!$b || !$t) return;
@@ -63,38 +194,38 @@
         if (!(wg && wg.up && self) && https) {
             $b.style.display = '';
             $b.className = 'ws-status wg-badge secure';
-            $t.textContent = 'Über HTTPS verschlüsselt';
-            $b.title = 'Diese Web-UI-Sitzung ist per HTTPS (TLS) verschlüsselt.';
+            $t.textContent = t('Über HTTPS verschlüsselt');
+            $b.title = t('Diese Web-UI-Sitzung ist per HTTPS (TLS) verschlüsselt.');
             return;
         }
         if (!wg || !wg.enabled) { $b.style.display = 'none'; return; }
         $b.style.display = '';
         if (wg.up && self) {
             $b.className = 'ws-status wg-badge secure';
-            $t.textContent = 'Über WireGuard geschützt';
-            $b.title = 'Diese Web-UI-Sitzung läuft durch den WireGuard-Tunnel (' + wg.addr + ').';
+            $t.textContent = t('Über WireGuard geschützt');
+            $b.title = t('Diese Web-UI-Sitzung läuft durch den WireGuard-Tunnel') + ' (' + wg.addr + ').';
         } else if (wg.up) {
             $b.className = 'ws-status wg-badge lan';
-            $t.textContent = 'WireGuard aktiv · Sitzung über LAN';
-            $b.title = 'Der Tunnel steht, diese Sitzung nutzt ihn aber nicht. Geschützt: http://' + wg.addr + '/';
+            $t.textContent = t('WireGuard aktiv · Sitzung über LAN');
+            $b.title = t('Der Tunnel steht, diese Sitzung nutzt ihn aber nicht. Geschützt:') + ' http://' + wg.addr + '/';
         } else {
             $b.className = 'ws-status wg-badge busy';
             $t.textContent = 'WireGuard: ' + (wg.state || '?');
-            $b.title = 'Tunnel eingeschaltet, aber nicht verbunden.';
+            $b.title = t('Tunnel eingeschaltet, aber nicht verbunden.');
         }
     }
 
     /* tr = transport reported by the board: 0 plain, 1 TLS (stunnel), 2 WireGuard */
     function clientBadge(tr, str) {
         if (tr === 2) {
-            return '<span class="badge badge-wg" title="USB/IP-Verbindung läuft durch den WireGuard-Tunnel">&#128274; ' +
+            return '<span class="badge badge-wg" title="' + t('USB/IP-Verbindung läuft durch den WireGuard-Tunnel') + '">&#128274; ' +
                    esc(str) + ' · WireGuard</span>';
         }
         if (tr === 1) {
-            return '<span class="badge badge-wg" title="USB/IP-Verbindung ist per TLS verschlüsselt (stunnel)">&#128274; ' +
+            return '<span class="badge badge-wg" title="' + t('USB/IP-Verbindung ist per TLS verschlüsselt (stunnel)') + '">&#128274; ' +
                    esc(str) + ' · TLS</span>';
         }
-        return '<span class="badge badge-state" title="Unverschlüsselte USB/IP-Verbindung">' + esc(str) + '</span>';
+        return '<span class="badge badge-state" title="' + t('Unverschlüsselte USB/IP-Verbindung') + '">' + esc(str) + '</span>';
     }
 
     /* ================================================================
@@ -116,7 +247,7 @@
         var $icon = document.getElementById('theme-toggle-icon');
         var $text = document.getElementById('theme-toggle-text');
         if ($icon) $icon.textContent = THEME_ICON[t];
-        if ($text) $text.textContent = THEME_LABEL[t];
+        if ($text) $text.textContent = window._t(THEME_LABEL[t]);
         if (typeof drawBandwidthChart === 'function') drawBandwidthChart();
     }
 
@@ -369,6 +500,8 @@
      * WebSocket connection
      * ================================================================ */
 
+    var wsLostTimer = null;
+
     function wsConnect() {
         if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) {
             return;
@@ -377,8 +510,13 @@
         ws = new WebSocket(proto + '//' + location.host + '/ws');
 
         ws.onopen = function() {
+            if (wsLostTimer) {
+                clearTimeout(wsLostTimer);
+                wsLostTimer = null;
+            }
+            $wsDot.classList.remove('connecting');
             $wsDot.classList.add('connected');
-            $wsText.textContent = 'Connected';
+            $wsText.textContent = t('Connected');
             if (wsReconnectTimer) {
                 clearTimeout(wsReconnectTimer);
                 wsReconnectTimer = null;
@@ -386,8 +524,18 @@
         };
 
         ws.onclose = function() {
+            /* Grey "reconnecting" first; red only if it stays down (a page
+             * reload or a short drop should not look like an error). */
             $wsDot.classList.remove('connected');
-            $wsText.textContent = 'Disconnected';
+            $wsDot.classList.add('connecting');
+            $wsText.textContent = t('Verbinde…');
+            if (!wsLostTimer) {
+                wsLostTimer = setTimeout(function() {
+                    wsLostTimer = null;
+                    $wsDot.classList.remove('connecting');
+                    $wsText.textContent = t('Disconnected');
+                }, 5000);
+            }
             ws = null;
             if (!wsReconnectTimer) {
                 wsReconnectTimer = setTimeout(function() {
@@ -506,9 +654,9 @@
         /* Power save badge: lit whenever the setting is on (MHz = current mode). */
         $pmBadge.style.display = msg.pm ? '' : 'none';
         if (msg.pm) {
-            $pmBadgeText.textContent = 'Energiesparen an' + (msg.cpu_mhz ? ' \u00b7 ' + msg.cpu_mhz + ' MHz' : '');
+            $pmBadgeText.textContent = t('Energiesparen an') + (msg.cpu_mhz ? ' \u00b7 ' + msg.cpu_mhz + ' MHz' : '');
         }
-        $sidebarUptime.textContent = 'Uptime: ' + formatUptime(msg.uptime_sec);
+        $sidebarUptime.textContent = t('Uptime') + ': ' + formatUptime(msg.uptime_sec);
 
         /* Memory */
         var usedInternal = TOTAL_INTERNAL_HEAP - msg.free_internal;
@@ -651,7 +799,7 @@
 
     function updateDeviceList(devices) {
         if (!devices.length) {
-            $deviceList.innerHTML = '<div class="empty-state">No USB devices connected</div>';
+            $deviceList.innerHTML = '<div class="empty-state">' + t('No USB devices connected') + '</div>';
             return;
         }
 
@@ -678,7 +826,7 @@
             var spdStr = speedStr(d.speed);
             var spdCls = speedClass(d.speed);
             var stCls = stateClass(d.state);
-            var stStr = stateStr(d.state);
+            var stStr = t(stateStr(d.state));
             var clientStr = d.client_ip ? ip4str(d.client_ip) : '';
 
             /* Determine primary class from icl */
@@ -695,7 +843,7 @@
                 }
             }
 
-            var devName = d.prod || d.mfr || primaryClass || 'Unknown Device';
+            var devName = d.prod || d.mfr || primaryClass || t('Unknown Device');
 
             var card = existingMap[d.idx];
             if (card) {
@@ -759,7 +907,7 @@
                         '<div class="expand-icon">&#9660;</div>' +
                     '</div>' +
                     '<div class="device-card-body" id="dev-body-' + d.idx + '">' +
-                        '<div class="text-dim" style="padding:1rem 0;text-align:center">Loading...</div>' +
+                        '<div class="text-dim" style="padding:1rem 0;text-align:center">' + t('Loading...') + '</div>' +
                     '</div>';
 
                 $deviceList.appendChild(card);
@@ -801,7 +949,7 @@
     function fetchDeviceDetail(idx) {
         var body = document.getElementById('dev-body-' + idx);
         if (!body) return;
-        body.innerHTML = '<div class="text-dim" style="padding:1rem 0;text-align:center">Loading...</div>';
+        body.innerHTML = '<div class="text-dim" style="padding:1rem 0;text-align:center">' + t('Loading...') + '</div>';
 
         fetch('/api/devices/detail?idx=' + idx)
             .then(function(r) { return r.json(); })
@@ -809,7 +957,7 @@
                 renderDeviceDetail(idx, detail);
             })
             .catch(function(err) {
-                body.innerHTML = '<div class="text-dim" style="padding:1rem 0;text-align:center">Failed to load details</div>';
+                body.innerHTML = '<div class="text-dim" style="padding:1rem 0;text-align:center">' + t('Failed to load details') + '</div>';
             });
     }
 
@@ -820,30 +968,30 @@
         var html = '';
 
         /* Device info rows */
-        html += '<div class="device-detail-row"><span class="detail-label">Bus ID</span><span class="detail-value">' + esc(d.path) + '</span></div>';
-        html += '<div class="device-detail-row"><span class="detail-label">VID:PID</span><span class="detail-value">' + hex4(d.vid) + ':' + hex4(d.pid) + '</span></div>';
-        html += '<div class="device-detail-row"><span class="detail-label">BCD Device</span><span class="detail-value">' + hex4(d.bcd_device || 0) + '</span></div>';
-        html += '<div class="device-detail-row"><span class="detail-label">Class</span><span class="detail-value">' + (USB_CLASS[d['class']] || ('0x' + hex4(d['class'] || 0))) + '</span></div>';
-        html += '<div class="device-detail-row"><span class="detail-label">Speed</span><span class="detail-value">' + esc(d.speed) + '</span></div>';
-        html += '<div class="device-detail-row"><span class="detail-label">State</span><span class="detail-value">' + esc(d.state) + '</span></div>';
+        html += '<div class="device-detail-row"><span class="detail-label">' + t('Bus ID') + '</span><span class="detail-value">' + esc(d.path) + '</span></div>';
+        html += '<div class="device-detail-row"><span class="detail-label">' + t('VID:PID') + '</span><span class="detail-value">' + hex4(d.vid) + ':' + hex4(d.pid) + '</span></div>';
+        html += '<div class="device-detail-row"><span class="detail-label">' + t('BCD Device') + '</span><span class="detail-value">' + hex4(d.bcd_device || 0) + '</span></div>';
+        html += '<div class="device-detail-row"><span class="detail-label">' + t('Class') + '</span><span class="detail-value">' + (USB_CLASS[d['class']] || ('0x' + hex4(d['class'] || 0))) + '</span></div>';
+        html += '<div class="device-detail-row"><span class="detail-label">' + t('Speed') + '</span><span class="detail-value">' + esc(d.speed) + '</span></div>';
+        html += '<div class="device-detail-row"><span class="detail-label">' + t('State') + '</span><span class="detail-value">' + esc(t(d.state || '')) + '</span></div>';
         if (d.client_ip) {
-            html += '<div class="device-detail-row"><span class="detail-label">Client</span><span class="detail-value">' + esc(d.client_ip) + '</span></div>';
+            html += '<div class="device-detail-row"><span class="detail-label">' + t('Client') + '</span><span class="detail-value">' + esc(d.client_ip) + '</span></div>';
         }
-        html += '<div class="device-detail-row"><span class="detail-label">Manufacturer</span><span class="detail-value">' + esc(d.manufacturer || '--') + '</span></div>';
-        html += '<div class="device-detail-row"><span class="detail-label">Product</span><span class="detail-value">' + esc(d.product || '--') + '</span></div>';
-        html += '<div class="device-detail-row"><span class="detail-label">Serial</span><span class="detail-value">' + esc(d.serial || '--') + '</span></div>';
+        html += '<div class="device-detail-row"><span class="detail-label">' + t('Manufacturer') + '</span><span class="detail-value">' + esc(d.manufacturer || '--') + '</span></div>';
+        html += '<div class="device-detail-row"><span class="detail-label">' + t('Product') + '</span><span class="detail-value">' + esc(d.product || '--') + '</span></div>';
+        html += '<div class="device-detail-row"><span class="detail-label">' + t('Serial') + '</span><span class="detail-value">' + esc(d.serial || '--') + '</span></div>';
 
         /* Stats */
-        html += '<div class="device-detail-row"><span class="detail-label">Bytes In</span><span class="detail-value">' + (d.bytes_in || 0).toLocaleString() + '</span></div>';
-        html += '<div class="device-detail-row"><span class="detail-label">Bytes Out</span><span class="detail-value">' + (d.bytes_out || 0).toLocaleString() + '</span></div>';
-        html += '<div class="device-detail-row"><span class="detail-label">URBs OK</span><span class="detail-value">' + (d.urbs_completed || 0).toLocaleString() + '</span></div>';
-        html += '<div class="device-detail-row"><span class="detail-label">URBs Failed</span><span class="detail-value">' + (d.urbs_failed || 0).toLocaleString() + '</span></div>';
+        html += '<div class="device-detail-row"><span class="detail-label">' + t('Bytes In') + '</span><span class="detail-value">' + (d.bytes_in || 0).toLocaleString() + '</span></div>';
+        html += '<div class="device-detail-row"><span class="detail-label">' + t('Bytes Out') + '</span><span class="detail-value">' + (d.bytes_out || 0).toLocaleString() + '</span></div>';
+        html += '<div class="device-detail-row"><span class="detail-label">' + t('URBs OK') + '</span><span class="detail-value">' + (d.urbs_completed || 0).toLocaleString() + '</span></div>';
+        html += '<div class="device-detail-row"><span class="detail-label">' + t('URBs Failed') + '</span><span class="detail-value">' + (d.urbs_failed || 0).toLocaleString() + '</span></div>';
 
         /* Interfaces table */
         if (d.interfaces && d.interfaces.length) {
-            html += '<div style="margin-top:0.75rem;font-size:0.8125rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em">Interfaces</div>';
+            html += '<div style="margin-top:0.75rem;font-size:0.8125rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em">' + t('Interfaces') + '</div>';
             html += '<table style="width:100%;font-size:0.8125rem;border-collapse:collapse;margin-top:0.375rem">';
-            html += '<tr style="color:var(--text-dim);text-align:left"><th style="padding:0.25rem 0.5rem;font-weight:500">#</th><th style="padding:0.25rem 0.5rem;font-weight:500">Class</th><th style="padding:0.25rem 0.5rem;font-weight:500">Sub</th><th style="padding:0.25rem 0.5rem;font-weight:500">Proto</th><th style="padding:0.25rem 0.5rem;font-weight:500">EPs</th></tr>';
+            html += '<tr style="color:var(--text-dim);text-align:left"><th style="padding:0.25rem 0.5rem;font-weight:500">#</th><th style="padding:0.25rem 0.5rem;font-weight:500">' + t('Class') + '</th><th style="padding:0.25rem 0.5rem;font-weight:500">' + t('Sub') + '</th><th style="padding:0.25rem 0.5rem;font-weight:500">' + t('Proto') + '</th><th style="padding:0.25rem 0.5rem;font-weight:500">' + t('EPs') + '</th></tr>';
             for (var ii = 0; ii < d.interfaces.length; ii++) {
                 var iface = d.interfaces[ii];
                 var cls = USB_CLASS[iface['class']] || ('0x' + ('00' + iface['class'].toString(16)).slice(-2));
@@ -860,9 +1008,9 @@
 
         /* Endpoints table */
         if (d.endpoints && d.endpoints.length) {
-            html += '<div style="margin-top:0.75rem;font-size:0.8125rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em">Endpoints</div>';
+            html += '<div style="margin-top:0.75rem;font-size:0.8125rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em">' + t('Endpoints') + '</div>';
             html += '<table style="width:100%;font-size:0.8125rem;border-collapse:collapse;margin-top:0.375rem">';
-            html += '<tr style="color:var(--text-dim);text-align:left"><th style="padding:0.25rem 0.5rem;font-weight:500">Addr</th><th style="padding:0.25rem 0.5rem;font-weight:500">Dir</th><th style="padding:0.25rem 0.5rem;font-weight:500">Type</th><th style="padding:0.25rem 0.5rem;font-weight:500">MaxPkt</th><th style="padding:0.25rem 0.5rem;font-weight:500">Interval</th></tr>';
+            html += '<tr style="color:var(--text-dim);text-align:left"><th style="padding:0.25rem 0.5rem;font-weight:500">' + t('Addr') + '</th><th style="padding:0.25rem 0.5rem;font-weight:500">' + t('Dir') + '</th><th style="padding:0.25rem 0.5rem;font-weight:500">' + t('Type') + '</th><th style="padding:0.25rem 0.5rem;font-weight:500">' + t('MaxPkt') + '</th><th style="padding:0.25rem 0.5rem;font-weight:500">' + t('Interval') + '</th></tr>';
             for (var ei = 0; ei < d.endpoints.length; ei++) {
                 var ep = d.endpoints[ei];
                 html += '<tr style="border-top:1px solid var(--border-light)">' +
@@ -879,14 +1027,19 @@
         /* Action buttons */
         html += '<div class="device-card-actions">';
         if (d.state === 'Exported') {
-            html += '<button class="btn btn-sm btn-secondary" onclick="window._deviceAction(\'disconnect\',' + idx + ')">Disconnect Client</button>';
+            html += '<button class="btn btn-sm btn-secondary" onclick="window._deviceAction(\'disconnect\',' + idx + ')">' + t('Disconnect Client') + '</button>';
         }
-        html += '<button class="btn btn-sm btn-secondary" onclick="window._deviceAction(\'export\',' + idx + ')">Toggle Export</button>';
-        html += '<button class="btn btn-sm btn-danger" onclick="if(confirm(\'Eject this device?\'))window._deviceAction(\'disconnect\',' + idx + ')">Eject</button>';
+        html += '<button class="btn btn-sm btn-secondary" onclick="window._deviceAction(\'export\',' + idx + ')">' + t('Toggle Export') + '</button>';
+        html += '<button class="btn btn-sm btn-danger" onclick="window._ejectDevice(' + idx + ')">' + t('Eject') + '</button>';
         html += '</div>';
 
         body.innerHTML = html;
     }
+
+    /* Eject asks first; a translated question must not end up inside the onclick attribute */
+    window._ejectDevice = function(idx) {
+        if (confirm(t('Eject this device?'))) window._deviceAction('disconnect', idx);
+    };
 
     /* Device action handler */
     window._deviceAction = function(action, idx) {
@@ -895,17 +1048,17 @@
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (data.ok) {
-                    toast('Action completed', 'success');
+                    toast(t('Action completed'), 'success');
                     /* Re-fetch detail if still expanded */
                     if (expandedDevIdx === idx) {
                         setTimeout(function() { fetchDeviceDetail(idx); }, 300);
                     }
                 } else {
-                    toast(data.error || 'Action failed', 'error');
+                    toast(data.error || t('Action failed'), 'error');
                 }
             })
             .catch(function() {
-                toast('Request failed', 'error');
+                toast(t('Request failed'), 'error');
             });
     };
 
@@ -926,7 +1079,7 @@
     function buildTopology(devices) {
         var C = themeColors();
         if (!devices || !devices.length) {
-            $topologySvg.innerHTML = '<svg viewBox="0 0 500 100"><text x="250" y="50" text-anchor="middle" fill="' + C.dim + '" font-family="system-ui" font-size="12">No devices connected</text></svg>';
+            $topologySvg.innerHTML = '<svg viewBox="0 0 500 100"><text x="250" y="50" text-anchor="middle" fill="' + C.dim + '" font-family="system-ui" font-size="12">' + t('No devices connected') + '</text></svg>';
             return;
         }
 
@@ -1249,12 +1402,12 @@
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.ok) {
-                toast('Network settings saved. Reboot to apply.', 'success');
+                toast(t('Network settings saved. Reboot to apply.'), 'success');
             } else {
-                toast(data.error || 'Save failed', 'error');
+                toast(data.error || t('Save failed'), 'error');
             }
         })
-        .catch(function() { toast('Request failed', 'error'); });
+        .catch(function() { toast(t('Request failed'), 'error'); });
     };
 
     /* --- Auth --- */
@@ -1281,7 +1434,7 @@
                 if ($setAuthUser) $setAuthUser.value = data.username || '';
                 if ($setAuthPass) {
                     $setAuthPass.value = '';
-                    $setAuthPass.placeholder = data.has_password ? '(unchanged)' : 'required';
+                    $setAuthPass.placeholder = data.has_password ? t('(unchanged)') : t('required');
                 }
                 var $hint = document.getElementById('auth-hint');
                 if ($hint) $hint.style.display = data.has_password ? 'none' : 'block';
@@ -1292,7 +1445,7 @@
     window.saveAuth = function() {
         var $pass2 = document.getElementById('set-auth-pass2');
         if ($setAuthPass.value !== $pass2.value) {
-            toast('Passwörter stimmen nicht überein', 'error');
+            toast(t('Passwörter stimmen nicht überein'), 'error');
             $pass2.focus();
             return;
         }
@@ -1309,15 +1462,15 @@
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.ok) {
-                toast('Auth settings saved', 'success');
+                toast(t('Auth settings saved'), 'success');
                 $setAuthPass.value = '';
                 $pass2.value = '';
                 loadAuthSettings();
             } else {
-                toast(data.error || 'Save failed', 'error');
+                toast(data.error || t('Save failed'), 'error');
             }
         })
-        .catch(function() { toast('Request failed', 'error'); });
+        .catch(function() { toast(t('Request failed'), 'error'); });
     };
 
     /* --- Device filter (VID:PID allowlist) --- */
@@ -1340,7 +1493,7 @@
             enabled: document.getElementById('devf-enabled').checked,
             list: document.getElementById('devf-list').value.trim()
         };
-        if (body.enabled && !confirm('Apply device filter? The USB bus is reset and attached clients are dropped.')) return;
+        if (body.enabled && !confirm(t('Apply device filter? The USB bus is reset and attached clients are dropped.'))) return;
         fetch('/api/settings/devfilter', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1349,13 +1502,13 @@
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.ok) {
-                toast('Device filter saved', 'success');
+                toast(t('Device filter saved'), 'success');
                 loadDevFilter();
             } else {
-                toast(data.error || 'Save failed', 'error');
+                toast(data.error || t('Save failed'), 'error');
             }
         })
-        .catch(function() { toast('Request failed', 'error'); });
+        .catch(function() { toast(t('Request failed'), 'error'); });
     };
 
     /* --- USB hub compatibility (Full Speed only) --- */
@@ -1367,8 +1520,8 @@
                 document.getElementById('usb-hub-panel').style.display =
                     d.supported && (d.hub_seen || d.fsls_saved) ? '' : 'none';
                 document.getElementById('set-fsls').checked = !!d.fsls_saved;
-                var state = d.fsls_active ? 'Aktiv: USB läuft mit Full Speed.' : 'Aktiv: USB läuft mit High Speed.';
-                if (d.fsls_saved !== d.fsls_active) state += ' Neue Einstellung gilt nach dem Neustart.';
+                var state = d.fsls_active ? t('Aktiv: USB läuft mit Full Speed.') : t('Aktiv: USB läuft mit High Speed.');
+                if (d.fsls_saved !== d.fsls_active) state += ' ' + t('Neue Einstellung gilt nach dem Neustart.');
                 document.getElementById('usb-fsls-state').textContent = state;
             })
             .catch(function() { /* ignore */ });
@@ -1376,7 +1529,7 @@
 
     window.saveUsbHub = function() {
         var on = document.getElementById('set-fsls').checked;
-        if (!confirm('Einstellung speichern und Board neu starten? Eingebundene Geräte werden getrennt.')) return;
+        if (!confirm(t('Einstellung speichern und Board neu starten? Eingebundene Geräte werden getrennt.'))) return;
         fetch('/api/settings/usb', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1384,11 +1537,11 @@
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
-            if (!data.ok) { toast(data.error || 'Save failed', 'error'); return; }
-            toast('Gespeichert - Board startet neu', 'success');
+            if (!data.ok) { toast(data.error || t('Save failed'), 'error'); return; }
+            toast(t('Gespeichert - Board startet neu'), 'success');
             fetch('/api/system/restart', { method: 'POST' });
         })
-        .catch(function() { toast('Request failed', 'error'); });
+        .catch(function() { toast(t('Request failed'), 'error'); });
     };
 
     /* --- Power save --- */
@@ -1413,13 +1566,13 @@
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.ok) {
-                toast(on ? 'Energiesparen an' : 'Energiesparen aus - volle Leistung', 'success');
+                toast(on ? t('Energiesparen an') : t('Energiesparen aus - volle Leistung'), 'success');
             } else {
-                toast(data.error || 'Save failed', 'error');
+                toast(data.error || t('Save failed'), 'error');
                 loadPower();
             }
         })
-        .catch(function() { toast('Request failed', 'error'); loadPower(); });
+        .catch(function() { toast(t('Request failed'), 'error'); loadPower(); });
     };
 
     /* --- WireGuard tunnel --- */
@@ -1427,17 +1580,17 @@
     function $id(x) { return document.getElementById(x); }
 
     function wgAgo(s) {
-        if (s < 0) return 'never';
-        if (s < 60) return s + ' s ago';
-        if (s < 3600) return Math.floor(s / 60) + ' min ago';
-        return Math.floor(s / 3600) + ' h ago';
+        if (s < 0) return t('never');
+        if (s < 60) return t('{n} s ago').replace('{n}', s);
+        if (s < 3600) return t('{n} min ago').replace('{n}', Math.floor(s / 60));
+        return t('{n} h ago').replace('{n}', Math.floor(s / 3600));
     }
 
     function wgStatus(data) {
         var $st = $id('wg-state');
         if (!$st) return;
         var txt = data.state + (data.state === 'connected' || data.handshake_ago >= 0
-            ? ' · last handshake ' + wgAgo(data.handshake_ago) : '');
+            ? ' · ' + t('last handshake') + ' ' + wgAgo(data.handshake_ago) : '');
         if (data.error) txt += ' · ' + data.error;
         $st.textContent = txt;
         $st.className = 'wg-state ' + (data.state === 'connected' ? 'ok'
@@ -1460,7 +1613,7 @@
                 $id('wg-netmask').value = data.netmask || '255.255.255.0';
                 $id('wg-keepalive').value = (data.keepalive != null) ? data.keepalive : 25;
                 $id('wg-psk').value = '';
-                $id('wg-psk').placeholder = data.has_psk ? '(stored - empty = keep, "-" = remove)' : 'optional';
+                $id('wg-psk').placeholder = data.has_psk ? t('(stored - empty = keep, "-" = remove)') : t('optional');
                 $id('wg-privkey').value = '';
             })
             .catch(function() { /* ignore */ });
@@ -1474,21 +1627,21 @@
 
     window.wgCopyPub = function() {
         var v = $id('wg-pubkey').value;
-        if (!v) { toast('Generate a key pair first', 'error'); return; }
-        if (navigator.clipboard) navigator.clipboard.writeText(v).then(function() { toast('Public key copied', 'success'); });
-        else { $id('wg-pubkey').select(); document.execCommand('copy'); toast('Public key copied', 'success'); }
+        if (!v) { toast(t('Generate a key pair first'), 'error'); return; }
+        if (navigator.clipboard) navigator.clipboard.writeText(v).then(function() { toast(t('Public key copied'), 'success'); });
+        else { $id('wg-pubkey').select(); document.execCommand('copy'); toast(t('Public key copied'), 'success'); }
     };
 
     window.wgGenKey = function() {
         if ($id('wg-pubkey').value &&
-            !confirm('Create a NEW key pair? The old key stops working - the public key must be updated on the peer.')) return;
+            !confirm(t('Create a NEW key pair? The old key stops working - the public key must be updated on the peer.'))) return;
         fetch('/api/settings/wireguard/genkey', { method: 'POST' })
             .then(function(r) { return r.json(); })
             .then(function(data) {
-                if (data.ok) { $id('wg-pubkey').value = data.public_key; toast('Key pair generated', 'success'); }
-                else toast(data.error || 'Key generation failed', 'error');
+                if (data.ok) { $id('wg-pubkey').value = data.public_key; toast(t('Key pair generated'), 'success'); }
+                else toast(data.error || t('Key generation failed'), 'error');
             })
-            .catch(function() { toast('Request failed', 'error'); });
+            .catch(function() { toast(t('Request failed'), 'error'); });
     };
 
     window.saveWireguard = function() {
@@ -1510,15 +1663,15 @@
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
-            if (data.ok) { toast('WireGuard settings saved', 'success'); loadWireguard(); }
-            else toast(data.error || 'Save failed', 'error');
+            if (data.ok) { toast(t('WireGuard settings saved'), 'success'); loadWireguard(); }
+            else toast(data.error || t('Save failed'), 'error');
         })
-        .catch(function() { toast('Request failed', 'error'); });
+        .catch(function() { toast(t('Request failed'), 'error'); });
     };
 
     window.wgShowConfig = function() {
         var pub = $id('wg-pubkey').value, addr = $id('wg-address').value.trim();
-        if (!pub || !addr) { toast('Generate a key and set the tunnel address first', 'error'); return; }
+        if (!pub || !addr) { toast(t('Generate a key and set the tunnel address first'), 'error'); return; }
         var cfg = '[Peer]\n# usbip-esp32p4\nPublicKey = ' + pub + '\nAllowedIPs = ' + addr + '/32\n';
         if ($id('wg-psk').placeholder.indexOf('stored') === 0 || $id('wg-psk').value)
             cfg += 'PresharedKey = <same preshared key>\n';
@@ -1539,12 +1692,12 @@
                 var radios = document.querySelectorAll('input[name="tls-mode"]');
                 for (var i = 0; i < radios.length; i++) radios[i].checked = (parseInt(radios[i].value, 10) === d.usbip_tls_mode);
                 document.getElementById('sec-https').checked = !!d.https;
-                document.getElementById('sec-fp').textContent = d.cert_fp || '(no certificate yet)';
+                document.getElementById('sec-fp').textContent = d.cert_fp || t('(no certificate yet)');
                 var note = document.getElementById('sec-https-note');
-                note.textContent = (d.https !== d.https_active) ? 'Restart required to apply.' :
-                    (d.https_active ? 'Active: https://' + location.hostname + '/' : '');
+                note.textContent = (d.https !== d.https_active) ? t('Restart required to apply.') :
+                    (d.https_active ? t('Active') + ': https://' + location.hostname + '/' : '');
                 document.getElementById('sec-tls-info').textContent = 'Port ' + d.tls_port +
-                    ' · active TLS sessions: ' + d.tls_sessions;
+                    ' · ' + t('active TLS sessions') + ': ' + d.tls_sessions;
             })
             .catch(function() { /* ignore */ });
     }
@@ -1557,9 +1710,9 @@
     window.saveSecurity = function() {
         var https = document.getElementById('sec-https').checked;
         var mode = tlsModeValue();
-        if (mode === 2 && !confirm('TLS only: plain USB/IP connections (port 3240) will be refused. Clients need stunnel. Continue?')) return;
+        if (mode === 2 && !confirm(t('TLS only: plain USB/IP connections (port 3240) will be refused. Clients need stunnel. Continue?'))) return;
         if (https !== !!secState.https_active &&
-            !confirm('HTTPS change takes effect after a restart. The web UI will then be at ' +
+            !confirm(t('HTTPS change takes effect after a restart. The web UI will then be at ') +
                      (https ? 'https://' : 'http://') + location.hostname + '/ . Your browser will warn once about the self-signed certificate - compare the fingerprint shown here.')) return;
         fetch('/api/settings/security', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -1567,10 +1720,10 @@
         })
         .then(function(r) { return r.json(); })
         .then(function(d) {
-            if (d.ok) { toast('Encryption settings saved', 'success'); loadSecurity(); }
-            else toast(d.error || 'Save failed', 'error');
+            if (d.ok) { toast(t('Encryption settings saved'), 'success'); loadSecurity(); }
+            else toast(d.error || t('Save failed'), 'error');
         })
-        .catch(function() { toast('Request failed', 'error'); });
+        .catch(function() { toast(t('Request failed'), 'error'); });
     };
 
     function pskRequest(action) {
@@ -1624,27 +1777,27 @@
 
     window.secShowPsk = function() {
         pskRequest('show').then(function(d) {
-            if (d.ok) showStunnel(d); else toast(d.error || 'Failed', 'error');
-        }).catch(function() { toast('Request failed', 'error'); });
+            if (d.ok) showStunnel(d); else toast(d.error || t('Failed'), 'error');
+        }).catch(function() { toast(t('Request failed'), 'error'); });
     };
 
     window.secRegenPsk = function() {
-        if (!confirm('Create a new TLS key? Existing stunnel configurations stop working.')) return;
+        if (!confirm(t('Create a new TLS key? Existing stunnel configurations stop working.'))) return;
         pskRequest('regenerate').then(function(d) {
-            if (d.ok) { showStunnel(d); toast('New TLS key created', 'success'); }
-            else toast(d.error || 'Failed', 'error');
-        }).catch(function() { toast('Request failed', 'error'); });
+            if (d.ok) { showStunnel(d); toast(t('New TLS key created'), 'success'); }
+            else toast(d.error || t('Failed'), 'error');
+        }).catch(function() { toast(t('Request failed'), 'error'); });
     };
 
     window.secRegenCert = function() {
-        if (!confirm('Create a new HTTPS certificate? It is used after the next restart; browsers will warn again.')) return;
+        if (!confirm(t('Create a new HTTPS certificate? It is used after the next restart; browsers will warn again.'))) return;
         fetch('/api/settings/security/cert', { method: 'POST' })
             .then(function(r) { return r.json(); })
             .then(function(d) {
-                if (d.ok) { toast('New certificate created (active after restart)', 'success'); loadSecurity(); }
-                else toast(d.error || 'Failed', 'error');
+                if (d.ok) { toast(t('New certificate created (active after restart)'), 'success'); loadSecurity(); }
+                else toast(d.error || t('Failed'), 'error');
             })
-            .catch(function() { toast('Request failed', 'error'); });
+            .catch(function() { toast(t('Request failed'), 'error'); });
     };
 
     /* --- ACL --- */
@@ -1681,7 +1834,7 @@
                 aclMe = { ip: data.me_ip || '', mac: data.me_mac || '' };
                 document.getElementById('acl-add-me').style.display = aclMe.ip ? '' : 'none';
                 document.getElementById('acl-me-info').textContent = aclMe.ip
-                    ? 'Dieser PC: ' + aclMe.ip + (aclMe.mac ? ' / ' + aclMe.mac : ' (MAC unbekannt, nicht im selben LAN)')
+                    ? t('Dieser PC') + ': ' + aclMe.ip + (aclMe.mac ? ' / ' + aclMe.mac : ' (' + t('MAC unbekannt, nicht im selben LAN') + ')')
                     : '';
                 renderAclList();
             })
@@ -1691,7 +1844,7 @@
     function renderAclList() {
         if (!$aclList) return;
         if (!aclEntries.length) {
-            $aclList.innerHTML = '<div class="text-dim" style="padding:0.5rem 0;font-size:0.8125rem">No entries in allowlist</div>';
+            $aclList.innerHTML = '<div class="text-dim" style="padding:0.5rem 0;font-size:0.8125rem">' + t('No entries in allowlist') + '</div>';
             return;
         }
         var html = '';
@@ -1701,7 +1854,7 @@
                 '<span class="acl-type">' + (e.type === 'mac' ? 'MAC' : 'IP') + '</span>' +
                 '<span class="acl-ip">' + esc(e.value) + '</span>' +
                 '<span class="acl-comment">' + esc(e.comment || '') + '</span>' +
-                '<button onclick="window._removeAclEntry(' + i + ')">Remove</button>' +
+                '<button onclick="window._removeAclEntry(' + i + ')">' + t('Remove') + '</button>' +
                 '</div>';
         }
         $aclList.innerHTML = html;
@@ -1720,18 +1873,18 @@
     function pushAclEntry(type, value, comment) {
         if (type === 'mac') {
             value = normMac(value);
-            if (!value) { toast('Invalid MAC address (aa:bb:cc:dd:ee:ff)', 'error'); return false; }
+            if (!value) { toast(t('Invalid MAC address (aa:bb:cc:dd:ee:ff)'), 'error'); return false; }
         } else if (!/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(value)) {
-            toast('Invalid IP address', 'error');
+            toast(t('Invalid IP address'), 'error');
             return false;
         }
         for (var i = 0; i < aclEntries.length; i++) {
             if (aclEntries[i].type === type && aclEntries[i].value === value) {
-                toast('Already in list', 'error');
+                toast(t('Already in list'), 'error');
                 return false;
             }
         }
-        if (aclEntries.length >= 32) { toast('List full (max 32)', 'error'); return false; }
+        if (aclEntries.length >= 32) { toast(t('List full (max 32)'), 'error'); return false; }
         aclEntries.push({ type: type, value: value, comment: comment.slice(0, 31) });
         renderAclList();
         return true;
@@ -1749,7 +1902,7 @@
     window.addAclMe = function() {
         var type = $aclNewType.value;
         var value = type === 'mac' ? aclMe.mac : aclMe.ip;
-        if (!value) { toast('MAC dieses PCs unbekannt (nicht im selben LAN) - IP verwenden', 'error'); return; }
+        if (!value) { toast(t('MAC dieses PCs unbekannt (nicht im selben LAN) - IP verwenden'), 'error'); return; }
         if (pushAclEntry(type, value, $aclNewComment.value.trim())) $aclNewComment.value = '';
     };
 
@@ -1773,14 +1926,62 @@
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.ok) {
-                toast('ACL settings saved', 'success');
+                toast(t('ACL settings saved'), 'success');
                 loadAclSettings();
             } else {
-                toast(data.error || 'Save failed', 'error');
+                toast(data.error || t('Save failed'), 'error');
             }
         })
-        .catch(function() { toast('Request failed', 'error'); });
+        .catch(function() { toast(t('Request failed'), 'error'); });
     };
+
+    window.resetUsbBus = function() {
+        if (!confirm(t('Reset the USB bus? This disconnects and re-enumerates ALL devices and drops any attached clients.'))) return;
+        fetch('/api/usb/reset', { method: 'POST' })
+            .then(function(r) { toast(r.ok ? t('Action completed') : t('Action failed'), r.ok ? 'success' : 'error'); })
+            .catch(function() { toast(t('Request failed'), 'error'); });
+    };
+
+    /* --- Restart / factory reset (with feedback; a silent failure looked like "nothing happens") --- */
+
+    window.systemAction = function(what) {
+        var reset = what === 'factory-reset';
+        if (!confirm(reset ? t('Alle Einstellungen löschen und neu starten?') : t('Board neu starten?'))) return;
+        fetch('/api/system/' + what, { method: 'POST' })
+            .then(function(r) {
+                return r.json().catch(function() { return {}; }).then(function(d) {
+                    if (r.ok && d.ok !== false) {
+                        toast(reset ? t('Werksreset - Board startet neu…') : t('Board startet neu…'), 'success');
+                    } else {
+                        toast((d.error || (t('Fehler') + ' ' + r.status)) + (r.status === 401 ? ' - ' + t('bitte neu anmelden') : ''), 'error');
+                    }
+                });
+            })
+            .catch(function() {
+                /* the board may already be restarting and drop the connection */
+                toast(t('Keine Antwort - Board startet vermutlich neu'), 'success');
+            });
+    };
+
+    /* --- Software components (versions reported by the firmware) --- */
+
+    var componentsLoaded = false;
+    function loadComponents() {
+        if (componentsLoaded) return;
+        fetch('/api/system/components')
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(list) {
+                if (!list || !list.length) return;
+                componentsLoaded = true;
+                var html = '';
+                for (var i = 0; i < list.length; i++) {
+                    html += '<tr><td>' + esc(list[i].name) + '</td><td>' + esc(list[i].version) +
+                            '</td><td>' + esc(list[i].license) + '</td></tr>';
+                }
+                document.getElementById('sw-board').innerHTML = html;
+            })
+            .catch(function() { /* ignore */ });
+    }
 
     /* --- System info --- */
 
@@ -1798,6 +1999,16 @@
                 if ($idf) $idf.textContent = data.idf_version || '--';
                 if ($chip) $chip.textContent = (data.chip || 'ESP32-P4') + (data.revision ? ' ' + data.revision : '');
                 if ($heap) $heap.textContent = Math.round((data.heap_free || 0) / 1024) + ' KB free';
+                var $reset = document.getElementById('sys-reset');
+                if ($reset && data.reset) {
+                    $reset.textContent = data.reset;
+                    $reset.style.color = data.crash ? 'var(--red)' : '';
+                }
+                var $crashes = document.getElementById('sys-crashes');
+                if ($crashes && data.crashes !== undefined) $crashes.textContent = data.crashes;
+                loadComponents();
+                var $prev = document.getElementById('log-prev');
+                if ($prev) $prev.style.display = data.prev_log > 0 ? '' : 'none';
             })
             .catch(function() { /* ignore */ });
     }
@@ -1819,18 +2030,19 @@
     function pollCaptureStatus() {
         fetch('/api/capture/status')
             .then(function(r) {
-                if (r.status === 404) {
-                    /* No capture routes: hide the panel and stop polling for good */
-                    capUnavailable = true;
-                    stopCapturePoll();
-                    var $panel = document.getElementById('cap-panel');
-                    if ($panel) $panel.style.display = 'none';
-                    return null;
-                }
+                if (r.status === 404) return { available: false };
                 return r.json();
             })
             .then(function(data) {
                 if (!data) return;
+                if (data.available === false) {
+                    /* Capture not compiled in: hide the panel and stop polling for good */
+                    capUnavailable = true;
+                    stopCapturePoll();
+                    var $panel = document.getElementById('cap-panel');
+                    if ($panel) $panel.style.display = 'none';
+                    return;
+                }
                 capState = data;
                 var $card = document.getElementById('cap-card');
                 var $status = document.getElementById('cap-status');
@@ -1843,11 +2055,11 @@
                 var $delete = document.getElementById('cap-delete');
 
                 if ($card) {
-                    $card.textContent = data.card_present ? 'Present' : 'Not Found';
+                    $card.textContent = data.card_present ? t('Present') : t('Not Found');
                     $card.style.color = data.card_present ? '#4caf50' : '#f44336';
                 }
                 if ($status) {
-                    $status.textContent = data.capturing ? 'Recording' : 'Idle';
+                    $status.textContent = data.capturing ? t('Recording') : t('Idle');
                     $status.style.color = data.capturing ? '#ff9800' : '';
                 }
                 if ($filename) $filename.textContent = data.filename || '--';
@@ -1858,7 +2070,7 @@
                     $dropped.style.color = data.dropped_count > 0 ? '#ff9800' : '';
                 }
                 if ($toggle) {
-                    $toggle.textContent = data.capturing ? 'Stop Capture' : 'Start Capture';
+                    $toggle.textContent = data.capturing ? t('Stop Capture') : t('Start Capture');
                     $toggle.disabled = !data.card_present && !data.capturing;
                 }
                 if ($download) $download.disabled = !data.filename || data.file_size === 0;
@@ -1886,13 +2098,13 @@
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (data.ok) {
-                    toast(capState.capturing ? 'Capture stopped' : 'Capture started: ' + (data.filename || ''));
+                    toast(capState.capturing ? t('Capture stopped') : t('Capture started') + ': ' + (data.filename || ''));
                 } else {
-                    toast(data.error || 'Capture error', 'error');
+                    toast(data.error || t('Capture error'), 'error');
                 }
                 pollCaptureStatus();
             })
-            .catch(function() { toast('Request failed', 'error'); });
+            .catch(function() { toast(t('Request failed'), 'error'); });
     };
 
     window.downloadCapture = function() {
@@ -1900,18 +2112,18 @@
     };
 
     window.deleteCapture = function() {
-        if (!confirm('Delete the capture file?')) return;
+        if (!confirm(t('Delete the capture file?'))) return;
         fetch('/api/capture/delete', { method: 'POST' })
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (data.ok) {
-                    toast('Capture file deleted');
+                    toast(t('Capture file deleted'));
                 } else {
-                    toast(data.error || 'Delete failed', 'error');
+                    toast(data.error || t('Delete failed'), 'error');
                 }
                 pollCaptureStatus();
             })
-            .catch(function() { toast('Request failed', 'error'); });
+            .catch(function() { toast(t('Request failed'), 'error'); });
     };
 
     /* Start polling when on dashboard */
@@ -1948,7 +2160,17 @@
      * Init
      * ================================================================ */
 
+    i18nCaptureHelp();
+    var $langSel = document.getElementById('lang-select');
+    LANGS.forEach(function(l) {
+        var o = document.createElement('option');
+        o.value = l[0];
+        o.textContent = l[1];
+        $langSel.appendChild(o);
+    });
+    $langSel.addEventListener('change', function() { setLanguage(this.value, true); });
     applyTheme(theme);
+    setLanguage(i18nPick(), false);
     document.getElementById('theme-toggle').addEventListener('click', function() {
         applyTheme(THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]);
     });

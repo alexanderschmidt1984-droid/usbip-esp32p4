@@ -31,6 +31,9 @@ void network_mgr_update_mdns_devices(int device_count);
  */
 esp_err_t network_mgr_get_ip_str(char *buf, size_t buf_len);
 
+/** Configured hostname (NVS, else CONFIG_USBIP_HOSTNAME). */
+void network_mgr_get_hostname(char *buf, size_t buf_len);
+
 #ifdef __cplusplus
 }
 #endif

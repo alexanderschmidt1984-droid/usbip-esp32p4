@@ -7,6 +7,7 @@
 #include "esp_err.h"
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,8 +16,12 @@ extern "C" {
 /** Maximum length of an event message */
 #define EVENT_LOG_MSG_MAX_LEN  128
 
-/** Maximum number of events stored in the ring buffer */
-#define EVENT_LOG_MAX_ENTRIES  256
+/** Maximum number of events stored in the ring buffer (PSRAM, ~300 KB) */
+#define EVENT_LOG_MAX_ENTRIES  2048
+
+/** System log ring (raw ESP_LOG output) in PSRAM. RAM only - nothing is
+ *  written to flash, so no wear; the content is lost on restart. */
+#define EVENT_LOG_SYSLOG_SIZE  (1024 * 1024)
 
 /** Event severity levels */
 typedef enum {
@@ -58,6 +63,42 @@ esp_err_t event_log_add(event_log_level_t level, const char *fmt, ...)
  * @return ESP_OK on success
  */
 esp_err_t event_log_get_recent(event_log_entry_t *entries, size_t max_entries, size_t *out_count);
+
+/**
+ * @brief Get entries oldest-first, for export
+ * @param skip Number of oldest entries to skip
+ * @param[out] entries Array to fill
+ * @param max_entries Size of the array
+ * @param[out] out_count Entries written (0 = end)
+ */
+esp_err_t event_log_get_oldest(size_t skip, event_log_entry_t *entries, size_t max_entries,
+                               size_t *out_count);
+
+/** Append raw text to the system log ring (called from the log hook). */
+void event_log_syslog_write(const char *text, size_t len);
+
+/**
+ * @brief Read the system log ring for export
+ * @param[in,out] pos Absolute read position; start with 0. Moved forward past
+ *                    data that was already overwritten.
+ * @return Bytes copied into buf (0 = nothing more)
+ */
+size_t event_log_syslog_read(uint64_t *pos, char *buf, size_t max);
+
+/*
+ * Crash info. The last EVENT_LOG_TAIL_SIZE bytes of the system log are also
+ * kept in RTC no-init memory, which survives a panic/watchdog/software
+ * restart (not a power loss). After such a restart they are available as the
+ * "previous run" log. Crashes are counted in NVS ("boot"/"crashes") - written
+ * only when a crash happened, so no flash wear in normal operation.
+ */
+#define EVENT_LOG_TAIL_SIZE 4096
+
+const char *event_log_reset_reason_str(void);   /* reason of the last restart */
+bool        event_log_last_reset_was_crash(void);
+uint32_t    event_log_crash_count(void);         /* since the last factory reset */
+size_t      event_log_previous_len(void);        /* bytes of "previous run" log, 0 = none */
+size_t      event_log_previous_read(uint64_t *pos, char *buf, size_t max);
 
 #ifdef __cplusplus
 }

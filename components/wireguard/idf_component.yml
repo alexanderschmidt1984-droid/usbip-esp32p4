@@ -1,5 +1,5 @@
 description: WireGuard implementation for ESPHome
-version: "0.4.6"
+version: "0.4.8"
 url: https://github.com/esphome-libs/wireguard
 repository: https://github.com/esphome-libs/wireguard.git
 license: BSD-3-Clause

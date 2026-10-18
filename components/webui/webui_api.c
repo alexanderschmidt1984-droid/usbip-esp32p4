@@ -11,6 +11,8 @@
 #include "esp_timer.h"
 #include "esp_chip_info.h"
 #include "esp_app_desc.h"
+#include "mbedtls/build_info.h"
+#include "lwip/init.h"
 #include "nvs_flash.h"
 #include "nvs.h"
 #include "device_manager.h"
@@ -847,6 +849,42 @@ static esp_err_t handle_api_settings_usb_post(httpd_req_t *req)
     return send_json_ok(req);
 }
 
+/* ---- Software components (name, version, license) ---- */
+
+#ifndef VER_USB
+#define VER_USB "?"
+#endif
+#ifndef VER_MDNS
+#define VER_MDNS "?"
+#endif
+#ifndef VER_IP101
+#define VER_IP101 "?"
+#endif
+#ifndef VER_SODIUM
+#define VER_SODIUM "?"
+#endif
+
+static esp_err_t handle_api_system_components(httpd_req_t *req)
+{
+    if (!webui_check_auth(req)) return webui_reject_auth(req);
+
+    static const char *const fmt =
+        "[{\"name\":\"ESP-IDF\",\"version\":\"%s\",\"license\":\"Apache-2.0\"},"
+        "{\"name\":\"FreeRTOS (ESP-IDF)\",\"version\":\"%s\",\"license\":\"MIT\"},"
+        "{\"name\":\"lwIP\",\"version\":\"%s\",\"license\":\"BSD-3-Clause\"},"
+        "{\"name\":\"Mbed TLS\",\"version\":\"%s\",\"license\":\"Apache-2.0\"},"
+        "{\"name\":\"espressif/usb (USB host)\",\"version\":\"%s\",\"license\":\"Apache-2.0\"},"
+        "{\"name\":\"espressif/mdns\",\"version\":\"%s\",\"license\":\"Apache-2.0\"},"
+        "{\"name\":\"espressif/ip101 (Ethernet PHY)\",\"version\":\"%s\",\"license\":\"Apache-2.0\"},"
+        "{\"name\":\"WireGuard (esphome-libs/wireguard)\",\"version\":\"0.4.8 (9b7660f) + 8 FIX(usbip)\",\"license\":\"BSD-3-Clause\"},"
+        "{\"name\":\"esphome/libsodium\",\"version\":\"%s\",\"license\":\"ISC\"}]";
+    char buf[1024];
+    int n = snprintf(buf, sizeof(buf), fmt, esp_get_idf_version(), tskKERNEL_VERSION_NUMBER,
+                     LWIP_VERSION_STRING, MBEDTLS_VERSION_STRING, VER_USB, VER_MDNS, VER_IP101,
+                     VER_SODIUM);
+    return send_json(req, buf, n);
+}
+
 /* ---- Power save ---- */
 
 static esp_err_t handle_api_settings_power_get(httpd_req_t *req)
@@ -898,12 +936,14 @@ static esp_err_t handle_api_system_info(httpd_req_t *req)
         "{\"version\":\"%s\",\"idf_version\":\"%s\","
         "\"chip\":\"ESP32-P4\",\"revision\":\"v%d.%d\","
         "\"heap_free\":%" PRIu32 ",\"heap_internal\":%" PRIu32 ","
-        "\"uptime_sec\":%d}",
+        "\"uptime_sec\":%d,\"reset\":\"%s\",\"crash\":%s,\"crashes\":%lu,\"prev_log\":%u}",
         esp_app_get_description()->version,
         esp_get_idf_version(),
         chip_info.revision / 100, chip_info.revision % 100,
         free_heap, internal_heap,
-        uptime_sec);
+        uptime_sec, event_log_reset_reason_str(),
+        event_log_last_reset_was_crash() ? "true" : "false",
+        (unsigned long)event_log_crash_count(), (unsigned)event_log_previous_len());
 
     return send_json(req, buf, n);
 }
@@ -915,6 +955,7 @@ static esp_err_t handle_api_system_restart(httpd_req_t *req)
     if (!webui_check_auth(req)) return webui_reject_auth(req);
 
     event_log_add(EVENT_LOG_LEVEL_WARN, "System restart requested via WebUI");
+    ESP_LOGW(TAG, "Restart requested via web UI");   /* last line of the "before restart" log */
 
     send_json(req, "{\"ok\":true,\"message\":\"restarting\"}", -1);
     vTaskDelay(pdMS_TO_TICKS(500));
@@ -930,6 +971,7 @@ static esp_err_t handle_api_system_factory_reset(httpd_req_t *req)
     if (!webui_check_auth(req)) return webui_reject_auth(req);
 
     event_log_add(EVENT_LOG_LEVEL_WARN, "Factory reset requested via WebUI");
+    ESP_LOGW(TAG, "Factory reset requested via web UI");
 
     send_json(req, "{\"ok\":true,\"message\":\"factory reset\"}", -1);
     vTaskDelay(pdMS_TO_TICKS(500));
@@ -1023,6 +1065,12 @@ void webui_api_register(httpd_handle_t server)
         .handler = handle_api_system_restart, .user_ctx = NULL
     };
     httpd_register_uri_handler(server, &uri_system_restart);
+
+    const httpd_uri_t uri_system_components = {
+        .uri = "/api/system/components", .method = HTTP_GET,
+        .handler = handle_api_system_components, .user_ctx = NULL
+    };
+    httpd_register_uri_handler(server, &uri_system_components);
 
     const httpd_uri_t uri_settings_usb_get = {
         .uri = "/api/settings/usb", .method = HTTP_GET,

@@ -62,8 +62,8 @@
         </div>
         <div class="sidebar-footer">
             <div class="ws-status">
-                <span class="ws-dot" id="ws-dot"></span>
-                <span id="ws-status-text">Connecting...</span>
+                <span class="ws-dot connecting" id="ws-dot"></span>
+                <span id="ws-status-text">Verbinde…</span>
             </div>
             <div class="ws-status wg-badge" id="wg-badge" style="display:none">
                 <svg class="wg-lock" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6">
@@ -84,6 +84,7 @@
             <button type="button" class="theme-toggle" id="theme-toggle" title="Design wechseln">
                 <span id="theme-toggle-icon">&#9680;</span><span id="theme-toggle-text">Auto</span>
             </button>
+            <select id="lang-select" class="lang-select" aria-label="Language"></select>
         </div>
     </nav>
 
@@ -133,6 +134,12 @@
             <div class="panel">
                 <div class="panel-title">Recent Events</div>
                 <div class="log-area" id="log-area"></div>
+                <div class="btn-row log-export">
+                    <a class="btn btn-sm" href="/api/logs/export?type=events" download>Ereignisse exportieren</a>
+                    <a class="btn btn-sm" href="/api/logs/export?type=system" download>System-Log exportieren</a>
+                    <a class="btn btn-sm" id="log-prev" href="/api/logs/export?type=previous" download style="display:none">Log vor letztem Neustart</a>
+                </div>
+                <p class="hint">Bis zu 2048 Ereignisse und 1&nbsp;MB System-Log im RAM (kein Flash-Verschleiß, beim Neustart weg). Nach einem Absturz bleiben die letzten 4&nbsp;KB als „Log vor letztem Neustart“ erhalten.</p>
             </div>
             <div class="panel" id="cap-panel">
                 <div class="panel-title">Packet Capture</div>
@@ -171,7 +178,7 @@
             <div class="panel">
                 <div class="panel-title">USB Bus</div>
                 <div class="btn-row">
-                    <button class="btn btn-danger" onclick="if(confirm('Reset the USB bus? This disconnects and re-enumerates ALL devices and drops any attached clients.'))fetch('/api/usb/reset',{method:'POST'})">Reset USB Bus</button>
+                    <button class="btn btn-danger" onclick="resetUsbBus()">Reset USB Bus</button>
                 </div>
             </div>
         </section>
@@ -197,7 +204,7 @@
             <div class="panel">
                 <div class="panel-title">Erste Schritte: USB-Gerät am PC nutzen</div>
                 <p class="hint">Das Board stellt angesteckte USB-Geräte per USB/IP im Netz bereit. Am PC wird ein Gerät eingebunden, als stecke es direkt dort. Ein Gerät kann immer nur ein PC gleichzeitig nutzen.</p>
-                <details class="help">
+                <details class="help" data-help="start">
                     <summary>Hilfe: USB/IP am PC einrichten</summary>
                     <div class="os-tabs"><button data-os="debian">Debian / Ubuntu</button><button data-os="arch">Arch Linux</button><button data-os="windows">Windows 10/11</button></div>
                     <div class="os-pane" data-os="debian">
@@ -256,7 +263,7 @@ echo vhci-hcd | sudo tee /etc/modules-load.d/usbip.conf</pre></li>
                     <span class="info-value" id="set-current-ip">--</span>
                 </div>
                 <button class="btn" onclick="saveNetwork()">Save Network Settings</button>
-                <details class="help">
+                <details class="help" data-help="network">
                     <summary>Hilfe</summary>
                     <ul>
                         <li><b>Hostname</b>: Name des Boards im Netz. Es meldet sich zusätzlich per mDNS als <code>&lt;hostname&gt;.local</code> und bewirbt den Dienst <code>_usbip._tcp</code>.</li>
@@ -285,7 +292,7 @@ sudo systemctl enable --now avahi-daemon</pre><p>In <code>/etc/nsswitch.conf</co
                 </div>
                 <p id="auth-hint" class="hint" style="display:none">No password set: settings cannot be changed until a WebUI password is configured. Leave the password field empty to keep the current one.</p>
                 <button class="btn" onclick="saveAuth()">Save Auth Settings</button>
-                <details class="help">
+                <details class="help" data-help="auth">
                     <summary>Hilfe</summary>
                     <ul>
                         <li>Ohne Passwort ist die Oberfläche nur lesbar. Einstellungen lassen sich erst ändern, wenn ein Passwort gesetzt ist.</li>
@@ -321,7 +328,7 @@ sudo systemctl enable --now avahi-daemon</pre><p>In <code>/etc/nsswitch.conf</co
                     </div>
                 </div>
                 <button class="btn" onclick="saveAcl()">Save ACL</button>
-                <details class="help">
+                <details class="help" data-help="acl">
                     <summary>Hilfe</summary>
                     <ul>
                         <li><b>Open</b>: Jeder im Netz darf USB/IP und diese Oberfläche nutzen.</li>
@@ -348,7 +355,7 @@ ip -br link         # MAC</pre></div>
                 </div>
                 <p class="hint" id="usb-fsls-state"></p>
                 <button class="btn" onclick="saveUsbHub()">Save &amp; Restart</button>
-                <details class="help">
+                <details class="help" data-help="usbhub">
                     <summary>Hilfe</summary>
                     <ul>
                         <li>Das Panel erscheint, sobald das Board einen <b>USB-Hub</b> erkannt hat.</li>
@@ -370,7 +377,7 @@ ip -br link         # MAC</pre></div>
                     <input type="text" id="devf-list" placeholder="1050:*, 0403:6001"></div>
                 <p class="hint">Hubs are always allowed. Other devices are ignored at enumeration.</p>
                 <button class="btn" onclick="saveDevFilter()">Save Device Filter</button>
-                <details class="help">
+                <details class="help" data-help="devfilter">
                     <summary>Hilfe</summary>
                     <ul>
                         <li>Eingeschaltet bietet das Board nur die aufgeführten Geräte an. Alle anderen ignoriert es schon beim Anstecken.</li>
@@ -414,7 +421,7 @@ ip -br link         # MAC</pre></div>
                     <button class="btn" onclick="saveSecurity()">Save Encryption</button>
                     <button class="btn btn-sm" onclick="secRegenCert()">New certificate</button>
                 </div>
-                <details class="help">
+                <details class="help" data-help="security">
                     <summary>Hilfe</summary>
                     <p>Hier gibt es zwei getrennte Funktionen für das lokale Netz. Über WireGuard ist beides schon verschlüsselt, dann braucht es diese Funktionen nicht.</p>
                     <p><b>1. USB/IP über TLS</b>: Das Board nimmt zusätzlich verschlüsselte Verbindungen auf Port 3241 an. Am PC übernimmt <b>stunnel</b> die Verschlüsselung, und usbip spricht nur mit <code>127.0.0.1</code>.</p>
@@ -495,8 +502,8 @@ usbip attach -r 127.0.0.1 -b 1-1</pre></li>
                 <div class="form-group"><label>Persistent keepalive (s, 0 = off)</label><input type="number" id="wg-keepalive" min="0" max="3600" value="25"></div>
                 <details>
                     <summary class="hint">Advanced</summary>
-                    <div class="form-group"><label>Preshared key</label><input type="password" id="wg-psk" autocomplete="off" placeholder="optional"></div>
-                    <div class="form-group"><label>Import private key (instead of Generate)</label><input type="password" id="wg-privkey" autocomplete="off" placeholder="empty = keep"></div>
+                    <div class="form-group"><label>Preshared key</label><input type="password" id="wg-psk" autocomplete="new-password" placeholder="optional"></div>
+                    <div class="form-group"><label>Import private key (instead of Generate)</label><input type="password" id="wg-privkey" autocomplete="new-password" placeholder="empty = keep"></div>
                 </details>
                 <p class="hint">The board dials out - no port forwarding needed at its site. USB/IP (port 3240) and this web UI are then reachable at the tunnel address. In closed ACL mode, add the tunnel IPs of your clients.</p>
                 <div class="form-row">
@@ -504,7 +511,7 @@ usbip attach -r 127.0.0.1 -b 1-1</pre></li>
                     <button class="btn btn-sm" onclick="wgShowConfig()">Peer config snippet</button>
                 </div>
                 <textarea id="wg-peercfg" readonly rows="5" style="display:none;width:100%;margin-top:8px;font-family:monospace"></textarea>
-                <details class="help">
+                <details class="help" data-help="wireguard">
                     <summary>Hilfe</summary>
                     <p>Das Board baut den Tunnel selbst zu einer <b>Gegenstelle</b> auf: zu diesem PC, zu einem eigenen Server oder zu einem Router wie der Fritzbox. Danach sind USB/IP und diese Oberfläche verschlüsselt unter der Tunnel-Adresse <code><span class="h-wgaddr"></span></code> erreichbar. Ist die Seite darüber geöffnet, steht unten links „Über WireGuard geschützt“, und Geräte mit Tunnel-Clients tragen ein Schloss.</p>
                     <p>Die Anleitung richtet <b>diesen PC als Gegenstelle</b> ein, im selben Netz. PC: <code>10.8.0.1</code>, Board: <code>10.8.0.2</code>, UDP-Port 51820.</p>
@@ -585,14 +592,36 @@ usbip attach -r <span class="h-wgaddr"></span> -b 1-1</pre></li>
                 <div class="info-row"><span>ESP-IDF</span><span id="sys-idf">--</span></div>
                 <div class="info-row"><span>Chip</span><span id="sys-chip">--</span></div>
                 <div class="info-row"><span>Free Heap</span><span id="sys-heap">--</span></div>
+                <div class="info-row"><span>Letzter Neustart</span><span id="sys-reset">--</span></div>
+                <div class="info-row"><span>Abstürze (seit Werksreset)</span><span id="sys-crashes">--</span></div>
+                <details class="sw-list">
+                    <summary>Software components</summary>
+                    <p class="sw-head">On the board</p>
+                    <table class="sw-table">
+                        <thead><tr><th>Component</th><th>Version</th><th>License</th></tr></thead>
+                        <tbody id="sw-board"><tr><td colspan="3">--</td></tr></tbody>
+                    </table>
+                    <p class="sw-head">Tested on the PC with</p>
+                    <table class="sw-table">
+                        <thead><tr><th>Program</th><th>Version</th><th>Use</th></tr></thead>
+                        <tbody>
+                            <tr><td translate="no">usbip (usbip-utils, Linux kernel vhci-hcd)</td><td translate="no">2.0 / kernel 7.2.10</td><td>USB/IP client</td></tr>
+                            <tr><td translate="no">usbip-win2</td><td>not tested yet</td><td>USB/IP client (Windows)</td></tr>
+                            <tr><td translate="no">stunnel</td><td translate="no">5.82</td><td>USB/IP over TLS</td></tr>
+                            <tr><td translate="no">wireguard-tools</td><td translate="no">1.0.20260223</td><td>WireGuard peer</td></tr>
+                            <tr><td translate="no">Firefox</td><td translate="no">157.0.1</td><td>Web UI, HTTPS</td></tr>
+                            <tr><td translate="no">CachyOS (Arch Linux)</td><td translate="no">kernel 7.2.10</td><td>Test PC</td></tr>
+                        </tbody>
+                    </table>
+                </details>
                 <div class="form-group" id="power-group" style="display:none">
                     <label class="checkbox-label"><input type="checkbox" id="set-power" onchange="savePower()"> Energiesparen (CPU taktet im Leerlauf herunter)</label>
                 </div>
                 <div class="btn-row">
-                    <button class="btn btn-warn" onclick="if(confirm('Restart the device?'))fetch('/api/system/restart',{method:'POST'})">Restart</button>
-                    <button class="btn btn-danger" onclick="if(confirm('Erase all settings and restart?'))fetch('/api/system/factory-reset',{method:'POST'})">Factory Reset</button>
+                    <button class="btn btn-warn" onclick="systemAction('restart')">Restart</button>
+                    <button class="btn btn-danger" onclick="systemAction('factory-reset')">Factory Reset</button>
                 </div>
-                <details class="help">
+                <details class="help" data-help="system">
                     <summary>Hilfe</summary>
                     <ul>
                         <li><b>Energiesparen</b> (ab Werk an): Ohne angehängtes Gerät läuft die CPU mit 100&nbsp;MHz statt 400&nbsp;MHz. Sobald ein Gerät angehängt ist, geht sie auf vollen Takt, die Übertragung wird also nicht langsamer. Abgehakt läuft das Board die ganze Zeit mit 400&nbsp;MHz. Wirkt sofort, ohne Neustart. Ist es an, steht unten links das grüne Blatt.</li>

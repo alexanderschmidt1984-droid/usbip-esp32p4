@@ -53,6 +53,11 @@ static void get_hostname(char *buf, size_t len)
     buf[len - 1] = '\0';
 }
 
+void network_mgr_get_hostname(char *buf, size_t buf_len)
+{
+    if (buf && buf_len) get_hostname(buf, buf_len);
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Event handlers                                                            */
 /* -------------------------------------------------------------------------- */
