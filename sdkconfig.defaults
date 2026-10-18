@@ -13,9 +13,10 @@ CONFIG_ESP32P4_REV_MIN_300=y
 # CPU frequency
 CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_360=y
 
-# Power management: dynamic frequency scaling while no client is connected
-# (see USBIP_POWER_SAVE). No light sleep - the board must stay reachable.
-CONFIG_PM_ENABLE=y
+# Power management (dynamic frequency scaling, USBIP_POWER_SAVE) is OFF:
+# on ESP32-P4 rev 3.2 with 200 MHz PSRAM the switch to 40 MHz in
+# esp_pm_configure() reset the chip right after boot (hardware test 2026-10-18).
+# CONFIG_PM_ENABLE is not set
 
 # Packet capture (USB traffic recording to SD card) is OFF by default: it
 # records everything incl. security-key traffic. Enable explicitly if needed.

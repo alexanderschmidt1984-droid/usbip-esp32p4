@@ -46,9 +46,9 @@ menu "USB/IP Server Configuration"
             password itself. Read-only pages stay available.
 
     config USBIP_POWER_SAVE
-        bool "Power save: dynamic CPU frequency scaling"
+        bool "Power save: dynamic CPU frequency scaling (EXPERIMENTAL)"
         depends on PM_ENABLE
-        default y
+        default n
         help
             Lets the CPU clock down to USBIP_PM_MIN_FREQ_MHZ while no USB/IP
             client is connected. A power-management lock keeps the CPU at full
