@@ -174,6 +174,18 @@ static void set_nonblock(int fd)
     setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
 }
 
+/* Detect a vanished client (power loss, cable pulled, standby) the same way
+ * the plaintext server does: probe after 10 s idle, 3 probes 5 s apart, so
+ * the device is released after ~25 s instead of staying blocked forever. */
+static void set_keepalive(int fd)
+{
+    int v = 1;
+    setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &v, sizeof(v));
+    v = 10; setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &v, sizeof(v));
+    v = 5;  setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL, &v, sizeof(v));
+    v = 3;  setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, &v, sizeof(v));
+}
+
 static bool wait_fd(int fd, bool for_write, int ms)
 {
     fd_set s;
@@ -203,6 +215,7 @@ static void session_task(void *arg)
     if (!up || !down || mbedtls_ssl_setup(&ssl, &s_conf) != 0) goto out;
 
     set_nonblock(a.fd);
+    set_keepalive(a.fd);
     mbedtls_ssl_set_bio(&ssl, (void *)(intptr_t)a.fd, bio_send, bio_recv, NULL);
 
     /* Handshake with timeout */
