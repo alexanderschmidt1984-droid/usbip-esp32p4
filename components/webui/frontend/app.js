@@ -50,6 +50,97 @@
         return d.innerHTML;
     }
 
+    /* ================================================================
+     * WireGuard status (sidebar badge, device client badges)
+     * ================================================================ */
+
+    var wgNet = null;  /* { addr, mask } as little-endian u32 like client_ip, while the tunnel is up */
+
+    function ip4parse(s) {
+        var p = String(s || '').split('.');
+        if (p.length !== 4) return null;
+        return ((+p[0]) | (+p[1] << 8) | (+p[2] << 16) | (+p[3] << 24)) >>> 0;
+    }
+
+    function updateWgBadge(wg, self) {
+        var $b = document.getElementById('wg-badge');
+        var $t = document.getElementById('wg-badge-text');
+        if (!$b || !$t) return;
+        var a = wg && wg.up ? ip4parse(wg.addr) : null;
+        var m = wg && wg.up ? ip4parse(wg.mask) : null;
+        wgNet = (a !== null && m !== null) ? { addr: a, mask: m } : null;
+        fillHelpValues(wg);
+        if (!wg || !wg.enabled) { $b.style.display = 'none'; return; }
+        $b.style.display = '';
+        if (wg.up && self) {
+            $b.className = 'ws-status wg-badge secure';
+            $t.textContent = 'Über WireGuard geschützt';
+            $b.title = 'Diese Web-UI-Sitzung läuft durch den WireGuard-Tunnel (' + wg.addr + ').';
+        } else if (wg.up) {
+            $b.className = 'ws-status wg-badge lan';
+            $t.textContent = 'WireGuard aktiv · Sitzung über LAN';
+            $b.title = 'Der Tunnel steht, diese Sitzung nutzt ihn aber nicht. Geschützt: http://' + wg.addr + '/';
+        } else {
+            $b.className = 'ws-status wg-badge busy';
+            $t.textContent = 'WireGuard: ' + (wg.state || '?');
+            $b.title = 'Tunnel eingeschaltet, aber nicht verbunden.';
+        }
+    }
+
+    function inWgNet(ip) {
+        return !!(wgNet && ip && ((ip & wgNet.mask) >>> 0) === ((wgNet.addr & wgNet.mask) >>> 0));
+    }
+
+    function clientBadge(ip, str) {
+        if (inWgNet(ip)) {
+            return '<span class="badge badge-wg" title="USB/IP-Verbindung läuft durch den WireGuard-Tunnel">&#128274; ' +
+                   esc(str) + ' · WireGuard</span>';
+        }
+        return '<span class="badge badge-state">' + esc(str) + '</span>';
+    }
+
+    /* ================================================================
+     * Settings help: OS tabs and live values in the examples
+     * ================================================================ */
+
+    var helpOs = null;
+    try { helpOs = localStorage.getItem('usbip-help-os'); } catch (e) { /* storage blocked */ }
+    if (!helpOs) helpOs = /Windows/i.test(navigator.userAgent) ? 'windows' : 'debian';
+
+    function setHelpOs(os) {
+        helpOs = os;
+        try { localStorage.setItem('usbip-help-os', os); } catch (e) { /* storage blocked */ }
+        var btns = document.querySelectorAll('.os-tabs button');
+        for (var i = 0; i < btns.length; i++) {
+            btns[i].classList.toggle('active', btns[i].getAttribute('data-os') === os);
+        }
+        var panes = document.querySelectorAll('.os-pane');
+        for (var j = 0; j < panes.length; j++) {
+            panes[j].classList.toggle('active', panes[j].getAttribute('data-os') === os);
+        }
+    }
+
+    document.addEventListener('click', function(e) {
+        var b = e.target.closest ? e.target.closest('.os-tabs button') : null;
+        if (b) { e.preventDefault(); setHelpOs(b.getAttribute('data-os')); }
+    });
+
+    function setAllText(cls, val) {
+        var els = document.getElementsByClassName(cls);
+        for (var i = 0; i < els.length; i++) els[i].textContent = val;
+    }
+
+    var lastHelpWg = '';
+    function fillHelpValues(wg) {
+        var addr = (wg && wg.addr) || '10.8.0.2';
+        var pub = ($id('wg-pubkey') && $id('wg-pubkey').value) || '<öffentlicher Schlüssel des Boards>';
+        var key = addr + '|' + pub;
+        if (key === lastHelpWg) return;
+        lastHelpWg = key;
+        setAllText('h-wgaddr', addr);
+        setAllText('h-wgpub', pub);
+    }
+
     function ip4str(ip) {
         if (!ip) return '';
         return (ip & 0xFF) + '.' +
@@ -345,6 +436,9 @@
             }
         }
 
+        /* --- WireGuard badge --- */
+        updateWgBadge(msg.wg, msg.wg_self);
+
         /* --- Update dashboard --- */
         updateDashboard(msg, devices, clientCount);
 
@@ -587,7 +681,7 @@
                     var badgeHtml = '<span class="badge badge-' + spdCls + '">' + spdStr + '</span>' +
                                    '<span class="badge badge-state badge-' + stCls + '">' + stStr + '</span>';
                     if (clientStr) {
-                        badgeHtml += '<span class="badge badge-state">' + esc(clientStr) + '</span>';
+                        badgeHtml += clientBadge(d.client_ip, clientStr);
                     }
                     var tpTotal = tp.bIn + tp.bOut;
                     if (tpTotal > 0) {
@@ -609,7 +703,7 @@
                 var badgeHtml = '<span class="badge badge-' + spdCls + '">' + spdStr + '</span>' +
                                '<span class="badge badge-state badge-' + stCls + '">' + stStr + '</span>';
                 if (clientStr) {
-                    badgeHtml += '<span class="badge badge-state">' + esc(clientStr) + '</span>';
+                    badgeHtml += clientBadge(d.client_ip, clientStr);
                 }
                 var tpTotal = tp.bIn + tp.bOut;
                 if (tpTotal > 0) {
@@ -1703,6 +1797,9 @@
      * Init
      * ================================================================ */
 
+    setHelpOs(helpOs);
+    setAllText('h-host', location.hostname);
+    fillHelpValues(null);
     wsConnect();
     console.log('USB/IP WebUI loaded');
 

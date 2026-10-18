@@ -11,7 +11,9 @@
 #include "device_manager.h"
 #include "event_log.h"
 #include "webui_internal.h"
+#include "wg_tunnel.h"
 
+#include <lwip/sockets.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -194,20 +196,46 @@ void ws_broadcast_stats(void)
     pos += snprintf(json_buf + pos, buflen - pos, ",\"logs\":");
     pos += build_logs_json(json_buf + pos, buflen - pos);
 
-    pos += snprintf(json_buf + pos, buflen - pos, "}");
+    /* WireGuard state, plus per client whether its own connection arrived on
+     * the tunnel address ("wg_self", appended per fd below). */
+    wg_tunnel_status_t wst;
+    wg_tunnel_get_status(&wst);
+    wg_tunnel_config_t wcfg;
+    wg_tunnel_get_config(&wcfg);
+    bool wg_up = (wst.state == WG_STATE_UP);
+    in_addr_t wg_ip = (wg_up && wcfg.address[0]) ? inet_addr(wcfg.address) : 0;
+    pos += snprintf(json_buf + pos, buflen - pos,
+        ",\"wg\":{\"enabled\":%s,\"up\":%s,\"state\":\"%s\",\"addr\":\"%s\",\"mask\":\"%s\"}"
+        ",\"wg_self\":",
+        wcfg.enabled ? "true" : "false", wg_up ? "true" : "false",
+        wg_tunnel_state_str(wst.state), wcfg.address, wcfg.netmask);
+    memset(&wcfg, 0, sizeof(wcfg));   /* holds the private key */
 
     /* Queue the send onto the httpd task for each client (own payload copy each). */
     for (int i = 0; i < ws_count; i++) {
+        bool self_wg = false;
+        if (wg_ip) {
+            struct sockaddr_in local;
+            socklen_t llen = sizeof(local);
+            if (getsockname(ws_fds_list[i], (struct sockaddr *)&local, &llen) == 0 &&
+                local.sin_family == AF_INET) {
+                self_wg = (local.sin_addr.s_addr == wg_ip);
+            }
+        }
+        const char *tail = self_wg ? "true}" : "false}";
+        size_t tail_len = strlen(tail);
+
         struct ws_async_send_ctx *ctx = malloc(sizeof(*ctx));
-        char *copy = malloc(pos);
+        char *copy = malloc(pos + tail_len);
         if (!ctx || !copy) {
             free(ctx);
             free(copy);
             continue;
         }
         memcpy(copy, json_buf, pos);
+        memcpy(copy + pos, tail, tail_len);
         ctx->fd = ws_fds_list[i];
-        ctx->len = pos;
+        ctx->len = pos + tail_len;
         ctx->payload = copy;
         if (httpd_queue_work(ws_server_handle, ws_async_send_cb, ctx) != ESP_OK) {
             free(ctx->payload);

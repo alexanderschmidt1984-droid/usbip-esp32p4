@@ -58,6 +58,13 @@
                 <span class="ws-dot" id="ws-dot"></span>
                 <span id="ws-status-text">Connecting...</span>
             </div>
+            <div class="ws-status wg-badge" id="wg-badge" style="display:none">
+                <svg class="wg-lock" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <rect x="3" y="7" width="10" height="7" rx="1.5"/>
+                    <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/>
+                </svg>
+                <span id="wg-badge-text"></span>
+            </div>
             <div class="sidebar-info" id="sidebar-uptime">--</div>
             <div class="sidebar-info sidebar-version">v1.0.0</div>
         </div>
@@ -167,6 +174,48 @@
             <h1 class="section-title">Settings</h1>
 
             <div class="panel">
+                <div class="panel-title">Erste Schritte: USB-Gerät am PC nutzen</div>
+                <p class="hint">Das Board stellt angesteckte USB-Geräte per USB/IP im Netz bereit. Am PC wird ein Gerät eingebunden, als stecke es direkt dort. Ein Gerät kann immer nur ein PC gleichzeitig nutzen.</p>
+                <details class="help">
+                    <summary>Hilfe: USB/IP am PC einrichten</summary>
+                    <div class="os-tabs"><button data-os="debian">Debian / Ubuntu</button><button data-os="arch">Arch Linux</button><button data-os="windows">Windows 10/11</button></div>
+                    <div class="os-pane" data-os="debian">
+                        <ol>
+                            <li>Programm installieren:<pre>sudo apt install usbip</pre><span class="note">Ubuntu: <code>sudo apt install linux-tools-generic</code> (enthält usbip).</span></li>
+                            <li>Kernelmodul laden, jetzt und dauerhaft bei jedem Start:<pre>sudo modprobe vhci-hcd
+echo vhci-hcd | sudo tee /etc/modules-load.d/usbip.conf</pre></li>
+                            <li>Angebotene Geräte anzeigen:<pre>usbip list -r <span class="h-host"></span></pre></li>
+                            <li>Gerät einbinden (Bus-ID aus der Liste, z.&nbsp;B. <code>1-1</code>):<pre>sudo usbip attach -r <span class="h-host"></span> -b 1-1</pre></li>
+                            <li>Prüfen: <code>usbip port</code> zeigt das eingebundene Gerät, <code>lsusb</code> listet es wie ein lokales.</li>
+                            <li>Wieder lösen (Portnummer aus <code>usbip port</code>, das erste Gerät ist Port 0):<pre>sudo usbip detach -p 0</pre></li>
+                        </ol>
+                    </div>
+                    <div class="os-pane" data-os="arch">
+                        <ol>
+                            <li>Programm installieren:<pre>sudo pacman -S usbip</pre></li>
+                            <li>Kernelmodul laden, jetzt und dauerhaft bei jedem Start:<pre>sudo modprobe vhci-hcd
+echo vhci-hcd | sudo tee /etc/modules-load.d/usbip.conf</pre></li>
+                            <li>Angebotene Geräte anzeigen:<pre>usbip list -r <span class="h-host"></span></pre></li>
+                            <li>Gerät einbinden (Bus-ID aus der Liste, z.&nbsp;B. <code>1-1</code>):<pre>sudo usbip attach -r <span class="h-host"></span> -b 1-1</pre></li>
+                            <li>Prüfen: <code>usbip port</code> zeigt das eingebundene Gerät, <code>lsusb</code> listet es wie ein lokales.</li>
+                            <li>Wieder lösen (Portnummer aus <code>usbip port</code>, das erste Gerät ist Port 0):<pre>sudo usbip detach -p 0</pre></li>
+                        </ol>
+                    </div>
+                    <div class="os-pane" data-os="windows">
+                        <ol>
+                            <li><b>usbip-win2</b> installieren: Installer von <code>github.com/vadimgrn/usbip-win2/releases</code> laden und als Administrator ausführen.</li>
+                            <li>Eingabeaufforderung oder PowerShell <b>als Administrator</b> öffnen.</li>
+                            <li>Angebotene Geräte anzeigen:<pre>usbip list -r <span class="h-host"></span></pre></li>
+                            <li>Gerät einbinden (Bus-ID aus der Liste, z.&nbsp;B. <code>1-1</code>):<pre>usbip attach -r <span class="h-host"></span> -b 1-1</pre></li>
+                            <li>Prüfen: <code>usbip port</code> zeigt das Gerät, im Geräte-Manager erscheint es wie ein lokales.</li>
+                            <li>Wieder lösen (Portnummer aus <code>usbip port</code>):<pre>usbip detach -p &lt;Port&gt;</pre></li>
+                        </ol>
+                    </div>
+                    <p class="note">Der PC baut die Verbindung zum Board auf (TCP 3240), eine Firewall-Freigabe am PC ist dafür nicht nötig. Wird das Gerät am Board abgezogen, trennt der PC die Verbindung. Nach dem Wiederanstecken erneut <code>attach</code> ausführen.</p>
+                </details>
+            </div>
+
+            <div class="panel">
                 <div class="panel-title">Network</div>
                 <div class="form-group">
                     <label>Hostname</label>
@@ -186,6 +235,21 @@
                     <span class="info-value" id="set-current-ip">--</span>
                 </div>
                 <button class="btn" onclick="saveNetwork()">Save Network Settings</button>
+                <details class="help">
+                    <summary>Hilfe</summary>
+                    <ul>
+                        <li><b>Hostname</b>: Name des Boards im Netz. Es meldet sich zusätzlich per mDNS als <code>&lt;hostname&gt;.local</code> und bewirbt den Dienst <code>_usbip._tcp</code>.</li>
+                        <li><b>DHCP</b> (Standard): Die Adresse vergibt der Router. Damit sie gleich bleibt, im Router eine feste Zuweisung einrichten (Fritzbox: Heimnetz → Netzwerk → Gerät bearbeiten → „Diesem Netzwerkgerät immer die gleiche IPv4-Adresse zuweisen“).</li>
+                        <li><b>Statische IP</b>: Haken bei DHCP entfernen, Adresse, Maske, Gateway und DNS eintragen. Die Adresse muss frei sein und außerhalb des DHCP-Bereichs des Routers liegen.</li>
+                        <li>Änderungen gelten erst <b>nach einem Neustart</b> (System → Restart). Danach die Seite unter der neuen Adresse öffnen.</li>
+                    </ul>
+                    <p>Namen mit <code>.local</code> am PC auflösen:</p>
+                    <div class="os-tabs"><button data-os="debian">Debian / Ubuntu</button><button data-os="arch">Arch Linux</button><button data-os="windows">Windows 10/11</button></div>
+                    <div class="os-pane" data-os="debian"><p>Auf Desktop-Systemen meist schon eingerichtet (avahi). Sonst:</p><pre>sudo apt install avahi-daemon libnss-mdns</pre></div>
+                    <div class="os-pane" data-os="arch"><pre>sudo pacman -S avahi nss-mdns
+sudo systemctl enable --now avahi-daemon</pre><p>In <code>/etc/nsswitch.conf</code> bei <code>hosts:</code> vor <code>resolve</code> den Eintrag <code>mdns_minimal [NOTFOUND=return]</code> ergänzen.</p></div>
+                    <div class="os-pane" data-os="windows"><p>Windows 10/11 löst <code>.local</code>-Namen von sich aus auf. Falls nicht, die IP-Adresse verwenden.</p></div>
+                </details>
             </div>
 
             <div class="panel">
@@ -199,6 +263,17 @@
                 </div>
                 <p id="auth-hint" class="hint" style="display:none">No password set: settings cannot be changed until a WebUI password is configured. Leave the password field empty to keep the current one.</p>
                 <button class="btn" onclick="saveAuth()">Save Auth Settings</button>
+                <details class="help">
+                    <summary>Hilfe</summary>
+                    <ul>
+                        <li>Ohne Passwort ist die Oberfläche nur lesbar. Einstellungen lassen sich erst ändern, wenn ein Passwort gesetzt ist.</li>
+                        <li>Haken setzen, Benutzername und Passwort eintragen, <b>Save Auth Settings</b>. Danach fragt der Browser beim Öffnen nach den Zugangsdaten.</li>
+                        <li>Passwort ändern: neues eintragen. Feld leer lassen = bisheriges Passwort bleibt.</li>
+                        <li>Nach 5 falschen Versuchen sperrt das Board weitere Anmeldungen von diesem PC für 30 Sekunden.</li>
+                        <li>Ohne HTTPS geht das Passwort unverschlüsselt durchs LAN. Schutz: HTTPS (Panel „Encryption“) oder die Oberfläche über WireGuard öffnen.</li>
+                        <li><b>Passwort vergessen</b>: Factory Reset geht nur angemeldet. Sonst das Board per USB komplett löschen und neu flashen (<code>idf.py -p /dev/ttyACM0 erase-flash flash</code>). Dabei gehen alle Einstellungen verloren.</li>
+                    </ul>
+                </details>
             </div>
 
             <div class="panel">
@@ -215,6 +290,20 @@
                     </div>
                 </div>
                 <button class="btn" onclick="saveAcl()">Save ACL</button>
+                <details class="help">
+                    <summary>Hilfe</summary>
+                    <ul>
+                        <li><b>Open</b>: Jeder im Netz darf USB/IP und diese Oberfläche nutzen.</li>
+                        <li><b>Closed (Allowlist)</b>: Nur die eingetragenen IP-Adressen dürfen zugreifen, und zwar auf USB/IP <b>und</b> auf diese Oberfläche.</li>
+                        <li>Der PC, von dem aus du speicherst, wird automatisch in die Liste aufgenommen. So sperrst du dich nicht selbst aus.</li>
+                        <li>Mit WireGuard die <b>Tunnel-IP</b> des PCs eintragen (z.&nbsp;B. <code>10.8.0.1</code>), nicht seine LAN-Adresse.</li>
+                    </ul>
+                    <p>Eigene IP-Adresse herausfinden:</p>
+                    <div class="os-tabs"><button data-os="debian">Debian / Ubuntu</button><button data-os="arch">Arch Linux</button><button data-os="windows">Windows 10/11</button></div>
+                    <div class="os-pane" data-os="debian"><pre>ip -4 -br addr</pre></div>
+                    <div class="os-pane" data-os="arch"><pre>ip -4 -br addr</pre></div>
+                    <div class="os-pane" data-os="windows"><pre>ipconfig</pre><p class="note">Wert bei „IPv4-Adresse“ des Ethernet- bzw. WLAN-Adapters.</p></div>
+                </details>
             </div>
 
             <div class="panel">
@@ -226,6 +315,19 @@
                     <input type="text" id="devf-list" placeholder="1050:*, 0403:6001"></div>
                 <p class="hint">Hubs are always allowed. Other devices are ignored at enumeration.</p>
                 <button class="btn" onclick="saveDevFilter()">Save Device Filter</button>
+                <details class="help">
+                    <summary>Hilfe</summary>
+                    <ul>
+                        <li>Eingeschaltet bietet das Board nur die aufgeführten Geräte an. Alle anderen ignoriert es schon beim Anstecken.</li>
+                        <li>Format <code>VID:PID</code> in Hex, durch Kommas getrennt. <code>*</code> steht für alle Produkte eines Herstellers, z.&nbsp;B. <code>1050:*</code> = alle YubiKeys.</li>
+                        <li>Die Liste wirkt beim Anstecken. Bereits steckende Geräte einmal abziehen und wieder anstecken.</li>
+                    </ul>
+                    <p>VID und PID herausfinden (oder auf jedem System: <code>usbip list -r <span class="h-host"></span></code> zeigt sie in Klammern):</p>
+                    <div class="os-tabs"><button data-os="debian">Debian / Ubuntu</button><button data-os="arch">Arch Linux</button><button data-os="windows">Windows 10/11</button></div>
+                    <div class="os-pane" data-os="debian"><p>Gerät am PC anstecken, dann:</p><pre>lsusb</pre><p class="note">Beispiel: <code>ID 1050:0407 Yubico.com Yubikey 4/5</code></p></div>
+                    <div class="os-pane" data-os="arch"><p>Gerät am PC anstecken, dann (Paket <code>usbutils</code>):</p><pre>lsusb</pre><p class="note">Beispiel: <code>ID 1050:0407 Yubico.com Yubikey 4/5</code></p></div>
+                    <div class="os-pane" data-os="windows"><p>Geräte-Manager → Gerät → Eigenschaften → Details → „Hardware-IDs“. <code>VID_1050&amp;PID_0407</code> entspricht <code>1050:0407</code>.</p></div>
+                </details>
             </div>
 
             <div class="panel">
@@ -257,6 +359,62 @@
                     <button class="btn" onclick="saveSecurity()">Save Encryption</button>
                     <button class="btn btn-sm" onclick="secRegenCert()">New certificate</button>
                 </div>
+                <details class="help">
+                    <summary>Hilfe</summary>
+                    <p>Hier gibt es zwei getrennte Funktionen für das lokale Netz. Über WireGuard ist beides schon verschlüsselt, dann braucht es diese Funktionen nicht.</p>
+                    <p><b>1. USB/IP über TLS</b>: Das Board nimmt zusätzlich verschlüsselte Verbindungen auf Port 3241 an. Am PC übernimmt <b>stunnel</b> die Verschlüsselung, und usbip spricht nur mit <code>127.0.0.1</code>.</p>
+                    <ul>
+                        <li><b>Additional</b>: unverschlüsselt (3240) und TLS (3241) gleichzeitig, gut zum Umstellen.</li>
+                        <li><b>TLS only</b>: Das Board lehnt unverschlüsselte Verbindungen ab, alle PCs brauchen stunnel.</li>
+                    </ul>
+                    <div class="os-tabs"><button data-os="debian">Debian / Ubuntu</button><button data-os="arch">Arch Linux</button><button data-os="windows">Windows 10/11</button></div>
+                    <div class="os-pane" data-os="debian">
+                        <ol>
+                            <li>Oben <b>Additional</b> wählen, <b>Save Encryption</b>.</li>
+                            <li>stunnel installieren:<pre>sudo apt install stunnel4</pre></li>
+                            <li><b>Show key &amp; stunnel config</b> → Linux. Den Block bis zur Zeile <code>ciphers</code> als <code>/etc/stunnel/usbip.conf</code> speichern, die Zeile <code>Kennung:Schlüssel</code> als <code>/etc/stunnel/usbip.psk</code>:<pre>sudoedit /etc/stunnel/usbip.conf
+sudoedit /etc/stunnel/usbip.psk
+sudo chmod 600 /etc/stunnel/usbip.psk</pre></li>
+                            <li>stunnel starten (läuft im Hintergrund weiter, beenden mit <code>sudo pkill stunnel</code>):<pre>sudo stunnel /etc/stunnel/usbip.conf</pre><span class="note">Dauerhaft: <code>systemctl list-unit-files 'stunnel*'</code>. Gibt es die Vorlage <code>stunnel@.service</code>, startet <code>sudo systemctl enable --now stunnel@usbip</code> genau diese Datei.</span></li>
+                            <li>Geräte über stunnel nutzen:<pre>usbip list -r 127.0.0.1
+sudo usbip attach -r 127.0.0.1 -b 1-1</pre></li>
+                            <li>Klappt das, auf <b>TLS only</b> umstellen.</li>
+                        </ol>
+                    </div>
+                    <div class="os-pane" data-os="arch">
+                        <ol>
+                            <li>Oben <b>Additional</b> wählen, <b>Save Encryption</b>.</li>
+                            <li>stunnel installieren:<pre>sudo pacman -S stunnel</pre></li>
+                            <li><b>Show key &amp; stunnel config</b> → Linux. Den Block bis zur Zeile <code>ciphers</code> als <code>/etc/stunnel/usbip.conf</code> speichern, die Zeile <code>Kennung:Schlüssel</code> als <code>/etc/stunnel/usbip.psk</code>:<pre>sudoedit /etc/stunnel/usbip.conf
+sudoedit /etc/stunnel/usbip.psk
+sudo chmod 600 /etc/stunnel/usbip.psk</pre></li>
+                            <li>stunnel starten (läuft im Hintergrund weiter, beenden mit <code>sudo pkill stunnel</code>):<pre>sudo stunnel /etc/stunnel/usbip.conf</pre><span class="note">Dauerhaft: <code>systemctl list-unit-files 'stunnel*'</code>. Gibt es die Vorlage <code>stunnel@.service</code>, startet <code>sudo systemctl enable --now stunnel@usbip</code> genau diese Datei.</span></li>
+                            <li>Geräte über stunnel nutzen:<pre>usbip list -r 127.0.0.1
+sudo usbip attach -r 127.0.0.1 -b 1-1</pre></li>
+                            <li>Klappt das, auf <b>TLS only</b> umstellen.</li>
+                        </ol>
+                    </div>
+                    <div class="os-pane" data-os="windows">
+                        <ol>
+                            <li>Oben <b>Additional</b> wählen, <b>Save Encryption</b>.</li>
+                            <li>stunnel für Windows installieren: <code>stunnel.org</code> → Downloads → Windows-Installer.</li>
+                            <li><b>Show key &amp; stunnel config</b> → Windows 10/11. Den Inhalt wie angezeigt in <code>stunnel.conf</code> übernehmen (die Beispiel-Dienste darin ersetzen) und <code>usbip.psk</code> anlegen, beides im Ordner <code>config</code> der stunnel-Installation.</li>
+                            <li>Als Administrator stunnel als Dienst einrichten und starten:<pre>stunnel.exe -install
+net start stunnel</pre></li>
+                            <li>Geräte über stunnel nutzen (Eingabeaufforderung als Administrator):<pre>usbip list -r 127.0.0.1
+usbip attach -r 127.0.0.1 -b 1-1</pre></li>
+                            <li>Klappt das, auf <b>TLS only</b> umstellen.</li>
+                        </ol>
+                    </div>
+                    <p class="note"><b>New key</b> erzeugt einen neuen TLS-Schlüssel. Danach die <code>.psk</code>-Datei auf allen PCs ersetzen.</p>
+                    <p><b>2. HTTPS für diese Oberfläche</b> (alle Systeme):</p>
+                    <ol>
+                        <li>Haken bei „HTTPS for this web UI“, <b>Save Encryption</b>, dann System → <b>Restart</b>.</li>
+                        <li>Seite unter <code>https://<span class="h-host"></span>/</code> öffnen. Der Browser warnt einmal, weil das Zertifikat selbst signiert ist.</li>
+                        <li>In den Zertifikatsdetails des Browsers den SHA-256-Fingerabdruck mit dem Wert oben vergleichen. Stimmt er überein, die Ausnahme bestätigen.</li>
+                        <li><b>New certificate</b> erzeugt ein neues Zertifikat. Es gilt nach dem nächsten Neustart, dann warnt der Browser erneut.</li>
+                    </ol>
+                </details>
             </div>
 
             <div class="panel">
@@ -289,6 +447,78 @@
                     <button class="btn btn-sm" onclick="wgShowConfig()">Peer config snippet</button>
                 </div>
                 <textarea id="wg-peercfg" readonly rows="5" style="display:none;width:100%;margin-top:8px;font-family:monospace"></textarea>
+                <details class="help">
+                    <summary>Hilfe</summary>
+                    <p>Das Board baut den Tunnel selbst zu einer <b>Gegenstelle</b> auf: zu diesem PC, zu einem eigenen Server oder zu einem Router wie der Fritzbox. Danach sind USB/IP und diese Oberfläche verschlüsselt unter der Tunnel-Adresse <code><span class="h-wgaddr"></span></code> erreichbar. Ist die Seite darüber geöffnet, steht unten links „Über WireGuard geschützt“, und Geräte mit Tunnel-Clients tragen ein Schloss.</p>
+                    <p>Die Anleitung richtet <b>diesen PC als Gegenstelle</b> ein, im selben Netz. PC: <code>10.8.0.1</code>, Board: <code>10.8.0.2</code>, UDP-Port 51820.</p>
+                    <div class="os-tabs"><button data-os="debian">Debian / Ubuntu</button><button data-os="arch">Arch Linux</button><button data-os="windows">Windows 10/11</button></div>
+                    <div class="os-pane" data-os="debian">
+                        <ol>
+                            <li>Installieren:<pre>sudo apt install wireguard-tools</pre></li>
+                            <li>Hier <b>Generate</b> klicken. Der private Schlüssel bleibt auf dem Board, angezeigt wird nur der öffentliche.</li>
+                            <li>Schlüssel für den PC erzeugen und dessen öffentlichen Schlüssel anzeigen:<pre>sudo sh -c 'umask 077; wg genkey &gt; /etc/wireguard/wg-usbip.key'
+sudo cat /etc/wireguard/wg-usbip.key | wg pubkey</pre></li>
+                            <li>Konfiguration anlegen mit <code>sudoedit /etc/wireguard/wg-usbip.conf</code>:<pre>[Interface]
+Address = 10.8.0.1/24
+ListenPort = 51820
+PostUp = wg set %i private-key /etc/wireguard/wg-usbip.key
+
+[Peer]
+PublicKey = <span class="h-wgpub"></span>
+AllowedIPs = <span class="h-wgaddr"></span>/32</pre></li>
+                            <li>Firewall für UDP 51820 öffnen (ufw):<pre>sudo ufw allow 51820/udp</pre><span class="note">Mit firewalld: <code>sudo firewall-cmd --permanent --add-port=51820/udp &amp;&amp; sudo firewall-cmd --reload</code>. Ohne Firewall entfällt der Schritt.</span></li>
+                            <li>Tunnel starten und beim Booten automatisch starten:<pre>sudo wg-quick up wg-usbip
+sudo systemctl enable wg-quick@wg-usbip</pre></li>
+                            <li>Hier eintragen: <b>Peer public key</b> = Ausgabe aus Schritt 3, <b>Peer endpoint</b> = IP des PCs (<code>ip -4 -br addr</code>), <b>Peer port</b> 51820, <b>Tunnel address</b> 10.8.0.2, <b>Netmask</b> 255.255.255.0, <b>Keepalive</b> 25, Haken bei <b>Enable</b>, dann <b>Save WireGuard</b>.</li>
+                            <li>Prüfen:<pre>sudo wg show wg-usbip      # "latest handshake" muss erscheinen
+ping <span class="h-wgaddr"></span>
+sudo usbip attach -r <span class="h-wgaddr"></span> -b 1-1</pre></li>
+                            <li>Oberfläche geschützt öffnen: <code>http://<span class="h-wgaddr"></span>/</code></li>
+                        </ol>
+                    </div>
+                    <div class="os-pane" data-os="arch">
+                        <ol>
+                            <li>Installieren:<pre>sudo pacman -S wireguard-tools</pre></li>
+                            <li>Hier <b>Generate</b> klicken. Der private Schlüssel bleibt auf dem Board, angezeigt wird nur der öffentliche.</li>
+                            <li>Schlüssel für den PC erzeugen und dessen öffentlichen Schlüssel anzeigen:<pre>sudo sh -c 'umask 077; wg genkey &gt; /etc/wireguard/wg-usbip.key'
+sudo cat /etc/wireguard/wg-usbip.key | wg pubkey</pre></li>
+                            <li>Konfiguration anlegen mit <code>sudoedit /etc/wireguard/wg-usbip.conf</code>:<pre>[Interface]
+Address = 10.8.0.1/24
+ListenPort = 51820
+PostUp = wg set %i private-key /etc/wireguard/wg-usbip.key
+
+[Peer]
+PublicKey = <span class="h-wgpub"></span>
+AllowedIPs = <span class="h-wgaddr"></span>/32</pre></li>
+                            <li>Firewall für UDP 51820 öffnen (ufw):<pre>sudo ufw allow 51820/udp</pre><span class="note">Mit firewalld: <code>sudo firewall-cmd --permanent --add-port=51820/udp &amp;&amp; sudo firewall-cmd --reload</code>. Ohne Firewall entfällt der Schritt.</span></li>
+                            <li>Tunnel starten und beim Booten automatisch starten:<pre>sudo wg-quick up wg-usbip
+sudo systemctl enable wg-quick@wg-usbip</pre></li>
+                            <li>Hier eintragen: <b>Peer public key</b> = Ausgabe aus Schritt 3, <b>Peer endpoint</b> = IP des PCs (<code>ip -4 -br addr</code>), <b>Peer port</b> 51820, <b>Tunnel address</b> 10.8.0.2, <b>Netmask</b> 255.255.255.0, <b>Keepalive</b> 25, Haken bei <b>Enable</b>, dann <b>Save WireGuard</b>.</li>
+                            <li>Prüfen:<pre>sudo wg show wg-usbip      # "latest handshake" muss erscheinen
+ping <span class="h-wgaddr"></span>
+sudo usbip attach -r <span class="h-wgaddr"></span> -b 1-1</pre></li>
+                            <li>Oberfläche geschützt öffnen: <code>http://<span class="h-wgaddr"></span>/</code></li>
+                        </ol>
+                    </div>
+                    <div class="os-pane" data-os="windows">
+                        <ol>
+                            <li><b>WireGuard für Windows</b> installieren: <code>wireguard.com/install</code>.</li>
+                            <li>Hier <b>Generate</b> klicken. Der private Schlüssel bleibt auf dem Board, angezeigt wird nur der öffentliche.</li>
+                            <li>In der WireGuard-App: Pfeil neben „Tunnel hinzufügen“ → „Leeren Tunnel hinzufügen…“, Name <code>wg-usbip</code>. Die App erzeugt selbst einen Schlüssel. Den angezeigten <b>öffentlichen Schlüssel</b> notieren. Unter der vorgegebenen Zeile <code>PrivateKey = …</code> ergänzen:<pre>ListenPort = 51820
+Address = 10.8.0.1/24
+
+[Peer]
+PublicKey = <span class="h-wgpub"></span>
+AllowedIPs = <span class="h-wgaddr"></span>/32</pre>Speichern, dann <b>Aktivieren</b>.</li>
+                            <li>Firewall für UDP 51820 öffnen (PowerShell als Administrator):<pre>New-NetFirewallRule -DisplayName "WireGuard usbip" -Direction Inbound -Protocol UDP -LocalPort 51820 -Action Allow</pre></li>
+                            <li>Hier eintragen: <b>Peer public key</b> = Schlüssel aus Schritt 3, <b>Peer endpoint</b> = IP des PCs (<code>ipconfig</code>), <b>Peer port</b> 51820, <b>Tunnel address</b> 10.8.0.2, <b>Netmask</b> 255.255.255.0, <b>Keepalive</b> 25, Haken bei <b>Enable</b>, dann <b>Save WireGuard</b>.</li>
+                            <li>Prüfen: In der App erscheint „Letzter Handshake“. Dann (als Administrator):<pre>ping <span class="h-wgaddr"></span>
+usbip attach -r <span class="h-wgaddr"></span> -b 1-1</pre></li>
+                            <li>Oberfläche geschützt öffnen: <code>http://<span class="h-wgaddr"></span>/</code></li>
+                        </ol>
+                    </div>
+                    <p class="note"><b>Über das Internet</b>: Als Gegenstelle dient dann ein Server oder Router mit öffentlicher Adresse. Peer endpoint ist dessen Domain oder IP, z.&nbsp;B. das Fritzbox-VPN unter Internet → Freigaben → VPN (WireGuard). <b>Peer config snippet</b> zeigt den passenden <code>[Peer]</code>-Block für die Gegenstelle. Das Tunnel-Netz darf sich nicht mit den lokalen Netzen überschneiden. Im ACL-Modus „Closed“ die Tunnel-IP des PCs freigeben. Status „waiting for time sync“ heißt: Das Board erreicht noch keinen NTP-Server (Internet nötig).</p>
+                </details>
             </div>
 
             <div class="panel">
@@ -301,6 +531,14 @@
                     <button class="btn btn-warn" onclick="if(confirm('Restart the device?'))fetch('/api/system/restart',{method:'POST'})">Restart</button>
                     <button class="btn btn-danger" onclick="if(confirm('Erase all settings and restart?'))fetch('/api/system/factory-reset',{method:'POST'})">Factory Reset</button>
                 </div>
+                <details class="help">
+                    <summary>Hilfe</summary>
+                    <ul>
+                        <li><b>Restart</b>: startet das Board neu. Eingebundene USB-Geräte werden dabei an allen PCs getrennt und müssen danach neu mit <code>attach</code> eingebunden werden.</li>
+                        <li><b>Factory Reset</b>: löscht <b>alle</b> Einstellungen (Netzwerk, Passwort, ACL, Geräte-Filter, WireGuard- und TLS-Schlüssel) und startet neu. Danach gilt DHCP ohne Passwort.</li>
+                        <li><b>Firmware-Update</b>: per USB-Kabel mit <code>idf.py -p /dev/ttyACM0 flash</code> (Windows: <code>-p COM3</code> o.&nbsp;ä.). Die Einstellungen bleiben erhalten.</li>
+                    </ul>
+                </details>
             </div>
         </section>
     </main>
