@@ -447,7 +447,8 @@ usbip attach -r 127.0.0.1 -b 1-1</pre></li>
                     <ol>
                         <li>Haken bei „HTTPS for this web UI“, <b>Save Encryption</b>, dann System → <b>Restart</b>.</li>
                         <li>Seite unter <code>https://<span class="h-host"></span>/</code> öffnen. Der Browser warnt einmal, weil das Zertifikat selbst signiert ist.</li>
-                        <li>In den Zertifikatsdetails des Browsers den SHA-256-Fingerabdruck mit dem Wert oben vergleichen. Stimmt er überein, die Ausnahme bestätigen.</li>
+                        <li>In den Zertifikatsdetails des Browsers den SHA-256-Fingerabdruck mit dem Wert oben vergleichen. Stimmt er überein, die Ausnahme bestätigen (Firefox: „Erweitert…“ → „Risiko akzeptieren und fortfahren“, Fehlercode <code>MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT</code> ist hier normal).</li>
+                        <li>Mit HTTPS leitet <code>http://</code> automatisch auf <code>https://</code> weiter. Mit Werkzeugen wie curl: <code>curl -k https://…</code></li>
                         <li><b>New certificate</b> erzeugt ein neues Zertifikat. Es gilt nach dem nächsten Neustart, dann warnt der Browser erneut.</li>
                     </ol>
                 </details>

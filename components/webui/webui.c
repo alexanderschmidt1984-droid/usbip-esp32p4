@@ -408,6 +408,7 @@ extern esp_err_t ws_handler(httpd_req_t *req);
 extern void ws_broadcast_stats(void);
 
 static httpd_handle_t s_server = NULL;
+static httpd_handle_t s_redirect_server = NULL;   /* port 80 -> https while HTTPS is on */
 static esp_timer_handle_t s_stats_timer = NULL;
 
 /* ---- Embedded file serving handlers ---- */
@@ -583,6 +584,64 @@ static void stats_timer_cb(void *arg)
 
 static bool s_https_active;
 
+/* Port 80 while HTTPS is on: send every request to the same path on https://.
+ * The Host header is only reused when it looks like a host name or IP
+ * (no header injection, no redirect to elsewhere via odd characters);
+ * otherwise the board's own IP is used. */
+static esp_err_t handle_https_redirect(httpd_req_t *req)
+{
+    char host[72] = "";
+    if (httpd_req_get_hdr_value_str(req, "Host", host, sizeof(host)) == ESP_OK) {
+        char *colon = strchr(host, ':');
+        if (colon) *colon = '\0';                       /* drop :80 */
+        for (const char *c = host; *c; c++) {
+            if (!((*c >= 'a' && *c <= 'z') || (*c >= 'A' && *c <= 'Z') ||
+                  (*c >= '0' && *c <= '9') || *c == '.' || *c == '-')) {
+                host[0] = '\0';
+                break;
+            }
+        }
+    }
+    if (!host[0]) {
+        network_mgr_get_ip_str(host, sizeof(host));
+    }
+
+    char location[sizeof(host) + 256];
+    const char *uri = req->uri[0] == '/' ? req->uri : "/";
+    int n = snprintf(location, sizeof(location), "https://%s%s", host, uri);
+    if (n < 0 || n >= (int)sizeof(location)) {
+        snprintf(location, sizeof(location), "https://%s/", host);
+    }
+    httpd_resp_set_status(req, "301 Moved Permanently");
+    httpd_resp_set_hdr(req, "Location", location);
+    httpd_resp_set_hdr(req, "Cache-Control", "no-store");   /* switching HTTPS off must work again */
+    httpd_resp_set_type(req, "text/plain");
+    return httpd_resp_sendstr(req, "Moved to HTTPS\n");
+}
+
+static void start_https_redirect(void)
+{
+    httpd_config_t rc = HTTPD_DEFAULT_CONFIG();
+    rc.server_port = 80;
+    rc.ctrl_port = ESP_HTTPD_DEF_CTRL_PORT + 2;   /* +0 is free, +1 is the HTTPS server */
+    rc.core_id = 1;
+    rc.stack_size = 4096;
+    rc.max_open_sockets = 2;
+    rc.max_uri_handlers = 1;
+    rc.lru_purge_enable = true;
+    rc.recv_wait_timeout = 5;
+    rc.send_wait_timeout = 5;
+    rc.uri_match_fn = httpd_uri_match_wildcard;
+    if (httpd_start(&s_redirect_server, &rc) != ESP_OK) {
+        ESP_LOGW(TAG, "HTTP->HTTPS redirect on port 80 not started");
+        s_redirect_server = NULL;
+        return;
+    }
+    const httpd_uri_t any = { .uri = "/*", .method = HTTP_GET, .handler = handle_https_redirect };
+    httpd_register_uri_handler(s_redirect_server, &any);
+    ESP_LOGI(TAG, "Port 80 redirects to HTTPS");
+}
+
 bool webui_https_active(void)
 {
     return s_https_active;
@@ -717,7 +776,10 @@ esp_err_t webui_init(void)
         esp_timer_start_periodic(s_stats_timer, 500 * 1000); /* 500ms in us */
     }
 
-    ESP_LOGI(TAG, "Web UI initialized on port 80");
+    if (s_https_active) {
+        start_https_redirect();
+    }
+    ESP_LOGI(TAG, "Web UI initialized on port %d", s_https_active ? 443 : 80);
     return ESP_OK;
 }
 
@@ -732,6 +794,10 @@ esp_err_t webui_stop(void)
     if (s_server) {
         httpd_stop(s_server);
         s_server = NULL;
+    }
+    if (s_redirect_server) {
+        httpd_stop(s_redirect_server);
+        s_redirect_server = NULL;
     }
 
     ESP_LOGI(TAG, "Web UI stopped");
