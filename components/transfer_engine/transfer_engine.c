@@ -26,6 +26,7 @@
 
 #include <lwip/sockets.h>
 #include <string.h>
+#include <inttypes.h>
 #include <errno.h>
 
 static const char *TAG = "xfer_eng";
@@ -718,8 +719,8 @@ static int handle_cmd_submit(int fd, usbip_header_t *hdr, const dm_device_info_t
         /* The per-packet lengths come from the client: never let their sum
          * exceed the buffer we actually allocated. */
         if (iso_total > xfer->data_buffer_size) {
-            ESP_LOGW(TAG, "ISO seqnum=%lu: packet lengths (%lu) exceed buffer (%u), rejecting",
-                     (unsigned long)seqnum, (unsigned long)iso_total,
+            ESP_LOGW(TAG, "ISO seqnum=%lu: packet lengths (%" PRIu64 ") exceed buffer (%u), rejecting",
+                     (unsigned long)seqnum, iso_total,
                      (unsigned)xfer->data_buffer_size);
             send_error_reply(fd, seqnum, -LINUX_EINVAL);
             free_pending_slot(slot);
@@ -833,8 +834,11 @@ esp_err_t transfer_engine_stop(void)
     return ESP_OK;
 }
 
-int transfer_engine_run(int sockfd, const char *busid)
+int transfer_engine_run(int sockfd, const char *busid, bool *needs_reset)
 {
+    if (needs_reset) {
+        *needs_reset = false;
+    }
     ESP_LOGI(TAG, "Transfer engine starting: fd=%d busid=%s", sockfd, busid ? busid : "");
 
     /* Look up the device */
@@ -1022,6 +1026,12 @@ cleanup:
 
             release_after_cancel(slot, done);
         }
+    }
+
+    /* No URB in flight is not enough: a mass-storage read spans several URBs,
+     * the stick can be mid-command between two of them. */
+    if (needs_reset) {
+        *needs_reset = !device_removed;
     }
 
     event_log_add(EVENT_LOG_LEVEL_INFO, "Transfer engine stopped for %s", busid);

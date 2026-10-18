@@ -269,8 +269,9 @@ static int handle_import(int fd, uint16_t client_version, uint32_t client_ip, ui
     }
 
     /* Enter the URB transfer loop (blocks until done) */
+    bool needs_reset = false;
     pm_busy(true);
-    transfer_engine_run(fd, req.busid);
+    transfer_engine_run(fd, req.busid, &needs_reset);
     pm_busy(false);
 
     /* Release interfaces and the device */
@@ -278,6 +279,30 @@ static int handle_import(int fd, uint16_t client_version, uint32_t client_ip, ui
     device_manager_release(dev_index);
     ESP_LOGI(TAG, "Transfer loop ended for device '%s'", req.busid);
     event_log_add(EVENT_LOG_LEVEL_INFO, "Device %s released (transfer ended)", req.busid);
+
+    /* For the client the session end was an unplug, but the device kept its
+     * power and may hang mid-command; the client's own reset does not reach us
+     * over USB/IP. Re-enumerate it like a re-plug - but only the whole root
+     * port can be reset, so not while another device is in use. */
+    if (needs_reset) {
+        bool others_busy = false;
+        for (int i = 0; i < DEVICE_MANAGER_MAX_DEVICES && !others_busy; i++) {
+            dm_device_info_t di;
+            others_busy = device_manager_get(i, &di) == ESP_OK && di.in_use &&
+                          di.state == DEV_STATE_EXPORTED;
+        }
+        if (others_busy) {
+            ESP_LOGW(TAG, "'%s' released; USB reset skipped (other device in use)",
+                     req.busid);
+            event_log_add(EVENT_LOG_LEVEL_WARN,
+                          "%s released without USB reset (other device in use) - replug if it hangs",
+                          req.busid);
+        } else {
+            ESP_LOGI(TAG, "'%s' released: resetting USB port (like a re-plug)", req.busid);
+            event_log_add(EVENT_LOG_LEVEL_INFO, "%s released: USB port reset", req.busid);
+            usb_host_mgr_reset_bus();
+        }
+    }
 
     return -1; /* Signal caller to exit (connection is done after import+transfer) */
 }
