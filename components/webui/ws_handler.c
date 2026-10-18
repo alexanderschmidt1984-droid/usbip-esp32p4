@@ -55,7 +55,7 @@ static int build_devices_json(char *buf, int buflen)
 
         pos += snprintf(buf + pos, buflen - pos,
             "{\"idx\":%d,\"path\":\"%s\",\"vid\":%u,\"pid\":%u,\"speed\":%d,"
-            "\"state\":%d,\"client_ip\":%lu,"
+            "\"state\":%d,\"client_ip\":%lu,\"tr\":%u,"
             "\"mfr\":\"%s\",\"prod\":\"%s\","
             "\"bi\":%llu,\"bo\":%llu,\"uok\":%lu,\"ufl\":%lu,"
             "\"det\":%s,\"icl\":[",
@@ -66,6 +66,7 @@ static int build_devices_json(char *buf, int buflen)
             (int)info.speed,
             (int)info.state,
             (unsigned long)info.client_ip,
+            (unsigned)info.transport,
             mfr_esc, prod_esc,
             (unsigned long long)info.bytes_in,
             (unsigned long long)info.bytes_out,
@@ -200,16 +201,19 @@ void ws_broadcast_stats(void)
      * the tunnel address ("wg_self", appended per fd below). */
     wg_tunnel_status_t wst;
     wg_tunnel_get_status(&wst);
-    wg_tunnel_config_t wcfg;
-    wg_tunnel_get_config(&wcfg);
-    bool wg_up = (wst.state == WG_STATE_UP);
-    in_addr_t wg_ip = (wg_up && wcfg.address[0]) ? inet_addr(wcfg.address) : 0;
+    uint32_t wg_ip = 0, wg_mask = 0;
+    bool wg_up = wg_tunnel_up_addr(&wg_ip, &wg_mask);
+    char wg_addr[16] = "", wg_mstr[16] = "";
+    if (wg_up) {
+        inet_ntoa_r(*(struct in_addr *)&wg_ip, wg_addr, sizeof(wg_addr));
+        inet_ntoa_r(*(struct in_addr *)&wg_mask, wg_mstr, sizeof(wg_mstr));
+    }
+    bool wg_enabled = wst.state != WG_STATE_DISABLED;
     pos += snprintf(json_buf + pos, buflen - pos,
         ",\"wg\":{\"enabled\":%s,\"up\":%s,\"state\":\"%s\",\"addr\":\"%s\",\"mask\":\"%s\"}"
         ",\"wg_self\":",
-        wcfg.enabled ? "true" : "false", wg_up ? "true" : "false",
-        wg_tunnel_state_str(wst.state), wcfg.address, wcfg.netmask);
-    memset(&wcfg, 0, sizeof(wcfg));   /* holds the private key */
+        wg_enabled ? "true" : "false", wg_up ? "true" : "false",
+        wg_tunnel_state_str(wst.state), wg_addr, wg_mstr);
 
     /* Queue the send onto the httpd task for each client (own payload copy each). */
     for (int i = 0; i < ws_count; i++) {

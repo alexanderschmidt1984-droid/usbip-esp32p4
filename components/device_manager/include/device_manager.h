@@ -40,6 +40,13 @@ typedef struct {
     uint8_t bInterfaceProtocol;
 } dm_interface_info_t;
 
+/** How the importing client is connected (dm_device_info_t.transport) */
+typedef enum {
+    DM_TRANSPORT_PLAIN = 0,      /**< plain TCP on the USB/IP port */
+    DM_TRANSPORT_TLS   = 1,      /**< via the on-board TLS proxy (sec_tls) */
+    DM_TRANSPORT_WG    = 2,      /**< arrived on the WireGuard tunnel address */
+} dm_transport_t;
+
 /** Device information record */
 typedef struct {
     bool     in_use;              /**< Slot is occupied */
@@ -56,6 +63,7 @@ typedef struct {
     device_speed_t speed;        /**< Device speed */
     device_state_t state;        /**< Current state */
     uint32_t client_ip;          /**< IP of importing client (if exported), for display */
+    uint8_t  transport;          /**< dm_transport_t of the importing client */
     int      owner_fd;           /**< fd of the owning connection (ownership key), -1 if none */
     char     path[32];           /**< Bus ID string e.g. "1-1" */
     dm_interface_info_t interfaces[DEVICE_MANAGER_MAX_INTERFACES]; /**< Interface descriptors */
@@ -118,10 +126,11 @@ esp_err_t device_manager_get(int index, dm_device_info_t *out_info);
  * @brief Import (claim) a device for a client
  * @param index Device index
  * @param client_ip Client IP address (for display/logging)
+ * @param transport dm_transport_t of the client connection (for display)
  * @param owner_fd fd of the owning connection (ownership key for release)
  * @return ESP_OK on success
  */
-esp_err_t device_manager_import(int index, uint32_t client_ip, int owner_fd);
+esp_err_t device_manager_import(int index, uint32_t client_ip, uint8_t transport, int owner_fd);
 
 /**
  * @brief Release an exported device

@@ -42,6 +42,8 @@ int                  sectls_active_sessions(void);
 
 /* true for connections the TLS proxy forwards via loopback */
 bool                 sectls_is_proxy_peer(uint32_t ip_nbo);
+/* Real client IP of a proxied session, by its loopback source port. */
+bool                 sectls_proxy_client_ip(uint16_t port_nbo, uint32_t *ip_nbo);
 
 bool                 sectls_https_enabled(void);                       /* setting */
 esp_err_t            sectls_set_https(bool on);                         /* after restart */

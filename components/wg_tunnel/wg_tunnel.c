@@ -502,6 +502,20 @@ void wg_tunnel_get_status(wg_tunnel_status_t *out)
     xSemaphoreGive(s_mtx);
 }
 
+bool wg_tunnel_up_addr(uint32_t *ip_nbo, uint32_t *mask_nbo)
+{
+    ip4_addr_t a = { 0 }, m = { 0 };
+    xSemaphoreTake(s_mtx, portMAX_DELAY);
+    bool up = (s_st.state == WG_STATE_UP) &&
+              ip4addr_aton(s_active.address, &a) && ip4addr_aton(s_active.netmask, &m);
+    xSemaphoreGive(s_mtx);
+    if (up) {
+        if (ip_nbo) *ip_nbo = a.addr;
+        if (mask_nbo) *mask_nbo = m.addr;
+    }
+    return up;
+}
+
 const char *wg_tunnel_state_str(wg_tunnel_state_t s)
 {
     switch (s) {

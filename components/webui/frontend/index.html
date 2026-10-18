@@ -365,7 +365,8 @@ sudo systemctl enable --now avahi-daemon</pre><p>In <code>/etc/nsswitch.conf</co
                     <p><b>1. USB/IP über TLS</b>: Das Board nimmt zusätzlich verschlüsselte Verbindungen auf Port 3241 an. Am PC übernimmt <b>stunnel</b> die Verschlüsselung, und usbip spricht nur mit <code>127.0.0.1</code>.</p>
                     <ul>
                         <li><b>Additional</b>: unverschlüsselt (3240) und TLS (3241) gleichzeitig, gut zum Umstellen.</li>
-                        <li><b>TLS only</b>: Das Board lehnt unverschlüsselte Verbindungen ab, alle PCs brauchen stunnel.</li>
+                        <li><b>TLS only</b>: Das Board lehnt unverschlüsselte Verbindungen ab, alle PCs brauchen stunnel. Verbindungen über den <b>WireGuard-Tunnel</b> bleiben erlaubt, sie sind bereits verschlüsselt. Ein abgelehnter PC meldet <code>Exported Device List Request failed - Unknown Op Common Status</code>.</li>
+                        <li>In der Geräteliste kennzeichnet ein Schloss mit „TLS“ bzw. „WireGuard“ verschlüsselte USB/IP-Verbindungen.</li>
                     </ul>
                     <div class="os-tabs"><button data-os="debian">Debian / Ubuntu</button><button data-os="arch">Arch Linux</button><button data-os="windows">Windows 10/11</button></div>
                     <div class="os-pane" data-os="debian">
@@ -388,7 +389,7 @@ sudo usbip attach -r 127.0.0.1 -b 1-1</pre></li>
                             <li><b>Show key &amp; stunnel config</b> → Linux. Den Block bis zur Zeile <code>ciphers</code> als <code>/etc/stunnel/usbip.conf</code> speichern, die Zeile <code>Kennung:Schlüssel</code> als <code>/etc/stunnel/usbip.psk</code>:<pre>sudoedit /etc/stunnel/usbip.conf
 sudoedit /etc/stunnel/usbip.psk
 sudo chmod 600 /etc/stunnel/usbip.psk</pre></li>
-                            <li>stunnel starten (läuft im Hintergrund weiter, beenden mit <code>sudo pkill stunnel</code>):<pre>sudo stunnel /etc/stunnel/usbip.conf</pre><span class="note">Dauerhaft: <code>systemctl list-unit-files 'stunnel*'</code>. Gibt es die Vorlage <code>stunnel@.service</code>, startet <code>sudo systemctl enable --now stunnel@usbip</code> genau diese Datei.</span></li>
+                            <li>stunnel starten (läuft im Hintergrund weiter, beenden mit <code>sudo pkill stunnel</code>):<pre>sudo stunnel /etc/stunnel/usbip.conf</pre><span class="note">Dauerhaft: Der Dienst <code>stunnel.service</code> startet <code>/etc/stunnel/stunnel.conf</code>. Datei umbenennen und Dienst einschalten: <code>sudo mv /etc/stunnel/usbip.conf /etc/stunnel/stunnel.conf &amp;&amp; sudo systemctl enable --now stunnel</code></span></li>
                             <li>Geräte über stunnel nutzen:<pre>usbip list -r 127.0.0.1
 sudo usbip attach -r 127.0.0.1 -b 1-1</pre></li>
                             <li>Klappt das, auf <b>TLS only</b> umstellen.</li>
@@ -518,6 +519,7 @@ usbip attach -r <span class="h-wgaddr"></span> -b 1-1</pre></li>
                         </ol>
                     </div>
                     <p class="note"><b>Über das Internet</b>: Als Gegenstelle dient dann ein Server oder Router mit öffentlicher Adresse. Peer endpoint ist dessen Domain oder IP, z.&nbsp;B. das Fritzbox-VPN unter Internet → Freigaben → VPN (WireGuard). <b>Peer config snippet</b> zeigt den passenden <code>[Peer]</code>-Block für die Gegenstelle. Das Tunnel-Netz darf sich nicht mit den lokalen Netzen überschneiden. Im ACL-Modus „Closed“ die Tunnel-IP des PCs freigeben. Status „waiting for time sync“ heißt: Das Board erreicht noch keinen NTP-Server (Internet nötig).</p>
+                    <p class="note"><b>Kein Handshake</b> („connecting · no handshake“): meist blockiert die Firewall des PCs UDP 51820 oder ein Schlüssel ist vertauscht. Prüfen mit <code>sudo tcpdump -ni any udp port 51820</code>: Kommen Pakete vom Board an, liegt es an den Schlüsseln. Nach einem Neustart des Tunnels <b>am PC</b> meldet sich das Board erst nach bis zu ca. 2 Minuten neu an. Schneller geht es, wenn man hier Enable aus- und wieder einschaltet.</p>
                 </details>
             </div>
 

@@ -168,7 +168,7 @@ esp_err_t device_manager_get(int index, dm_device_info_t *out_info)
     return ESP_OK;
 }
 
-esp_err_t device_manager_import(int index, uint32_t client_ip, int owner_fd)
+esp_err_t device_manager_import(int index, uint32_t client_ip, uint8_t transport, int owner_fd)
 {
     if (!s_devmgr.initialized) {
         return ESP_ERR_INVALID_STATE;
@@ -193,6 +193,7 @@ esp_err_t device_manager_import(int index, uint32_t client_ip, int owner_fd)
 
     dev->state = DEV_STATE_EXPORTED;
     dev->client_ip = client_ip;
+    dev->transport = transport;
     dev->owner_fd = owner_fd;
 
     give_lock();
@@ -232,6 +233,7 @@ esp_err_t device_manager_release(int index)
 
     dev->state = DEV_STATE_AVAILABLE;
     dev->client_ip = 0;
+    dev->transport = DM_TRANSPORT_PLAIN;
     dev->owner_fd = -1;
 
     give_lock();
@@ -282,6 +284,7 @@ void device_manager_release_by_owner(int owner_fd)
                      i, dev->path, owner_fd);
             dev->state = DEV_STATE_AVAILABLE;
             dev->client_ip = 0;
+            dev->transport = DM_TRANSPORT_PLAIN;
             dev->owner_fd = -1;
         }
     }

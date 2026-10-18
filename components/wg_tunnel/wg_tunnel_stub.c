@@ -6,4 +6,5 @@ void wg_tunnel_get_config(wg_tunnel_config_t *out) { memset(out, 0, sizeof(*out)
 esp_err_t wg_tunnel_set_config(const wg_tunnel_config_t *cfg, const char **e) { (void)cfg; if (e) *e = "WireGuard not compiled in"; return ESP_ERR_NOT_SUPPORTED; }
 esp_err_t wg_tunnel_generate_key(char *o, size_t l) { (void)o; (void)l; return ESP_ERR_NOT_SUPPORTED; }
 void wg_tunnel_get_status(wg_tunnel_status_t *out) { memset(out, 0, sizeof(*out)); }
+bool wg_tunnel_up_addr(uint32_t *ip, uint32_t *mask) { (void)ip; (void)mask; return false; }
 const char *wg_tunnel_state_str(wg_tunnel_state_t s) { (void)s; return "unsupported"; }

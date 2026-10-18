@@ -168,7 +168,7 @@ static int handle_devlist(int fd, uint16_t client_version)
 
 /* --- IMPORT handler --- */
 
-static int handle_import(int fd, uint16_t client_version, uint32_t client_ip)
+static int handle_import(int fd, uint16_t client_version, uint32_t client_ip, uint8_t transport)
 {
     /* Read the import request (busid) */
     usbip_op_import_request_t req;
@@ -201,7 +201,7 @@ static int handle_import(int fd, uint16_t client_version, uint32_t client_ip)
 
     /* Try to import (claim) the device. The connection fd is the ownership key
      * so only this exact connection can release it on disconnect. */
-    err = device_manager_import(dev_index, client_ip, fd);
+    err = device_manager_import(dev_index, client_ip, transport, fd);
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "Failed to import device '%s': %s", req.busid, esp_err_to_name(err));
 
@@ -289,6 +289,7 @@ void usbip_connection_handle(void *arg)
     usbip_conn_ctx_t *ctx = (usbip_conn_ctx_t *)arg;
     int fd = ctx->fd;
     uint32_t client_ip = ctx->client_ip;
+    uint8_t transport = ctx->transport;
     free(ctx); /* Handler owns and frees the context */
 
     char ip_str[16];
@@ -331,7 +332,7 @@ void usbip_connection_handle(void *arg)
 
             case OP_REQ_IMPORT:
                 ESP_LOGI(TAG, "OP_REQ_IMPORT from %s", ip_str);
-                rc = handle_import(fd, client_version, client_ip);
+                rc = handle_import(fd, client_version, client_ip, transport);
                 if (rc < 0) {
                     goto done;
                 }

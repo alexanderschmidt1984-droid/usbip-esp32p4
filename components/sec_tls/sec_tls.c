@@ -59,6 +59,30 @@ static TaskHandle_t      s_listener;
 static mbedtls_ssl_config s_conf;
 static bool              s_conf_ready;
 
+/* Loopback source port of each proxied session -> real client IP, so the
+ * USB/IP server can show and log the actual peer instead of 127.0.0.1. */
+#define PROXY_MAP_SLOTS 8
+static struct { uint16_t port; uint32_t ip; } s_proxy_map[PROXY_MAP_SLOTS];
+static portMUX_TYPE      s_proxy_lock = portMUX_INITIALIZER_UNLOCKED;
+
+static void proxy_map_set(uint16_t port, uint32_t ip)
+{
+    portENTER_CRITICAL(&s_proxy_lock);
+    for (int i = 0; i < PROXY_MAP_SLOTS; i++) {
+        if (s_proxy_map[i].port == 0) { s_proxy_map[i].port = port; s_proxy_map[i].ip = ip; break; }
+    }
+    portEXIT_CRITICAL(&s_proxy_lock);
+}
+
+static void proxy_map_clear(uint16_t port)
+{
+    portENTER_CRITICAL(&s_proxy_lock);
+    for (int i = 0; i < PROXY_MAP_SLOTS; i++) {
+        if (s_proxy_map[i].port == port) s_proxy_map[i].port = 0;
+    }
+    portEXIT_CRITICAL(&s_proxy_lock);
+}
+
 /* =============================================================== helpers */
 
 static esp_err_t nvs_put_str(const char *key, const char *val)
@@ -211,6 +235,7 @@ static void session_task(void *arg)
     mbedtls_ssl_context ssl;
     mbedtls_ssl_init(&ssl);
     int local = -1;
+    uint16_t map_port = 0;
     uint8_t *up = malloc(PUMP_BUF), *down = malloc(PUMP_BUF);   /* TLS->local, local->TLS */
     if (!up || !down || mbedtls_ssl_setup(&ssl, &s_conf) != 0) goto out;
 
@@ -233,11 +258,22 @@ static void session_task(void *arg)
     ESP_LOGI(TAG, "TLS session from %s (%s)", ip_str, mbedtls_ssl_get_ciphersuite(&ssl));
     event_log_add(EVENT_LOG_LEVEL_INFO, "USB/IP TLS session from %s", ip_str);
 
-    /* Forward to the plaintext USB/IP server via loopback */
+    /* Forward to the plaintext USB/IP server via loopback. Bind first so the
+     * source port is known - and registered - before the server can accept. */
     local = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    struct sockaddr_in src = { .sin_family = AF_INET, .sin_port = 0,
+                               .sin_addr.s_addr = htonl(INADDR_LOOPBACK) };
+    socklen_t slen = sizeof(src);
+    if (local < 0 || bind(local, (struct sockaddr *)&src, sizeof(src)) != 0 ||
+        getsockname(local, (struct sockaddr *)&src, &slen) != 0) {
+        ESP_LOGE(TAG, "loopback bind failed: errno %d", errno);
+        goto out;
+    }
+    map_port = src.sin_port;
+    proxy_map_set(map_port, a.ip);
     struct sockaddr_in la = { .sin_family = AF_INET, .sin_port = htons(CONFIG_USBIP_TCP_PORT),
                               .sin_addr.s_addr = htonl(INADDR_LOOPBACK) };
-    if (local < 0 || connect(local, (struct sockaddr *)&la, sizeof(la)) != 0) {
+    if (connect(local, (struct sockaddr *)&la, sizeof(la)) != 0) {
         ESP_LOGE(TAG, "loopback connect failed: errno %d", errno);
         goto out;
     }
@@ -285,6 +321,7 @@ static void session_task(void *arg)
     ESP_LOGI(TAG, "TLS session from %s closed", ip_str);
 
 out:
+    if (map_port) proxy_map_clear(map_port);
     if (local >= 0) close(local);
     close(a.fd);
     mbedtls_ssl_free(&ssl);
@@ -476,6 +513,21 @@ int sectls_active_sessions(void) { return s_sessions; }
 bool sectls_is_proxy_peer(uint32_t ip_nbo)
 {
     return ip_nbo == htonl(INADDR_LOOPBACK);
+}
+
+bool sectls_proxy_client_ip(uint16_t port_nbo, uint32_t *ip_nbo)
+{
+    bool found = false;
+    portENTER_CRITICAL(&s_proxy_lock);
+    for (int i = 0; i < PROXY_MAP_SLOTS; i++) {
+        if (s_proxy_map[i].port && s_proxy_map[i].port == port_nbo) {
+            *ip_nbo = s_proxy_map[i].ip;
+            found = true;
+            break;
+        }
+    }
+    portEXIT_CRITICAL(&s_proxy_lock);
+    return found;
 }
 
 esp_err_t sectls_set_usbip_mode(sectls_usbip_mode_t mode)

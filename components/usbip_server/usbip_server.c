@@ -9,6 +9,8 @@
 #include "event_log.h"
 #include "esp_log.h"
 #include "sec_tls.h"
+#include "wg_tunnel.h"
+#include "device_manager.h"
 #include "esp_heap_caps.h"
 
 #include "freertos/FreeRTOS.h"
@@ -44,6 +46,18 @@ static void ip4_to_str(uint32_t ip_nbo, char *buf, size_t buflen)
 {
     const uint8_t *b = (const uint8_t *)&ip_nbo;
     snprintf(buf, buflen, "%u.%u.%u.%u", b[0], b[1], b[2], b[3]);
+}
+
+/* True if the accepted connection arrived on the WireGuard tunnel address
+ * (i.e. it is already encrypted by the tunnel). */
+static bool arrived_on_wireguard(int fd)
+{
+    uint32_t wg_ip;
+    if (!wg_tunnel_up_addr(&wg_ip, NULL)) return false;
+    struct sockaddr_in local;
+    socklen_t len = sizeof(local);
+    return getsockname(fd, (struct sockaddr *)&local, &len) == 0 &&
+           local.sin_family == AF_INET && local.sin_addr.s_addr == wg_ip;
 }
 
 static void usbip_server_task(void *arg)
@@ -120,10 +134,23 @@ static void usbip_server_task(void *arg)
         }
 
         /* TLS: connections forwarded by the on-board TLS proxy arrive via
-         * loopback and were already access-checked there. In "TLS only" mode
-         * the plaintext port refuses every other client. */
+         * loopback and were already access-checked there; look up the real
+         * peer for display. WireGuard: the connection arrived on the tunnel
+         * address, so it is encrypted already. In "TLS only" mode the
+         * plaintext port refuses every other client. */
         bool via_tls = sectls_is_proxy_peer(client_ip);
-        if (!via_tls && sectls_usbip_mode() == SECTLS_USBIP_ONLY) {
+        uint8_t transport = DM_TRANSPORT_PLAIN;
+        if (via_tls) {
+            transport = DM_TRANSPORT_TLS;
+            uint32_t real_ip;
+            if (sectls_proxy_client_ip(client_addr.sin_port, &real_ip)) {
+                client_ip = real_ip;
+                ip4_to_str(client_ip, ip_str, sizeof(ip_str));
+            }
+        } else if (arrived_on_wireguard(client_fd)) {
+            transport = DM_TRANSPORT_WG;
+        }
+        if (transport == DM_TRANSPORT_PLAIN && sectls_usbip_mode() == SECTLS_USBIP_ONLY) {
             ESP_LOGW(TAG, "Plaintext connection from %s refused (TLS only)", ip_str);
             event_log_add(EVENT_LOG_LEVEL_WARN, "Rejected %s: USB/IP is TLS-only", ip_str);
             close(client_fd);
@@ -167,6 +194,7 @@ static void usbip_server_task(void *arg)
         }
         ctx->fd = client_fd;
         ctx->client_ip = client_ip;
+        ctx->transport = transport;
 
         /* Spawn connection handler task */
         char task_name[20];

@@ -57,6 +57,9 @@ esp_err_t   wg_tunnel_set_config(const wg_tunnel_config_t *cfg, const char **err
 /* Create a new key pair on the device; private key never leaves it. */
 esp_err_t   wg_tunnel_generate_key(char *public_key_out, size_t len);
 void        wg_tunnel_get_status(wg_tunnel_status_t *out);
+/* Tunnel address/netmask (network byte order) while the tunnel is up;
+ * false otherwise. Cheap, no key material involved. */
+bool        wg_tunnel_up_addr(uint32_t *ip_nbo, uint32_t *mask_nbo);
 const char *wg_tunnel_state_str(wg_tunnel_state_t s);
 
 #ifdef __cplusplus

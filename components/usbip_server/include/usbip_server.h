@@ -14,7 +14,8 @@ extern "C" {
 /** Connection context passed to the per-client handler task */
 typedef struct {
     int       fd;         /**< Client socket file descriptor */
-    uint32_t  client_ip;  /**< Client IP address (network byte order) */
+    uint32_t  client_ip;  /**< Client IP address (network byte order); real peer for TLS */
+    uint8_t   transport;  /**< dm_transport_t */
 } usbip_conn_ctx_t;
 
 /**

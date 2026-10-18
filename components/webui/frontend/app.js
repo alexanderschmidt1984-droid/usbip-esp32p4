@@ -54,22 +54,19 @@
      * WireGuard status (sidebar badge, device client badges)
      * ================================================================ */
 
-    var wgNet = null;  /* { addr, mask } as little-endian u32 like client_ip, while the tunnel is up */
-
-    function ip4parse(s) {
-        var p = String(s || '').split('.');
-        if (p.length !== 4) return null;
-        return ((+p[0]) | (+p[1] << 8) | (+p[2] << 16) | (+p[3] << 24)) >>> 0;
-    }
-
     function updateWgBadge(wg, self) {
         var $b = document.getElementById('wg-badge');
         var $t = document.getElementById('wg-badge-text');
         if (!$b || !$t) return;
-        var a = wg && wg.up ? ip4parse(wg.addr) : null;
-        var m = wg && wg.up ? ip4parse(wg.mask) : null;
-        wgNet = (a !== null && m !== null) ? { addr: a, mask: m } : null;
         fillHelpValues(wg);
+        var https = location.protocol === 'https:';
+        if (!(wg && wg.up && self) && https) {
+            $b.style.display = '';
+            $b.className = 'ws-status wg-badge secure';
+            $t.textContent = 'Über HTTPS verschlüsselt';
+            $b.title = 'Diese Web-UI-Sitzung ist per HTTPS (TLS) verschlüsselt.';
+            return;
+        }
         if (!wg || !wg.enabled) { $b.style.display = 'none'; return; }
         $b.style.display = '';
         if (wg.up && self) {
@@ -87,16 +84,17 @@
         }
     }
 
-    function inWgNet(ip) {
-        return !!(wgNet && ip && ((ip & wgNet.mask) >>> 0) === ((wgNet.addr & wgNet.mask) >>> 0));
-    }
-
-    function clientBadge(ip, str) {
-        if (inWgNet(ip)) {
+    /* tr = transport reported by the board: 0 plain, 1 TLS (stunnel), 2 WireGuard */
+    function clientBadge(tr, str) {
+        if (tr === 2) {
             return '<span class="badge badge-wg" title="USB/IP-Verbindung läuft durch den WireGuard-Tunnel">&#128274; ' +
                    esc(str) + ' · WireGuard</span>';
         }
-        return '<span class="badge badge-state">' + esc(str) + '</span>';
+        if (tr === 1) {
+            return '<span class="badge badge-wg" title="USB/IP-Verbindung ist per TLS verschlüsselt (stunnel)">&#128274; ' +
+                   esc(str) + ' · TLS</span>';
+        }
+        return '<span class="badge badge-state" title="Unverschlüsselte USB/IP-Verbindung">' + esc(str) + '</span>';
     }
 
     /* ================================================================
@@ -681,7 +679,7 @@
                     var badgeHtml = '<span class="badge badge-' + spdCls + '">' + spdStr + '</span>' +
                                    '<span class="badge badge-state badge-' + stCls + '">' + stStr + '</span>';
                     if (clientStr) {
-                        badgeHtml += clientBadge(d.client_ip, clientStr);
+                        badgeHtml += clientBadge(d.tr, clientStr);
                     }
                     var tpTotal = tp.bIn + tp.bOut;
                     if (tpTotal > 0) {
@@ -703,7 +701,7 @@
                 var badgeHtml = '<span class="badge badge-' + spdCls + '">' + spdStr + '</span>' +
                                '<span class="badge badge-state badge-' + stCls + '">' + stStr + '</span>';
                 if (clientStr) {
-                    badgeHtml += clientBadge(d.client_ip, clientStr);
+                    badgeHtml += clientBadge(d.tr, clientStr);
                 }
                 var tpTotal = tp.bIn + tp.bOut;
                 if (tpTotal > 0) {
