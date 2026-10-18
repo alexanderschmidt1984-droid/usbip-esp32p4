@@ -18,4 +18,5 @@ idf_component_register(
         esp_pm
         wg_tunnel
         sec_tls
+        power_mgr
 )

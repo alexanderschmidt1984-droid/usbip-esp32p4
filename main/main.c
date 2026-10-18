@@ -12,8 +12,10 @@
 #include "esp_system.h"
 #include "esp_heap_caps.h"
 #include "sdkconfig.h"
-#if CONFIG_USBIP_POWER_SAVE
+#if CONFIG_PM_PROFILING
 #include "esp_pm.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #endif
 
 #include "event_log.h"
@@ -26,6 +28,7 @@
 #include "webui.h"
 #include "wg_tunnel.h"
 #include "sec_tls.h"
+#include "power_mgr.h"
 #if CONFIG_CAPTURE_ENABLED
 #include "capture.h"
 #endif
@@ -91,21 +94,11 @@ void app_main(void)
     s_orig_vprintf = esp_log_set_vprintf(custom_vprintf);
     ESP_LOGI(TAG, "Custom log handler installed");
 
-#if CONFIG_USBIP_POWER_SAVE
-    {
-        /* Dynamic frequency scaling: idle at USBIP_PM_MIN_FREQ_MHZ, full clock
-         * whenever a USB/IP client has a device attached (PM lock). Light sleep
-         * stays off so Ethernet/USB remain responsive. */
-        esp_pm_config_t pm = {
-            .max_freq_mhz = CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,
-            .min_freq_mhz = CONFIG_USBIP_PM_MIN_FREQ_MHZ,
-            .light_sleep_enable = false,
-        };
-        esp_err_t pm_err = esp_pm_configure(&pm);
-        ESP_LOGI(TAG, "Power save (DFS %d-%d MHz): %s", pm.min_freq_mhz, pm.max_freq_mhz,
-                 esp_err_to_name(pm_err));
+    /* Power save (DFS), switchable in the web UI; non-fatal */
+    esp_err_t pm_err = power_mgr_init();
+    if (pm_err != ESP_OK) {
+        ESP_LOGW(TAG, "Power save init failed: %s", esp_err_to_name(pm_err));
     }
-#endif
 
     ESP_ERROR_CHECK(access_control_init());
     ESP_LOGI(TAG, "Access control initialized");
@@ -160,4 +153,12 @@ void app_main(void)
                   (unsigned long)cpu_freq_mhz, (float)psram_size / (1024.0f * 1024.0f), (unsigned)free_heap);
 
     ESP_LOGI(TAG, "USB/IP server ready. Connect via: usbip list -r <ip>");
+
+#if CONFIG_PM_PROFILING
+    /* Test aid: time spent per clock mode and per PM lock since boot. */
+    for (;;) {
+        vTaskDelay(pdMS_TO_TICKS(30000));
+        esp_pm_dump_locks(stdout);
+    }
+#endif
 }

@@ -243,6 +243,9 @@
     var $sThroughput = document.getElementById('s-throughput');
     var $sMemory = document.getElementById('s-memory');
     var $sUptime = document.getElementById('s-uptime');
+    var $sCpu = document.getElementById('s-cpu');
+    var $pmBadge = document.getElementById('pm-badge');
+    var $pmBadgeText = document.getElementById('pm-badge-text');
     var $sMemBar = document.getElementById('s-mem-bar');
     var $bwIn = document.getElementById('bw-in');
     var $bwOut = document.getElementById('bw-out');
@@ -290,7 +293,7 @@
     var MAX_LOG_ENTRIES = 15;
 
     /* Settings ACL working list */
-    var aclIps = [];
+    var aclEntries = [];
 
     /* ================================================================
      * Sidebar navigation
@@ -499,6 +502,12 @@
         $sClients.textContent = clientCount;
         $sThroughput.textContent = formatBytes(totalThroughputIn + totalThroughputOut);
         $sUptime.textContent = formatUptime(msg.uptime_sec);
+        if (msg.cpu_mhz) $sCpu.textContent = msg.cpu_mhz + ' MHz';
+        /* Power save badge: lit whenever the setting is on (MHz = current mode). */
+        $pmBadge.style.display = msg.pm ? '' : 'none';
+        if (msg.pm) {
+            $pmBadgeText.textContent = 'Energiesparen an' + (msg.cpu_mhz ? ' \u00b7 ' + msg.cpu_mhz + ' MHz' : '');
+        }
         $sidebarUptime.textContent = 'Uptime: ' + formatUptime(msg.uptime_sec);
 
         /* Memory */
@@ -1175,7 +1184,7 @@
          * the server's max_open_sockets (7), and its LRU purge then closes the
          * WebSocket (oldest socket) -> brief "Disconnected" on every visit. */
         var loaders = [loadNetworkSettings, loadAuthSettings, loadAclSettings,
-                       loadDevFilter, loadWireguard, loadSecurity, loadSystemInfo];
+                       loadDevFilter, loadWireguard, loadSecurity, loadPower, loadSystemInfo];
         loaders.reduce(function(p, fn) {
             return p.then(function() { return fn(); }, function() { return fn(); });
         }, Promise.resolve());
@@ -1281,6 +1290,12 @@
     }
 
     window.saveAuth = function() {
+        var $pass2 = document.getElementById('set-auth-pass2');
+        if ($setAuthPass.value !== $pass2.value) {
+            toast('Passwörter stimmen nicht überein', 'error');
+            $pass2.focus();
+            return;
+        }
         var body = {
             enabled: $setAuthEnabled.checked,
             username: $setAuthUser.value,
@@ -1295,6 +1310,8 @@
         .then(function(data) {
             if (data.ok) {
                 toast('Auth settings saved', 'success');
+                $setAuthPass.value = '';
+                $pass2.value = '';
                 loadAuthSettings();
             } else {
                 toast(data.error || 'Save failed', 'error');
@@ -1339,6 +1356,37 @@
             }
         })
         .catch(function() { toast('Request failed', 'error'); });
+    };
+
+    /* --- Power save --- */
+
+    function loadPower() {
+        return fetch('/api/settings/power')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                document.getElementById('power-group').style.display = data.available ? '' : 'none';
+                document.getElementById('set-power').checked = !!data.enabled;
+            })
+            .catch(function() { /* ignore */ });
+    }
+
+    window.savePower = function() {
+        var on = document.getElementById('set-power').checked;
+        fetch('/api/settings/power', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled: on })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.ok) {
+                toast(on ? 'Energiesparen an' : 'Energiesparen aus - volle Leistung', 'success');
+            } else {
+                toast(data.error || 'Save failed', 'error');
+                loadPower();
+            }
+        })
+        .catch(function() { toast('Request failed', 'error'); loadPower(); });
     };
 
     /* --- WireGuard tunnel --- */
@@ -1571,13 +1619,19 @@
     var $aclRadios = document.querySelectorAll('input[name="acl-mode"]');
     var $aclListSection = document.getElementById('acl-list-section');
     var $aclList = document.getElementById('acl-list');
-    var $aclNewIp = document.getElementById('acl-new-ip');
+    var $aclNewType = document.getElementById('acl-new-type');
+    var $aclNewValue = document.getElementById('acl-new-value');
+    var $aclNewComment = document.getElementById('acl-new-comment');
+    var aclMe = { ip: '', mac: '' };
 
     for (var ai = 0; ai < $aclRadios.length; ai++) {
         $aclRadios[ai].addEventListener('change', function() {
             $aclListSection.style.display = this.value === 'closed' ? 'block' : 'none';
         });
     }
+    $aclNewType.addEventListener('change', function() {
+        $aclNewValue.placeholder = this.value === 'mac' ? 'aa:bb:cc:dd:ee:ff' : '192.168.1.100';
+    });
 
     function loadAclSettings() {
         return fetch('/api/settings/acl')
@@ -1590,8 +1644,12 @@
                 }
                 $aclListSection.style.display = data.closed ? 'block' : 'none';
 
-                /* Set IP list */
-                aclIps = data.allowlist || [];
+                aclEntries = data.entries || [];
+                aclMe = { ip: data.me_ip || '', mac: data.me_mac || '' };
+                document.getElementById('acl-add-me').style.display = aclMe.ip ? '' : 'none';
+                document.getElementById('acl-me-info').textContent = aclMe.ip
+                    ? 'Dieser PC: ' + aclMe.ip + (aclMe.mac ? ' / ' + aclMe.mac : ' (MAC unbekannt, nicht im selben LAN)')
+                    : '';
                 renderAclList();
             })
             .catch(function() { /* ignore */ });
@@ -1599,40 +1657,67 @@
 
     function renderAclList() {
         if (!$aclList) return;
-        if (!aclIps.length) {
-            $aclList.innerHTML = '<div class="text-dim" style="padding:0.5rem 0;font-size:0.8125rem">No IPs in allowlist</div>';
+        if (!aclEntries.length) {
+            $aclList.innerHTML = '<div class="text-dim" style="padding:0.5rem 0;font-size:0.8125rem">No entries in allowlist</div>';
             return;
         }
         var html = '';
-        for (var i = 0; i < aclIps.length; i++) {
+        for (var i = 0; i < aclEntries.length; i++) {
+            var e = aclEntries[i];
             html += '<div class="acl-item">' +
-                '<span class="acl-ip">' + esc(aclIps[i]) + '</span>' +
-                '<button onclick="window._removeAclIp(' + i + ')">Remove</button>' +
+                '<span class="acl-type">' + (e.type === 'mac' ? 'MAC' : 'IP') + '</span>' +
+                '<span class="acl-ip">' + esc(e.value) + '</span>' +
+                '<span class="acl-comment">' + esc(e.comment || '') + '</span>' +
+                '<button onclick="window._removeAclEntry(' + i + ')">Remove</button>' +
                 '</div>';
         }
         $aclList.innerHTML = html;
     }
 
-    window._removeAclIp = function(index) {
-        aclIps.splice(index, 1);
+    window._removeAclEntry = function(index) {
+        aclEntries.splice(index, 1);
         renderAclList();
     };
 
-    window.addAclIp = function() {
-        var ip = $aclNewIp.value.trim();
-        if (!ip) return;
-        /* Basic IP validation */
-        if (!/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) {
+    function normMac(v) {
+        var m = v.trim().toLowerCase().replace(/-/g, ':');
+        return /^([0-9a-f]{2}:){5}[0-9a-f]{2}$/.test(m) ? m : null;
+    }
+
+    function pushAclEntry(type, value, comment) {
+        if (type === 'mac') {
+            value = normMac(value);
+            if (!value) { toast('Invalid MAC address (aa:bb:cc:dd:ee:ff)', 'error'); return false; }
+        } else if (!/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(value)) {
             toast('Invalid IP address', 'error');
-            return;
+            return false;
         }
-        if (aclIps.indexOf(ip) !== -1) {
-            toast('IP already in list', 'error');
-            return;
+        for (var i = 0; i < aclEntries.length; i++) {
+            if (aclEntries[i].type === type && aclEntries[i].value === value) {
+                toast('Already in list', 'error');
+                return false;
+            }
         }
-        aclIps.push(ip);
-        $aclNewIp.value = '';
+        if (aclEntries.length >= 32) { toast('List full (max 32)', 'error'); return false; }
+        aclEntries.push({ type: type, value: value, comment: comment.slice(0, 31) });
         renderAclList();
+        return true;
+    }
+
+    window.addAclEntry = function() {
+        var value = $aclNewValue.value.trim();
+        if (!value) return;
+        if (pushAclEntry($aclNewType.value, value, $aclNewComment.value.trim())) {
+            $aclNewValue.value = '';
+            $aclNewComment.value = '';
+        }
+    };
+
+    window.addAclMe = function() {
+        var type = $aclNewType.value;
+        var value = type === 'mac' ? aclMe.mac : aclMe.ip;
+        if (!value) { toast('MAC dieses PCs unbekannt (nicht im selben LAN) - IP verwenden', 'error'); return; }
+        if (pushAclEntry(type, value, $aclNewComment.value.trim())) $aclNewComment.value = '';
     };
 
     window.saveAcl = function() {
@@ -1645,7 +1730,7 @@
         }
         var body = {
             closed: closed,
-            allowlist: aclIps
+            entries: aclEntries
         };
         fetch('/api/settings/acl', {
             method: 'POST',
@@ -1656,6 +1741,7 @@
         .then(function(data) {
             if (data.ok) {
                 toast('ACL settings saved', 'success');
+                loadAclSettings();
             } else {
                 toast(data.error || 'Save failed', 'error');
             }

@@ -7,6 +7,11 @@
 #include "esp_http_server.h"
 #include "esp_system.h"
 #include "esp_timer.h"
+#include "esp_private/esp_clk.h"
+#include "esp_pm.h"
+#if CONFIG_PM_ENABLE
+#include "esp_private/pm_impl.h"
+#endif
 #include "freertos/FreeRTOS.h"
 #include "device_manager.h"
 #include "event_log.h"
@@ -186,11 +191,34 @@ void ws_broadcast_stats(void)
     uint32_t free_internal = esp_get_free_internal_heap_size();
     int64_t uptime_us = esp_timer_get_time();
     int uptime_sec = (int)(uptime_us / 1000000);
+    /* CPU clock. Without power save it is fixed. With power save (DFS) a
+     * running task always holds the CPU at max (FreeRTOS "rtosN" PM locks),
+     * so reading the clock here would always say max. Report the mode the
+     * board is in between tasks instead: full clock while a device is
+     * exported (usbip_connection PM lock), otherwise the idle clock. The
+     * Ethernet driver holds an APB_FREQ_MAX lock for good, so idle is the
+     * APB_MAX mode, not min_freq_mhz. */
+    int cpu_mhz = esp_clk_cpu_freq() / 1000000;
+    bool pm_on = false;
+#if CONFIG_PM_ENABLE
+    esp_pm_config_t pmc;
+    if (esp_pm_get_configuration(&pmc) == ESP_OK && pmc.min_freq_mhz < pmc.max_freq_mhz) {
+        pm_on = true;
+        bool busy = false;
+        for (int i = 0; i < DEVICE_MANAGER_MAX_DEVICES && !busy; i++) {
+            dm_device_info_t di;
+            busy = device_manager_get(i, &di) == ESP_OK && di.in_use &&
+                   di.state == DEV_STATE_EXPORTED;
+        }
+        cpu_mhz = esp_pm_impl_get_cpu_freq(busy ? PM_MODE_CPU_MAX : PM_MODE_APB_MAX);
+    }
+#endif
 
     pos += snprintf(json_buf + pos, buflen - pos,
         "{\"type\":\"stats\",\"free_heap\":%lu,\"free_internal\":%lu,\"uptime_sec\":%d,"
-        "\"bw_in\":0,\"bw_out\":0,\"devices\":",
-        (unsigned long)free_heap, (unsigned long)free_internal, uptime_sec);
+        "\"cpu_mhz\":%d,\"pm\":%s,\"bw_in\":0,\"bw_out\":0,\"devices\":",
+        (unsigned long)free_heap, (unsigned long)free_internal, uptime_sec, cpu_mhz,
+        pm_on ? "true" : "false");
 
     pos += build_devices_json(json_buf + pos, buflen - pos);
 

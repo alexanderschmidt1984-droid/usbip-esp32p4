@@ -489,6 +489,7 @@ body {
 .device-detail-row {
     display: flex;
     justify-content: space-between;
+    gap: 0.5rem;
     padding: 0.5rem 0;
     border-bottom: 1px solid var(--border-light);
     font-size: 0.8125rem;
@@ -826,7 +827,40 @@ body {
 
 /* ---- ACL list ---- */
 #acl-list {
-    padding: 0 1.25rem;
+    padding: 0;
+}
+
+.acl-item .acl-type {
+    flex: 0 0 2.75rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.acl-item .acl-ip {
+    flex: 0 0 11rem;
+}
+
+.acl-item .acl-comment {
+    flex: 1;
+    min-width: 0;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0 0.5rem;
+}
+
+.acl-add { flex-wrap: wrap; }
+.form-row select {
+    padding: 0.5rem 0.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 0.875rem;
 }
 
 .acl-item {
@@ -1033,6 +1067,8 @@ body {
 .wg-badge.secure { color: var(--green); font-weight: 600; }
 .wg-badge.lan { color: rgba(226, 232, 240, 0.6); }
 .wg-badge.busy { color: var(--orange); }
+.pm-badge { margin-top: -0.25rem; color: var(--green); font-weight: 600; }
+.pm-badge .pm-leaf { flex-shrink: 0; }
 .badge.badge-wg { background: rgba(34, 197, 94, 0.12); color: var(--green-text); }
 
 /* ---- Settings help ---- */

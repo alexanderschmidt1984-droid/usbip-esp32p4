@@ -72,6 +72,13 @@
                 </svg>
                 <span id="wg-badge-text"></span>
             </div>
+            <div class="ws-status pm-badge" id="pm-badge" style="display:none" title="Stromsparen: im Leerlauf taktet die CPU herunter, mit angehängtem Gerät läuft sie voll">
+                <svg class="pm-leaf" viewBox="0 0 16 16" width="12" height="12" fill="currentColor">
+                    <path d="M14 2C7 2 3 5 3 10c0 1.2.3 2.2.8 3L2.5 14.3l.9.9L4.7 13.9C5.6 14.6 6.8 15 8 15c4.5 0 6-5 6-13z"/>
+                    <path d="M4.5 13.5C6 10 8.5 7.5 12 5.5" fill="none" stroke="var(--sidebar-bg)" stroke-width="1.1" stroke-linecap="round"/>
+                </svg>
+                <span id="pm-badge-text">Energiesparen an</span>
+            </div>
             <div class="sidebar-info" id="sidebar-uptime">--</div>
             <div class="sidebar-info sidebar-version" id="sidebar-version">--</div>
             <button type="button" class="theme-toggle" id="theme-toggle" title="Design wechseln">
@@ -109,6 +116,10 @@
                 <div class="stat-card">
                     <div class="stat-value" id="s-uptime">--</div>
                     <div class="stat-label">Uptime</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="s-cpu">--</div>
+                    <div class="stat-label">CPU</div>
                 </div>
             </div>
             <div class="panel">
@@ -270,6 +281,7 @@ sudo systemctl enable --now avahi-daemon</pre><p>In <code>/etc/nsswitch.conf</co
                 <div id="auth-fields" style="display:none">
                     <div class="form-group"><label>Username</label><input type="text" id="set-auth-user"></div>
                     <div class="form-group"><label>Password</label><input type="password" id="set-auth-pass" autocomplete="new-password"></div>
+                    <div class="form-group"><label>Repeat password</label><input type="password" id="set-auth-pass2" autocomplete="new-password"></div>
                 </div>
                 <p id="auth-hint" class="hint" style="display:none">No password set: settings cannot be changed until a WebUI password is configured. Leave the password field empty to keep the current one.</p>
                 <button class="btn" onclick="saveAuth()">Save Auth Settings</button>
@@ -277,11 +289,11 @@ sudo systemctl enable --now avahi-daemon</pre><p>In <code>/etc/nsswitch.conf</co
                     <summary>Hilfe</summary>
                     <ul>
                         <li>Ohne Passwort ist die Oberfläche nur lesbar. Einstellungen lassen sich erst ändern, wenn ein Passwort gesetzt ist.</li>
-                        <li>Haken setzen, Benutzername und Passwort eintragen, <b>Save Auth Settings</b>. Danach fragt der Browser beim Öffnen nach den Zugangsdaten.</li>
-                        <li>Passwort ändern: neues eintragen. Feld leer lassen = bisheriges Passwort bleibt.</li>
+                        <li>Haken setzen, Benutzername eintragen und das Passwort <b>zweimal</b> (gegen Tippfehler), dann <b>Save Auth Settings</b>. Danach fragt der Browser beim Öffnen nach den Zugangsdaten.</li>
+                        <li>Passwort ändern: neues in beide Felder eintragen. Beide leer lassen = bisheriges Passwort bleibt.</li>
                         <li>Nach 5 falschen Versuchen sperrt das Board weitere Anmeldungen von diesem PC für 30 Sekunden.</li>
                         <li>Ohne HTTPS geht das Passwort unverschlüsselt durchs LAN. Schutz: HTTPS (Panel „Encryption“) oder die Oberfläche über WireGuard öffnen.</li>
-                        <li><b>Passwort vergessen</b>: Factory Reset geht nur angemeldet. Sonst das Board per USB komplett löschen und neu flashen (<code>idf.py -p /dev/ttyACM0 erase-flash flash</code>). Dabei gehen alle Einstellungen verloren.</li>
+                        <li><b>Passwort vergessen</b>: Factory Reset geht nur angemeldet. Sonst per USB-Kabel nur die Einstellungen löschen, die Firmware bleibt: <code>idf.py -p /dev/ttyACM0 erase-region 0x9000 0x6000</code> (Windows: <code>-p COM3</code> o.&nbsp;ä.). Dabei gehen alle Einstellungen verloren (auch WireGuard- und TLS-Schlüssel).</li>
                     </ul>
                 </details>
             </div>
@@ -294,9 +306,18 @@ sudo systemctl enable --now avahi-daemon</pre><p>In <code>/etc/nsswitch.conf</co
                 </div>
                 <div id="acl-list-section" style="display:none">
                     <div id="acl-list"></div>
+                    <div class="form-row acl-add">
+                        <select id="acl-new-type">
+                            <option value="ip">IP</option>
+                            <option value="mac">MAC</option>
+                        </select>
+                        <input type="text" id="acl-new-value" placeholder="192.168.1.100">
+                        <input type="text" id="acl-new-comment" maxlength="31" placeholder="Kommentar, z. B. Alex Laptop">
+                        <button class="btn btn-sm" onclick="addAclEntry()">Add</button>
+                    </div>
                     <div class="form-row">
-                        <input type="text" id="acl-new-ip" placeholder="192.168.1.100">
-                        <button class="btn btn-sm" onclick="addAclIp()">Add</button>
+                        <button class="btn btn-sm" id="acl-add-me" onclick="addAclMe()" style="display:none">Diesen PC eintragen</button>
+                        <span class="hint" id="acl-me-info"></span>
                     </div>
                 </div>
                 <button class="btn" onclick="saveAcl()">Save ACL</button>
@@ -304,15 +325,19 @@ sudo systemctl enable --now avahi-daemon</pre><p>In <code>/etc/nsswitch.conf</co
                     <summary>Hilfe</summary>
                     <ul>
                         <li><b>Open</b>: Jeder im Netz darf USB/IP und diese Oberfläche nutzen.</li>
-                        <li><b>Closed (Allowlist)</b>: Nur die eingetragenen IP-Adressen dürfen zugreifen, und zwar auf USB/IP <b>und</b> auf diese Oberfläche.</li>
+                        <li><b>Closed (Allowlist)</b>: Nur eingetragene Teilnehmer dürfen zugreifen, und zwar auf USB/IP <b>und</b> auf diese Oberfläche. Ein Eintrag ist entweder eine <b>IP</b> oder eine <b>MAC-Adresse</b>, dazu ein <b>Kommentar</b>, damit klar bleibt, wem du den Zugang gegeben hast.</li>
+                        <li><b>MAC statt IP</b>: praktisch, wenn der PC per DHCP mal eine andere IP bekommt. Funktioniert nur für PCs im <b>selben LAN</b> (das Board liest die MAC aus seiner ARP-Tabelle), nicht über WireGuard oder einen Router hinweg. Eine MAC lässt sich fälschen – sie ist eine Bequemlichkeit, kein starker Schutz. Für echten Schutz: Passwort, TLS oder WireGuard.</li>
+                        <li><b>Diesen PC eintragen</b> übernimmt IP bzw. MAC des PCs, an dem du gerade sitzt (Typ vorher wählen).</li>
                         <li>Der PC, von dem aus du speicherst, wird automatisch in die Liste aufgenommen. So sperrst du dich nicht selbst aus.</li>
                         <li>Mit WireGuard die <b>Tunnel-IP</b> des PCs eintragen (z.&nbsp;B. <code>10.8.0.1</code>), nicht seine LAN-Adresse.</li>
                     </ul>
-                    <p>Eigene IP-Adresse herausfinden:</p>
+                    <p>Eigene IP- bzw. MAC-Adresse herausfinden:</p>
                     <div class="os-tabs"><button data-os="debian">Debian / Ubuntu</button><button data-os="arch">Arch Linux</button><button data-os="windows">Windows 10/11</button></div>
-                    <div class="os-pane" data-os="debian"><pre>ip -4 -br addr</pre></div>
-                    <div class="os-pane" data-os="arch"><pre>ip -4 -br addr</pre></div>
-                    <div class="os-pane" data-os="windows"><pre>ipconfig</pre><p class="note">Wert bei „IPv4-Adresse“ des Ethernet- bzw. WLAN-Adapters.</p></div>
+                    <div class="os-pane" data-os="debian"><pre>ip -4 -br addr      # IP
+ip -br link         # MAC</pre></div>
+                    <div class="os-pane" data-os="arch"><pre>ip -4 -br addr      # IP
+ip -br link         # MAC</pre></div>
+                    <div class="os-pane" data-os="windows"><pre>ipconfig /all</pre><p class="note">„IPv4-Adresse“ bzw. „Physische Adresse“ (MAC) des Ethernet- oder WLAN-Adapters.</p></div>
                 </details>
             </div>
 
@@ -539,6 +564,9 @@ usbip attach -r <span class="h-wgaddr"></span> -b 1-1</pre></li>
                 <div class="info-row"><span>ESP-IDF</span><span id="sys-idf">--</span></div>
                 <div class="info-row"><span>Chip</span><span id="sys-chip">--</span></div>
                 <div class="info-row"><span>Free Heap</span><span id="sys-heap">--</span></div>
+                <div class="form-group" id="power-group" style="display:none">
+                    <label class="checkbox-label"><input type="checkbox" id="set-power" onchange="savePower()"> Energiesparen (CPU taktet im Leerlauf herunter)</label>
+                </div>
                 <div class="btn-row">
                     <button class="btn btn-warn" onclick="if(confirm('Restart the device?'))fetch('/api/system/restart',{method:'POST'})">Restart</button>
                     <button class="btn btn-danger" onclick="if(confirm('Erase all settings and restart?'))fetch('/api/system/factory-reset',{method:'POST'})">Factory Reset</button>
@@ -546,6 +574,7 @@ usbip attach -r <span class="h-wgaddr"></span> -b 1-1</pre></li>
                 <details class="help">
                     <summary>Hilfe</summary>
                     <ul>
+                        <li><b>Energiesparen</b> (ab Werk an): Ohne angehängtes Gerät läuft die CPU mit 100&nbsp;MHz statt 400&nbsp;MHz. Sobald ein Gerät angehängt ist, geht sie auf vollen Takt, die Übertragung wird also nicht langsamer. Abgehakt läuft das Board die ganze Zeit mit 400&nbsp;MHz. Wirkt sofort, ohne Neustart. Ist es an, steht unten links das grüne Blatt.</li>
                         <li><b>Restart</b>: startet das Board neu. Eingebundene USB-Geräte werden dabei an allen PCs getrennt und müssen danach neu mit <code>attach</code> eingebunden werden.</li>
                         <li><b>Factory Reset</b>: löscht <b>alle</b> Einstellungen (Netzwerk, Passwort, ACL, Geräte-Filter, WireGuard- und TLS-Schlüssel) und startet neu. Danach gilt DHCP ohne Passwort.</li>
                         <li><b>Firmware-Update</b>: per USB-Kabel mit <code>idf.py -p /dev/ttyACM0 flash</code> (Windows: <code>-p COM3</code> o.&nbsp;ä.). Die Einstellungen bleiben erhalten.</li>

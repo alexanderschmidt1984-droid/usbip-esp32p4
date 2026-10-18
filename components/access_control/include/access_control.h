@@ -1,6 +1,6 @@
 /*
  * Access Control Component
- * IP-based access control with NVS persistence
+ * IP- and MAC-based access control with NVS persistence
  */
 #pragma once
 
@@ -12,19 +12,35 @@
 extern "C" {
 #endif
 
-/** Maximum number of IPs in the allowlist */
+/** Maximum number of allowlist entries (IP and MAC together) */
 #define ACCESS_CONTROL_MAX_IPS 32
+#define ACCESS_CONTROL_COMMENT_LEN 32   /* incl. NUL */
+
+typedef enum {
+    ACL_ENTRY_IP  = 0,   /**< match the client IP */
+    ACL_ENTRY_MAC = 1,   /**< match the client MAC (ARP table; same LAN only) */
+} acl_entry_type_t;
+
+/** Allowlist entry; comment names who was given access. */
+typedef struct {
+    uint8_t  type;                                /**< acl_entry_type_t */
+    uint8_t  mac[6];                              /**< ACL_ENTRY_MAC */
+    uint32_t ip;                                  /**< ACL_ENTRY_IP, network byte order */
+    char     comment[ACCESS_CONTROL_COMMENT_LEN];
+} acl_entry_t;
 
 /**
  * @brief Initialize access control subsystem
  * Loads mode and allowlist from NVS. Defaults to open mode if nothing saved.
+ * An allowlist stored by older firmware (IPs only) is taken over.
  * @return ESP_OK on success
  */
 esp_err_t access_control_init(void);
 
 /**
- * @brief Check if a client IP is allowed
- * In open mode, always returns true. In closed mode, only allowlisted IPs pass.
+ * @brief Check if a client is allowed (logs denials)
+ * In open mode, always returns true. In closed mode the client passes when its
+ * IP is listed, or when its MAC (looked up in the ARP table) is listed.
  * @param client_ip Client IP address (network byte order)
  * @return true if allowed
  */
@@ -32,7 +48,7 @@ bool access_control_check(uint32_t client_ip);
 
 /**
  * @brief Silent allowlist lookup (no logging) - for frequent checks such as
- *        Web UI requests. Returns true if ip is in the allowlist.
+ *        Web UI requests. Returns true if the client is in the allowlist.
  * @param client_ip Client IP address (network byte order)
  */
 bool access_control_is_allowed(uint32_t client_ip);
@@ -50,27 +66,30 @@ bool access_control_is_closed_mode(void);
 void access_control_set_mode(bool closed);
 
 /**
- * @brief Add an IP to the allowlist
- * Checks for duplicates and saves to NVS.
+ * @brief Add an IP entry to the allowlist (no-op if the IP is already listed)
  * @param ip IP address to add (network byte order)
+ * @param comment optional note, may be NULL
  * @return ESP_OK on success, ESP_ERR_NO_MEM if list full, ESP_ERR_INVALID_STATE if duplicate
  */
-esp_err_t access_control_add_ip(uint32_t ip);
+esp_err_t access_control_add_ip(uint32_t ip, const char *comment);
 
 /**
- * @brief Remove an IP from the allowlist
- * @param ip IP address to remove (network byte order)
- * @return ESP_OK on success, ESP_ERR_NOT_FOUND if not in list
+ * @brief Get the allowlist
+ * @return Number of entries written to out
  */
-esp_err_t access_control_remove_ip(uint32_t ip);
+int access_control_get_entries(acl_entry_t *out, int max);
 
 /**
- * @brief Get current allowlist
- * @param[out] out_ips Array to fill with IPs
- * @param max Maximum number of IPs to return
- * @return Number of IPs written to out_ips
+ * @brief Replace the whole allowlist and save it
+ * @return ESP_OK, ESP_ERR_INVALID_SIZE if n > ACCESS_CONTROL_MAX_IPS
  */
-int access_control_get_allowlist(uint32_t *out_ips, int max);
+esp_err_t access_control_set_entries(const acl_entry_t *entries, int n);
+
+/**
+ * @brief MAC address of a client on the local network (from the ARP table)
+ * @return true if found
+ */
+bool access_control_lookup_mac(uint32_t client_ip, uint8_t mac_out[6]);
 
 #ifdef __cplusplus
 }

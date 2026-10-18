@@ -46,15 +46,18 @@ menu "USB/IP Server Configuration"
             password itself. Read-only pages stay available.
 
     config USBIP_POWER_SAVE
-        bool "Power save: dynamic CPU frequency scaling (EXPERIMENTAL)"
+        bool "Power save: dynamic CPU frequency scaling"
         depends on PM_ENABLE
-        default n
+        default y
         help
-            Lets the CPU clock down to USBIP_PM_MIN_FREQ_MHZ while no USB/IP
-            client is connected. A power-management lock keeps the CPU at full
-            speed for as long as a client connection is open, so transfer
-            latency is unaffected. Light sleep is NOT used (the board must stay
-            reachable on the network).
+            Lets the CPU clock down while no USB/IP device is attached. A
+            power-management lock keeps the CPU at full speed for as long as a
+            device is attached, so transfer latency is unaffected. Light sleep
+            is NOT used (the board must stay reachable on the network).
+            Compiled in = offered in the web UI (Settings -> System), on by
+            default; switching it off there keeps the CPU at full clock.
+            Note: the Ethernet driver holds an APB_FREQ_MAX lock, so the idle
+            clock is 100 MHz on ESP32-P4, not USBIP_PM_MIN_FREQ_MHZ.
 
     config USBIP_PM_MIN_FREQ_MHZ
         int "Minimum CPU frequency when idle (MHz)"

@@ -19,6 +19,7 @@
 #include "device_filter.h"
 #include "wg_tunnel.h"
 #include "sec_tls.h"
+#include "power_mgr.h"
 #include <time.h>
 #include "network_mgr.h"
 #include "event_log.h"
@@ -424,82 +425,167 @@ static esp_err_t handle_api_settings_auth_post(httpd_req_t *req)
 
 /* ---- ACL settings ---- */
 
+static void mac_to_str(const uint8_t m[6], char *buf, size_t len)
+{
+    snprintf(buf, len, "%02x:%02x:%02x:%02x:%02x:%02x", m[0], m[1], m[2], m[3], m[4], m[5]);
+}
+
+/* aa:bb:cc:dd:ee:ff or aa-bb-..., case-insensitive */
+static bool mac_from_str(const char *s, uint8_t m[6])
+{
+    unsigned v[6];
+    char sep1, sep2, sep3, sep4, sep5, tail;
+    if (sscanf(s, "%2x%c%2x%c%2x%c%2x%c%2x%c%2x%c", &v[0], &sep1, &v[1], &sep2, &v[2], &sep3,
+               &v[3], &sep4, &v[4], &sep5, &v[5], &tail) != 11) {
+        return false;
+    }
+    char seps[5] = { sep1, sep2, sep3, sep4, sep5 };
+    for (int i = 0; i < 5; i++) {
+        if (seps[i] != ':' && seps[i] != '-') return false;
+    }
+    for (int i = 0; i < 6; i++) m[i] = (uint8_t)v[i];
+    return true;
+}
+
 static esp_err_t handle_api_settings_acl_get(httpd_req_t *req)
 {
     if (!webui_check_auth(req)) return webui_reject_auth(req);
 
     bool closed = access_control_is_closed_mode();
-    uint32_t ips[ACCESS_CONTROL_MAX_IPS];
-    int count = access_control_get_allowlist(ips, ACCESS_CONTROL_MAX_IPS);
+    acl_entry_t *entries = malloc(sizeof(acl_entry_t) * ACCESS_CONTROL_MAX_IPS);
+    const int buflen = 6144;
+    char *buf = malloc(buflen);
+    if (!entries || !buf) {
+        free(entries);
+        free(buf);
+        return send_json_error(req, 500, "out of memory");
+    }
+    int count = access_control_get_entries(entries, ACCESS_CONTROL_MAX_IPS);
 
-    char buf[1024];
-    int pos = 0;
-    int buflen = sizeof(buf);
-
-    pos += snprintf(buf + pos, buflen - pos,
-        "{\"closed\":%s,\"allowlist\":[", closed ? "true" : "false");
-
-    for (int i = 0; i < count; i++) {
-        ip4_addr_t addr;
-        addr.addr = ips[i];
-        if (i > 0) pos += snprintf(buf + pos, buflen - pos, ",");
-        pos += snprintf(buf + pos, buflen - pos, "\"%s\"", ip4addr_ntoa(&addr));
+    /* The requesting PC, so the UI can offer "add this PC" */
+    uint32_t me = webui_req_client_ip(req);
+    ip4_addr_t me_addr = { .addr = me };
+    char me_ip[16] = "", me_mac[18] = "";
+    if (me) {
+        strlcpy(me_ip, ip4addr_ntoa(&me_addr), sizeof(me_ip));
+        uint8_t m[6];
+        if (access_control_lookup_mac(me, m)) mac_to_str(m, me_mac, sizeof(me_mac));
     }
 
+    int pos = snprintf(buf, buflen, "{\"closed\":%s,\"me_ip\":\"%s\",\"me_mac\":\"%s\",\"entries\":[",
+                       closed ? "true" : "false", me_ip, me_mac);
+    for (int i = 0; i < count && pos < buflen - 160; i++) {
+        char value[18];
+        if (entries[i].type == ACL_ENTRY_MAC) {
+            mac_to_str(entries[i].mac, value, sizeof(value));
+        } else {
+            ip4_addr_t a = { .addr = entries[i].ip };
+            strlcpy(value, ip4addr_ntoa(&a), sizeof(value));
+        }
+        char comment[ACCESS_CONTROL_COMMENT_LEN * 2];
+        webui_json_escape(entries[i].comment, comment, sizeof(comment));
+        pos += snprintf(buf + pos, buflen - pos, "%s{\"type\":\"%s\",\"value\":\"%s\",\"comment\":\"%s\"}",
+                        i ? "," : "", entries[i].type == ACL_ENTRY_MAC ? "mac" : "ip", value, comment);
+    }
     pos += snprintf(buf + pos, buflen - pos, "]}");
-    return send_json(req, buf, pos);
+
+    esp_err_t ret = send_json(req, buf, pos);
+    free(entries);
+    free(buf);
+    return ret;
+}
+
+/* Whole body; httpd_req_recv may return it in pieces. */
+static int read_body_full(httpd_req_t *req, char *buf, int maxlen)
+{
+    if (req->content_len <= 0 || (int)req->content_len >= maxlen) return -1;
+    int got = 0;
+    while (got < (int)req->content_len) {
+        int n = httpd_req_recv(req, buf + got, req->content_len - got);
+        if (n == HTTPD_SOCK_ERR_TIMEOUT) continue;
+        if (n <= 0) return -1;
+        got += n;
+    }
+    buf[got] = '\0';
+    return got;
 }
 
 static esp_err_t handle_api_settings_acl_post(httpd_req_t *req)
 {
     if (!webui_check_auth(req)) return webui_reject_auth(req);
 
-    char body[512];
-    if (read_body(req, body, sizeof(body)) < 0) {
-        return send_json_error(req, 400, "missing body");
+    const int bodymax = 6144;
+    char *body = malloc(bodymax);
+    acl_entry_t *entries = calloc(ACCESS_CONTROL_MAX_IPS, sizeof(acl_entry_t));
+    if (!body || !entries) {
+        free(body);
+        free(entries);
+        return send_json_error(req, 500, "out of memory");
+    }
+    if (read_body_full(req, body, bodymax) < 0) {
+        free(body);
+        free(entries);
+        return send_json_error(req, 400, "missing or too large body");
     }
 
-    bool closed = false;
-    if (json_get_bool(body, "closed", &closed)) {
-        access_control_set_mode(closed);
-    }
-
-    /* Clear existing allowlist and rebuild from body */
-    /* First, remove all current IPs */
-    uint32_t old_ips[ACCESS_CONTROL_MAX_IPS];
-    int old_count = access_control_get_allowlist(old_ips, ACCESS_CONTROL_MAX_IPS);
-    for (int i = 0; i < old_count; i++) {
-        access_control_remove_ip(old_ips[i]);
-    }
-
-    /* Parse allowlist array - simple approach: find each IP string in the array */
-    const char *arr = strstr(body, "\"allowlist\"");
-    if (arr) {
-        const char *p = strchr(arr, '[');
-        if (p) {
-            p++;
-            while (*p) {
-                while (*p == ' ' || *p == ',') p++;
-                if (*p == ']') break;
-                if (*p == '"') {
-                    p++;
-                    char ip_str[20];
-                    int i = 0;
-                    while (*p && *p != '"' && i < (int)sizeof(ip_str) - 1) {
-                        ip_str[i++] = *p++;
-                    }
-                    ip_str[i] = '\0';
-                    if (*p == '"') p++;
-
-                    ip4_addr_t addr;
-                    if (ip4addr_aton(ip_str, &addr)) {
-                        access_control_add_ip(addr.addr);
-                    }
-                } else {
-                    break;
-                }
-            }
+    /* Parse "entries":[{"type":"ip|mac","value":"...","comment":"..."}, ...]
+     * Comments contain no braces we care about: objects are cut at the next
+     * '}' outside a string. */
+    int n = 0;
+    const char *err_msg = NULL;
+    const char *arr = strstr(body, "\"entries\"");
+    const char *p = arr ? strchr(arr, '[') : NULL;
+    while (p && *p && !err_msg) {
+        const char *ob = strchr(p, '{');
+        const char *close_arr = strchr(p, ']');
+        if (!ob || (close_arr && close_arr < ob)) break;
+        const char *q = ob + 1;
+        bool in_str = false;
+        while (*q && (in_str || *q != '}')) {
+            if (*q == '\\' && in_str && q[1]) q++;
+            else if (*q == '"') in_str = !in_str;
+            q++;
         }
+        if (!*q) { err_msg = "malformed entries"; break; }
+        char obj[256];
+        int olen = (int)(q - ob) + 1;
+        if (olen >= (int)sizeof(obj)) { err_msg = "entry too long"; break; }
+        memcpy(obj, ob, olen);
+        obj[olen] = '\0';
+        p = q + 1;
+
+        if (n >= ACCESS_CONTROL_MAX_IPS) { err_msg = "too many entries (max 32)"; break; }
+        char type[8] = "", value[40] = "";
+        json_get_string(obj, "type", type, sizeof(type));
+        json_get_string(obj, "value", value, sizeof(value));
+        acl_entry_t *e = &entries[n];
+        json_get_string(obj, "comment", e->comment, sizeof(e->comment));
+        if (strcmp(type, "mac") == 0) {
+            e->type = ACL_ENTRY_MAC;
+            if (!mac_from_str(value, e->mac)) err_msg = "invalid MAC address";
+        } else {
+            ip4_addr_t a;
+            e->type = ACL_ENTRY_IP;
+            if (!ip4addr_aton(value, &a)) err_msg = "invalid IP address";
+            e->ip = a.addr;
+        }
+        n++;
+    }
+    bool closed = false;
+    bool has_mode = json_get_bool(body, "closed", &closed);
+    free(body);
+    if (err_msg) {
+        free(entries);
+        return send_json_error(req, 400, err_msg);
+    }
+
+    esp_err_t err = access_control_set_entries(entries, n);
+    free(entries);
+    if (err != ESP_OK) {
+        return send_json_error(req, 500, "saving allowlist failed");
+    }
+    if (has_mode) {
+        access_control_set_mode(closed);
     }
 
     /* Anti-lockout: the ACL now also guards the Web UI, so when switching to
@@ -507,14 +593,14 @@ static esp_err_t handle_api_settings_acl_post(httpd_req_t *req)
     if (access_control_is_closed_mode()) {
         uint32_t me = webui_req_client_ip(req);
         if (me != 0 && !access_control_is_allowed(me)) {
-            access_control_add_ip(me);
+            access_control_add_ip(me, "auto (saved from here)");
             ip4_addr_t a; a.addr = me;
             event_log_add(EVENT_LOG_LEVEL_INFO, "ACL: added requesting client %s to allowlist",
                           ip4addr_ntoa(&a));
         }
     }
 
-    event_log_add(EVENT_LOG_LEVEL_INFO, "ACL settings updated via WebUI");
+    event_log_add(EVENT_LOG_LEVEL_INFO, "ACL settings updated via WebUI (%d entries)", n);
     return send_json_ok(req);
 }
 
@@ -728,6 +814,38 @@ static esp_err_t handle_api_settings_security_cert(httpd_req_t *req)
     return send_json(req, buf, n);
 }
 
+/* ---- Power save ---- */
+
+static esp_err_t handle_api_settings_power_get(httpd_req_t *req)
+{
+    if (!webui_check_auth(req)) return webui_reject_auth(req);
+
+    char buf[64];
+    int n = snprintf(buf, sizeof(buf), "{\"available\":%s,\"enabled\":%s}",
+                     power_mgr_available() ? "true" : "false",
+                     power_mgr_get() ? "true" : "false");
+    return send_json(req, buf, n);
+}
+
+static esp_err_t handle_api_settings_power_post(httpd_req_t *req)
+{
+    if (!webui_check_auth(req)) return webui_reject_auth(req);
+
+    char body[128];
+    bool enabled;
+    if (read_body(req, body, sizeof(body)) < 0 || !json_get_bool(body, "enabled", &enabled)) {
+        return send_json_error(req, 400, "missing enabled");
+    }
+    esp_err_t err = power_mgr_set(enabled);
+    if (err == ESP_ERR_NOT_SUPPORTED) {
+        return send_json_error(req, 400, "power save not compiled in");
+    } else if (err != ESP_OK) {
+        return send_json_error(req, 500, "saving power setting failed");
+    }
+    event_log_add(EVENT_LOG_LEVEL_INFO, "Power save %s", enabled ? "on" : "off");
+    return send_json_ok(req);
+}
+
 /* ---- System info ---- */
 
 static esp_err_t handle_api_system_info(httpd_req_t *req)
@@ -872,6 +990,18 @@ void webui_api_register(httpd_handle_t server)
         .handler = handle_api_system_restart, .user_ctx = NULL
     };
     httpd_register_uri_handler(server, &uri_system_restart);
+
+    const httpd_uri_t uri_settings_power_get = {
+        .uri = "/api/settings/power", .method = HTTP_GET,
+        .handler = handle_api_settings_power_get, .user_ctx = NULL
+    };
+    httpd_register_uri_handler(server, &uri_settings_power_get);
+
+    const httpd_uri_t uri_settings_power_post = {
+        .uri = "/api/settings/power", .method = HTTP_POST,
+        .handler = handle_api_settings_power_post, .user_ctx = NULL
+    };
+    httpd_register_uri_handler(server, &uri_settings_power_post);
 
     /* Factory reset */
     const httpd_uri_t uri_system_factory_reset = {
