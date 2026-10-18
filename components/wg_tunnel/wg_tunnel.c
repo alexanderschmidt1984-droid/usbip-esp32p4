@@ -386,7 +386,9 @@ esp_err_t wg_tunnel_init(void)
     s_mtx = xSemaphoreCreateMutex();
     s_ev = xEventGroupCreate();
     if (!s_mtx || !s_ev) return ESP_ERR_NO_MEM;
-    if (sodium_init() < 0) return ESP_FAIL;
+    /* NOTE: no sodium_init() - it stirs libsodium's randombytes from
+     * /dev/urandom, which does not exist here and abort()s. The X25519
+     * functions used need no init; randomness comes from esp_fill_random(). */
 
     nvs_load();
     derive_public(s_cfg.private_key, s_st.public_key, sizeof(s_st.public_key));
