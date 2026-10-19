@@ -228,7 +228,6 @@ U226|Unbekannt
 U227|Dunkel
 U228|Hell
 H17|Änderungen gelten erst <b>nach einem Neustart</b> (System → Neustart). Danach die Seite unter der neuen Adresse öffnen.
-H23|Haken setzen, Benutzername eintragen und das Passwort <b>zweimal</b> (gegen Tippfehler), dann <b>Anmeldung speichern</b>. Danach fragt der Browser beim Öffnen nach den Zugangsdaten.
 H26|Ohne HTTPS geht das Passwort unverschlüsselt durchs LAN. Schutz: HTTPS (Bereich „Verschlüsselung“) oder die Oberfläche über WireGuard öffnen.
 H28|<b>Offen</b>: Jeder im Netz darf USB/IP und diese Oberfläche nutzen.
 H29|<b>Geschlossen (Freigabeliste)</b>: Nur eingetragene Teilnehmer dürfen zugreifen, und zwar auf USB/IP <b>und</b> auf diese Oberfläche. Ein Eintrag ist entweder eine <b>IP</b> oder eine <b>MAC-Adresse</b>, dazu ein <b>Kommentar</b>, damit klar bleibt, wem du den Zugang gegeben hast.
@@ -250,7 +249,7 @@ H89|<b>Über das Internet</b>: Als Gegenstelle dient dann ein Server oder Router
 H90|<b>Kein Handshake</b> („connecting · no handshake“): meist blockiert die Firewall des PCs UDP 51820 oder ein Schlüssel ist vertauscht. Prüfen mit <code>sudo tcpdump -ni any udp port 51820</code>: Kommen Pakete vom Board an, liegt es an den Schlüsseln. Nach einem Neustart des Tunnels <b>am PC</b> meldet sich das Board erst nach bis zu ca. 2 Minuten neu an. Schneller geht es, wenn man hier den Tunnel aus- und wieder einschaltet.
 H92|<b>Neustart</b>: startet das Board neu. Eingebundene USB-Geräte werden dabei an allen PCs getrennt und müssen danach neu mit <code>attach</code> eingebunden werden.
 H93|<b>Werksreset</b>: löscht <b>alle</b> Einstellungen (Netzwerk, Passwort, Zugriffsliste, Gerätefilter, WireGuard- und TLS-Schlüssel) und startet neu. Danach gilt DHCP ohne Passwort.
-H94|<b>Ohne Web-UI zurücksetzen</b>: die <b>RESET</b>-Taste am Board <b>5× hintereinander</b> drücken, zwischen zwei Drückern jeweils weniger als 5&nbsp;s (gut: etwa einmal pro Sekunde). Beim 5. Start löscht das Board alle Einstellungen wie der Werksreset. Strom aus/ein zählt genauso. Ein einzelner Reset oder Stromausfall löst nichts aus; Abstürze zählen nicht mit. Die BOOT-Taste geht dafür nicht (beim Einschalten gedrückt = Flash-Modus, im Betrieb belegt Ethernet den Pin).
+H94|<b>Ohne Web-UI zurücksetzen</b>: die <b>RESET</b>-Taste am Board <b>5× hintereinander</b> drücken, etwa alle 2&nbsp;Sekunden (mindestens 1&nbsp;s, höchstens 5&nbsp;s Abstand; drückt man schneller, wird der Start unterbrochen, bevor er gezählt wird). Beim 5. Start löscht das Board alle Einstellungen wie der Werksreset. Strom aus/ein zählt genauso. Ein einzelner Reset oder Stromausfall löst nichts aus; Abstürze zählen nicht mit. Die BOOT-Taste geht dafür nicht (beim Einschalten gedrückt = Flash-Modus, im Betrieb belegt Ethernet den Pin).
 U229|USB-Bus zurücksetzen? Alle Geräte werden getrennt und neu erkannt, verbundene Clients fallen weg.
 U230|Softwarekomponenten
 U231|Auf dem Board
@@ -267,3 +266,72 @@ U241|USB/IP über TLS
 U242|WireGuard-Gegenstelle
 U243|Web-UI, HTTPS
 U244|Test-PC
+U245|Schnelles Lesen (experimentell)
+U246|Liest große Blöcke überlappend (etwa +20–30 % beim Lesen von Sticks). Bricht ein Gerät mitten im Lesen ab, wird die USB/IP-Verbindung getrennt statt ein Lesefehler gemeldet. Ab Werk aus.
+U247|Schnelles Lesen an
+U248|Schnelles Lesen aus
+U249|Angemeldet als
+U250|USB/IP unverschlüsselt
+U251|Mindestens ein Gerät ist ohne Verschlüsselung über das LAN angehängt.
+U252|USB/IP über WireGuard geschützt
+U253|USB/IP über TLS verschlüsselt
+U254|USB/IP verschlüsselt (TLS/WireGuard)
+U255|Alle angehängten Geräte laufen über eine verschlüsselte Verbindung.
+U256|Start
+U257|Netzwerk
+U258|Anmeldung
+U259|Sicherheit
+U260|Geräte
+U261|Zuschauer-Zugang (nur Ansicht)
+U262|Ein zweiter Benutzer, der Übersicht, Geräte und Datenverkehr sehen kann, aber keine Einstellungen sieht oder ändert und keine Geräte trennen kann.
+U263|Zuschauer: Benutzername
+U264|Zuschauer: Passwort
+U265|Zuschauer: Passwort wiederholen
+U266|Zugriffskontrolle ist geschlossen
+U267|und enthält keine Adresse aus dem Tunnelnetz. Die WireGuard-Gegenstelle wird so abgewiesen. Trage ihre Tunnel-IP in die Freigabeliste ein (vermutlich
+U268|In Zugriffsliste eintragen
+U269|Zugriffskontrolle: Tunnel-IP der Gegenstelle eintragen, sonst wird sie abgewiesen.
+U270|Admin: Benutzername
+U271|Admin: Passwort
+U272|Admin: Passwort wiederholen
+U273|Einstellungen sichern / wiederherstellen
+U274|Speichert
+U275|alle
+U276|Einstellungen in eine Datei – auch Passwörter (als Hash), WireGuard- und TLS-Schlüssel und das HTTPS-Zertifikat. Die Datei ist mit deinem Sicherungs-Passwort verschlüsselt (AES-256-GCM); ohne dieses Passwort ist sie nicht lesbar und nicht wiederherstellbar.
+U277|Sicherungs-Passwort (mind. 8 Zeichen)
+U278|Sicherungs-Passwort wiederholen
+U279|Sicherung herunterladen
+U280|Sicherungsdatei wiederherstellen
+U281|Sicherungs-Passwort der Datei
+U282|Wiederherstellen & Neustart
+U283|Admin-Benutzername ändern?
+U284|Admin und Zuschauer brauchen verschiedene Benutzernamen
+U285|Sicherungs-Passwort: mindestens 8 Zeichen
+U286|Sicherung wird erstellt…
+U287|Sicherung gespeichert
+U288|Sicherung fehlgeschlagen
+U289|Bitte eine Sicherungsdatei wählen
+U290|Bitte das Sicherungs-Passwort eingeben
+U291|Alle aktuellen Einstellungen durch die Sicherung ersetzen und neu starten?
+U292|Einstellungen wiederhergestellt – Board startet neu…
+U293|Sicherung von
+U294|Wiederherstellen fehlgeschlagen
+U295|Ersteinrichtung
+U296|Als Admin anmelden
+U297|Abmelden
+U298|Admin anlegen
+U299|Noch kein Admin vorhanden (neues Board oder Werksreset). Bis ein Admin angelegt ist, kann man hier nur einen Admin anlegen oder eine Sicherung einspielen – alle anderen Einstellungen sind gesperrt.
+U300|Danach fragt der Browser nach Benutzername und Passwort. Ohne Anmeldung kann jeder als
+U301|nur zuschauen.
+U302|Oder: Sicherung einspielen
+U303|Stellt alle Einstellungen aus einer Sicherungsdatei wieder her – auch den Admin – und startet das Board neu.
+U304|Gastzugang ohne Passwort (nur Ansicht)
+U305|Wer sich nicht anmeldet, ist
+U306|: sieht Übersicht, Geräte und Datenverkehr, aber keine Einstellungen und kann keine Geräte trennen. Ausgeschaltet fragt der Browser sofort nach dem Admin-Passwort.
+U307|„guest“ ist für den Gastzugang reserviert
+U308|Bitte einen Benutzernamen eingeben
+U309|Bitte ein Passwort eingeben
+U310|Admin angelegt – bitte jetzt anmelden
+H22|Nach einem Werksreset gibt es keinen Admin. Dann kann man nur unter <b>Ersteinrichtung</b> einen Admin anlegen oder eine Sicherung einspielen.
+H23|<b>Anmelden</b>: unten links <b>Als Admin anmelden</b>, dann fragt der Browser nach Benutzername und Passwort. <b>Abmelden</b> macht dich wieder zum <b translate="no">guest</b>.
+H24|Passwort ändern: neues in beide Felder eintragen. Beide leer lassen = bisheriges Passwort bleibt. Ausschalten lässt sich der Admin nicht mehr, nur per Werksreset löschen.

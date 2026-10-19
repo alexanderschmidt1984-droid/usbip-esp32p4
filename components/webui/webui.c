@@ -3,6 +3,7 @@
  */
 
 #include "webui.h"
+#include "webui_internal.h"
 #include "esp_log.h"
 #include "esp_http_server.h"
 #include "esp_system.h"
@@ -20,6 +21,7 @@
 #endif
 
 #include <string.h>
+#include <strings.h>
 #include <stdio.h>
 #include <unistd.h>
 #include "esp_random.h"
@@ -52,9 +54,16 @@ static uint8_t s_auth_salt[AUTH_SALT_LEN] = {0};
 static bool s_auth_has_salt = false;      /* false = legacy unsalted SHA-256 */
 static bool s_auth_has_password = false;
 
-/* Cache of the last successfully verified Authorization header (as SHA-256) */
+/* Guest access: requests without credentials get the read-only "guest" role
+ * (dashboard, devices, traffic; never settings - enforced here, not only in
+ * the UI). While no admin exists, the guest may only create the admin or
+ * restore a backup. On by default; the admin can switch it off. */
+static bool s_guest_enabled = true;
+
+/* Verified admin Authorization header (as SHA-256) */
 static uint8_t s_auth_cache[32];
-static bool s_auth_cache_valid = false;
+static bool s_auth_cache_ok;
+static webui_role_t s_req_role = WEBUI_ROLE_ADMIN;   /* role of the request being handled */
 
 typedef struct {
     uint32_t ip;
@@ -68,8 +77,8 @@ typedef enum {
     REJ_AUTH = 0,       /* 401 + WWW-Authenticate */
     REJ_FORBIDDEN_IP,   /* 403: IP not in ACL allowlist */
     REJ_CSRF,           /* 403: cross-site request */
-    REJ_NEED_PASSWORD,  /* 403: secure default, set a password first */
     REJ_LOCKED,         /* 429: too many failed logins */
+    REJ_ROLE,           /* 403: guest, admin-only resource */
 } reject_reason_t;
 static reject_reason_t s_reject_reason = REJ_AUTH;
 
@@ -90,11 +99,14 @@ static void auth_load_from_nvs(void)
     len = sizeof(s_auth_salt);
     s_auth_has_salt = (nvs_get_blob(nvs, "pw_salt", s_auth_salt, &len) == ESP_OK &&
                        len == AUTH_SALT_LEN);
+    uint8_t gen = 1;
+    nvs_get_u8(nvs, "guest", &gen);
+    s_guest_enabled = (gen != 0);
     nvs_close(nvs);
-    if (s_auth_enabled && !s_auth_has_password) {
-        /* Never run "enabled" without a real password hash */
-        s_auth_enabled = false;
-    }
+    /* An admin exists exactly when a password hash is stored (an older
+     * "password off" switch could leave it disabled - that only invited
+     * lock-outs, there is no such switch any more). */
+    s_auth_enabled = s_auth_has_password;
 }
 
 /* SHA-256 via the PSA API. mbedTLS 4.x (IDF 6.0) moved mbedtls_sha256() to a
@@ -137,6 +149,7 @@ static void auth_store_nvs(void)
     nvs_handle_t nvs;
     if (nvs_open(AUTH_NVS_NAMESPACE, NVS_READWRITE, &nvs) != ESP_OK) return;
     nvs_set_u8(nvs, "enabled", s_auth_enabled ? 1 : 0);
+    nvs_set_u8(nvs, "guest", s_guest_enabled ? 1 : 0);
     nvs_set_str(nvs, "username", s_auth_username);
     nvs_set_blob(nvs, "pw_hash", s_auth_password_hash, 32);
     if (s_auth_has_salt) {
@@ -154,14 +167,20 @@ static void auth_set_password(const char *password)
     s_auth_has_password = true;
 }
 
-esp_err_t webui_auth_save(bool enabled, const char *username, const char *password)
+esp_err_t webui_auth_save(const char *username, const char *password)
 {
     /* Empty password field = "keep the current password". Previously an empty
      * field overwrote the stored hash with SHA-256(""), silently enabling
      * login with an empty password. */
     bool new_pw = (password && password[0] != '\0');
-    if (enabled && !new_pw && !s_auth_has_password) {
-        return ESP_ERR_INVALID_ARG;   /* cannot enable auth without a password */
+    if (!new_pw && !s_auth_has_password) {
+        return ESP_ERR_INVALID_ARG;   /* the first admin needs a password */
+    }
+    if (username && strcasecmp(username, WEBUI_GUEST_NAME) == 0) {
+        return ESP_ERR_INVALID_STATE;  /* "guest" is the password-less account */
+    }
+    if (!s_auth_username[0] && !(username && username[0])) {
+        return ESP_ERR_INVALID_ARG;
     }
     if (username && username[0] != '\0') {
         strncpy(s_auth_username, username, AUTH_MAX_USERNAME - 1);
@@ -170,8 +189,8 @@ esp_err_t webui_auth_save(bool enabled, const char *username, const char *passwo
     if (new_pw) {
         auth_set_password(password);
     }
-    s_auth_enabled = enabled;
-    s_auth_cache_valid = false;           /* force re-verification */
+    s_auth_enabled = true;
+    s_auth_cache_ok = false;   /* force re-verification */
     memset(s_auth_track, 0, sizeof(s_auth_track));
     auth_store_nvs();
     return ESP_OK;
@@ -190,6 +209,64 @@ bool webui_auth_has_password(void)
 const char *webui_auth_username(void)
 {
     return s_auth_username;
+}
+
+void webui_guest_set(bool enabled)
+{
+    s_guest_enabled = enabled;
+    auth_store_nvs();
+    event_log_add(EVENT_LOG_LEVEL_INFO, "Guest access %s", enabled ? "enabled" : "disabled");
+}
+
+bool webui_guest_enabled(void) { return s_guest_enabled; }
+
+webui_role_t webui_req_role(void) { return s_req_role; }
+
+static bool uri_in(httpd_req_t *req, const char *const *list, size_t n)
+{
+    size_t plen = strcspn(req->uri, "?");
+    for (size_t i = 0; i < n; i++) {
+        if (strlen(list[i]) == plen && strncmp(req->uri, list[i], plen) == 0) return true;
+    }
+    return false;
+}
+
+/* What the guest may load: the pages and read-only live data, nothing else.
+ * Without an admin it may also create one or restore a backup. */
+static bool guest_may(httpd_req_t *req)
+{
+    static const char *const get_ok[] = {
+        "/", "/style.css", "/app.js", "/lang", "/ws", "/api/devices", "/api/devices/detail",
+        "/api/stats", "/api/logs", "/api/system/info", "/api/capture/status",
+    };
+    static const char *const setup_ok[] = { "/api/settings/auth", "/api/system/restore" };
+    if (req->method == HTTP_GET) return uri_in(req, get_ok, sizeof(get_ok) / sizeof(get_ok[0]));
+    return !s_auth_enabled && req->method == HTTP_POST &&
+           uri_in(req, setup_ok, sizeof(setup_ok) / sizeof(setup_ok[0]));
+}
+
+static bool auth_as_guest(httpd_req_t *req)
+{
+    s_req_role = WEBUI_ROLE_GUEST;
+    if (!guest_may(req)) {
+        s_reject_reason = REJ_ROLE;
+        return false;
+    }
+    return true;
+}
+
+/* Basic credentials naming the guest (sent by the logout trick) */
+static bool auth_hdr_is_guest(const char *auth_buf)
+{
+    if (strncmp(auth_buf, "Basic ", 6) != 0) return false;
+    unsigned char d[96];
+    size_t dl = 0;
+    if (mbedtls_base64_decode(d, sizeof(d) - 1, &dl, (const unsigned char *)(auth_buf + 6),
+                              strlen(auth_buf + 6)) != 0) return false;
+    d[dl] = '\0';
+    char *colon = strchr((char *)d, ':');
+    if (colon) *colon = '\0';
+    return strcasecmp((char *)d, WEBUI_GUEST_NAME) == 0;
 }
 
 /* Client IPv4 of a request (network byte order); 0 if unknown.
@@ -257,6 +334,7 @@ static bool csrf_ok(httpd_req_t *req)
 static bool auth_check_request(httpd_req_t *req)
 {
     s_reject_reason = REJ_AUTH;
+    s_req_role = WEBUI_ROLE_ADMIN;
     uint32_t ip = webui_req_client_ip(req);
 
     /* 1. IP allowlist also protects the Web UI (closed mode) */
@@ -273,18 +351,29 @@ static bool auth_check_request(httpd_req_t *req)
         return false;
     }
 
-    /* 3. No password configured */
+    /* 3. No admin yet: the guest may only create one or restore a backup */
     if (!s_auth_enabled) {
 #if CONFIG_USBIP_WEBUI_REQUIRE_PASSWORD
-        if (is_write && strcmp(req->uri, "/api/settings/auth") != 0) {
-            s_reject_reason = REJ_NEED_PASSWORD;
-            return false;
-        }
-#endif
+        return auth_as_guest(req);
+#else
         return true;
+#endif
     }
 
-    /* 4. Brute-force lockout */
+    /* 4. No credentials: guest (if allowed). /login always asks for them. */
+    bool login = strcmp(req->uri, "/login") == 0;
+    char auth_buf[256];
+    bool has_hdr = httpd_req_get_hdr_value_str(req, "Authorization", auth_buf, sizeof(auth_buf)) == ESP_OK;
+    if (has_hdr && auth_hdr_is_guest(auth_buf)) {
+        if (login) return false;   /* challenge again, but no failed attempt */
+        has_hdr = false;
+    }
+    if (!has_hdr) {
+        if (s_guest_enabled && !login) return auth_as_guest(req);
+        return false;
+    }
+
+    /* 5. Brute-force lockout */
     int64_t now = esp_timer_get_time();
     auth_track_t *t = auth_track_get(ip, false);
     if (t && t->locked_until_us > now) {
@@ -292,15 +381,10 @@ static bool auth_check_request(httpd_req_t *req)
         return false;
     }
 
-    char auth_buf[256];
-    if (httpd_req_get_hdr_value_str(req, "Authorization", auth_buf, sizeof(auth_buf)) != ESP_OK) {
-        return false;
-    }
-
-    /* 5. Fast path: same header as the last verified one */
+    /* 6. Fast path: same header as the recently verified one */
     uint8_t hdr_hash[32];
     sha256_compute((const uint8_t *)auth_buf, strlen(auth_buf), hdr_hash);
-    if (s_auth_cache_valid && ct_equal(hdr_hash, s_auth_cache, 32)) {
+    if (s_auth_cache_ok && ct_equal(hdr_hash, s_auth_cache, 32)) {
         return true;
     }
 
@@ -338,7 +422,7 @@ static bool auth_check_request(httpd_req_t *req)
 
     if (ok) {
         memcpy(s_auth_cache, hdr_hash, 32);
-        s_auth_cache_valid = true;
+        s_auth_cache_ok = true;
         if (t) memset(t, 0, sizeof(*t));
         return true;
     }
@@ -368,10 +452,10 @@ static esp_err_t auth_reject(httpd_req_t *req)
         httpd_resp_set_status(req, "403 Forbidden");
         httpd_resp_set_type(req, "application/json");
         return httpd_resp_sendstr(req, "{\"ok\":false,\"error\":\"Cross-site request rejected\"}");
-    case REJ_NEED_PASSWORD:
+    case REJ_ROLE:
         httpd_resp_set_status(req, "403 Forbidden");
         httpd_resp_set_type(req, "application/json");
-        return httpd_resp_sendstr(req, "{\"ok\":false,\"error\":\"Set a Web UI password first (Settings -> Authentication)\"}");
+        return httpd_resp_sendstr(req, "{\"ok\":false,\"error\":\"Not allowed for the guest - log in as admin\"}");
     case REJ_LOCKED:
         httpd_resp_set_status(req, "429 Too Many Requests");
         httpd_resp_set_type(req, "application/json");
@@ -455,6 +539,31 @@ static esp_err_t handle_settings(httpd_req_t *req)
     httpd_resp_set_hdr(req, "Location", "/#settings");
     httpd_resp_send(req, NULL, 0);
     return ESP_OK;
+}
+
+/* Admin login: guests browse without credentials, so the browser only asks
+ * for them when told to - this URL always demands them, then returns home. */
+static esp_err_t handle_login(httpd_req_t *req)
+{
+    if (s_auth_enabled && !auth_check_request(req)) return auth_reject(req);
+    httpd_resp_set_status(req, "302 Found");
+    httpd_resp_set_hdr(req, "Location", "/");
+    return httpd_resp_send(req, NULL, 0);
+}
+
+/* Logout: the page makes an XHR with credentials "guest:..." to this URL.
+ * The challenge makes the browser send them, the 200 makes it keep them in
+ * place of the admin's - from then on it browses as guest. Never counted. */
+static esp_err_t handle_logout(httpd_req_t *req)
+{
+    char auth_buf[256];
+    if (httpd_req_get_hdr_value_str(req, "Authorization", auth_buf, sizeof(auth_buf)) == ESP_OK &&
+        auth_hdr_is_guest(auth_buf)) {
+        return httpd_resp_sendstr(req, "ok");
+    }
+    httpd_resp_set_status(req, "401 Unauthorized");
+    httpd_resp_set_hdr(req, "WWW-Authenticate", "Basic realm=\"USB/IP Server\"");
+    return httpd_resp_send(req, NULL, 0);
 }
 
 static esp_err_t handle_style_css(httpd_req_t *req)
@@ -822,7 +931,7 @@ esp_err_t webui_init(void)
     config.core_id = 1;
     config.task_priority = 5;
     config.stack_size = 8192;
-    config.max_uri_handlers = 48;     /* 32 was exhausted with all features enabled */
+    config.max_uri_handlers = 64;     /* 48 was exhausted with capture, backup and login */
     config.max_open_sockets = 7;      /* was 4; starved slots wedged the server (LWIP_MAX_SOCKETS raised to 16) */
     config.lru_purge_enable = true;   /* reclaim the oldest socket instead of refusing new connections when full */
     config.recv_wait_timeout = 10;    /* seconds; don't let a stalled peer pin a slot indefinitely */
@@ -876,6 +985,11 @@ esp_err_t webui_init(void)
         .handler = handle_settings, .user_ctx = NULL
     };
     httpd_register_uri_handler(s_server, &uri_settings);
+
+    const httpd_uri_t uri_login = { .uri = "/login", .method = HTTP_GET, .handler = handle_login };
+    httpd_register_uri_handler(s_server, &uri_login);
+    const httpd_uri_t uri_logout = { .uri = "/logout", .method = HTTP_GET, .handler = handle_logout };
+    httpd_register_uri_handler(s_server, &uri_logout);
 
     const httpd_uri_t uri_css = {
         .uri = "/style.css", .method = HTTP_GET,
@@ -936,6 +1050,7 @@ esp_err_t webui_init(void)
 
     /* Register REST API endpoints */
     webui_api_register(s_server);
+    webui_backup_register(s_server);
 
 #if !CONFIG_CAPTURE_ENABLED
     const httpd_uri_t uri_cap_status = {

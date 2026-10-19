@@ -249,12 +249,9 @@ H18|Résoudre les noms <code>.local</code> sur le PC :
 H19|Généralement déjà configuré sur les systèmes de bureau (avahi). Sinon :
 H20|Dans <code>/etc/nsswitch.conf</code>, ajouter <code>mdns_minimal [NOTFOUND=return]</code> à la ligne <code>hosts:</code> avant <code>resolve</code>.
 H21|Windows 10/11 résout les noms <code>.local</code> de lui-même. Sinon, utilisez l'adresse IP.
-H22|Sans mot de passe, l'interface est en lecture seule. Les paramètres ne peuvent être modifiés qu'une fois un mot de passe défini.
-H23|Cocher la case, saisir un nom d'utilisateur et le mot de passe <b>deux fois</b> (contre les fautes de frappe), puis <b>Enregistrer l'authentification</b>. Le navigateur demandera ensuite les identifiants à l'ouverture.
-H24|Changer le mot de passe : saisir le nouveau dans les deux champs. Laisser les deux vides = le mot de passe actuel reste.
 H25|Après 5 tentatives erronées, la carte bloque les connexions de ce PC pendant 30 secondes.
 H26|Sans HTTPS, le mot de passe traverse le LAN en clair. Protection : HTTPS (section « Chiffrement ») ou ouvrir l'interface via WireGuard.
-H27|<b>Mot de passe oublié</b> : appuyer <b>5 fois de suite sur RESET</b> sur la carte (moins de 5&nbsp;s entre chaque appui) – tout est remis aux réglages d'usine. Ou effacer seulement les paramètres via le câble USB, le firmware reste : <code>idf.py -p /dev/ttyACM0 erase-region 0x9000 0x6000</code> (Windows : <code>-p COM3</code> ou similaire). Tous les paramètres sont perdus (y compris les clés WireGuard et TLS).
+H27|<b>Mot de passe oublié</b> : appuyer <b>5 fois de suite sur RESET</b> sur la carte (environ toutes les 2&nbsp;s – au moins 1&nbsp;s, au plus 5&nbsp;s d'écart) – tout est remis aux réglages d'usine. Ou effacer seulement les paramètres via le câble USB, le firmware reste : <code>idf.py -p /dev/ttyACM0 erase-region 0x9000 0x6000</code> (Windows : <code>-p COM3</code> ou similaire). Tous les paramètres sont perdus (y compris les clés WireGuard et TLS).
 H28|<b>Ouvert</b> : tout le monde sur le réseau peut utiliser USB/IP et cette interface.
 H29|<b>Fermé (liste d'autorisation)</b> : seuls les participants listés ont accès, à USB/IP <b>et</b> à cette interface. Une entrée est soit une <b>IP</b>, soit une <b>adresse MAC</b>, avec un <b>commentaire</b> pour savoir à qui vous avez donné l'accès.
 H30|<b>MAC au lieu d'IP</b> : pratique si le PC obtient parfois une autre IP par DHCP. Fonctionne seulement pour les PC du <b>même LAN</b> (la carte lit la MAC dans sa table ARP), pas à travers WireGuard ou un routeur. Une MAC peut être usurpée – c'est un confort, pas une protection forte. Pour une vraie protection : mot de passe, TLS ou WireGuard.
@@ -321,7 +318,7 @@ H90|<b>Pas de handshake</b> (« connecting · no handshake ») : le plus souvent
 H91|<b>Économie d'énergie</b> (activée par défaut) : sans périphérique attaché, le CPU tourne à 100&nbsp;MHz au lieu de 400&nbsp;MHz. Dès qu'un périphérique est attaché, il passe à pleine fréquence, les transferts ne ralentissent donc pas. Décoché, la carte tourne en permanence à 400&nbsp;MHz. Effet immédiat, sans redémarrage. Activée, la feuille verte s'affiche en bas à gauche.
 H92|<b>Redémarrer</b> : redémarre la carte. Les périphériques USB attachés sont déconnectés sur tous les PC et doivent ensuite être rattachés avec <code>attach</code>.
 H93|<b>Réinitialisation d'usine</b> : efface <b>tous</b> les paramètres (réseau, mot de passe, liste d'accès, filtre, clés WireGuard et TLS) et redémarre. Ensuite DHCP sans mot de passe s'applique.
-H94|<b>Réinitialiser sans l'interface</b> : appuyer <b>5 fois de suite</b> sur le bouton <b>RESET</b> de la carte, moins de 5&nbsp;s entre deux appuis (idéal : environ une fois par seconde). Au 5e démarrage, la carte efface tous les paramètres comme une réinitialisation d'usine. Couper/rétablir l'alimentation compte de la même façon. Un seul reset ou une coupure de courant ne déclenche rien ; les plantages ne comptent pas. Le bouton BOOT ne convient pas (appuyé à la mise sous tension = mode flash, en fonctionnement la broche est utilisée par Ethernet).
+H94|<b>Réinitialiser sans l'interface</b> : appuyer <b>5 fois de suite</b> sur le bouton <b>RESET</b> de la carte, environ toutes les 2&nbsp;s (au moins 1&nbsp;s, au plus 5&nbsp;s d'écart ; plus vite, le démarrage est interrompu avant d'être compté). Au 5e démarrage, la carte efface tous les paramètres comme une réinitialisation d'usine. Couper/rétablir l'alimentation compte de la même façon. Un seul reset ou une coupure de courant ne déclenche rien ; les plantages ne comptent pas. Le bouton BOOT ne convient pas (appuyé à la mise sous tension = mode flash, en fonctionnement la broche est utilisée par Ethernet).
 H95|<b>Mise à jour du firmware</b> : via le câble USB avec <code>idf.py -p /dev/ttyACM0 flash</code> (Windows : <code>-p COM3</code> ou similaire). Les paramètres sont conservés.
 U229|Réinitialiser le bus USB ? Tous les périphériques sont déconnectés et réénumérés, les clients connectés sont coupés.
 U230|Composants logiciels
@@ -339,3 +336,70 @@ U241|USB/IP via TLS
 U242|Pair WireGuard
 U243|Interface web, HTTPS
 U244|PC de test
+U245|Lecture rapide (expérimental)
+U246|Lit les gros blocs en parallèle (environ +20–30 % en lecture sur clés USB). Si un périphérique échoue en pleine lecture, la connexion USB/IP est coupée au lieu de signaler une erreur de lecture. Désactivé par défaut.
+U247|Lecture rapide activée
+U248|Lecture rapide désactivée
+U249|Connecté en tant que
+U250|USB/IP non chiffré
+U251|Au moins un périphérique est attaché via le LAN sans chiffrement.
+U252|USB/IP protégé par WireGuard
+U253|USB/IP chiffré via TLS
+U254|USB/IP chiffré (TLS/WireGuard)
+U255|Tous les périphériques attachés utilisent une connexion chiffrée.
+U256|Démarrage
+U257|Réseau
+U258|Connexion
+U259|Sécurité
+U260|Périphériques
+U261|Accès lecteur (lecture seule)
+U262|Un second utilisateur qui voit le tableau de bord, les périphériques et le trafic, mais ne voit ni ne modifie les paramètres et ne peut pas déconnecter de périphériques.
+U263|Lecteur : nom d'utilisateur
+U264|Lecteur : mot de passe
+U265|Lecteur : répéter le mot de passe
+U266|Le contrôle d'accès est fermé
+U267|et ne contient aucune adresse du réseau du tunnel. Le pair WireGuard est donc refusé. Ajoutez son IP tunnel à la liste d'autorisation (probablement
+U268|Ajouter à la liste d'accès
+U269|Contrôle d'accès : ajoutez l'IP tunnel du pair, sinon il est refusé.
+U270|Admin : nom d'utilisateur
+U271|Admin : mot de passe
+U272|Admin : répéter le mot de passe
+U273|Sauvegarder / restaurer les paramètres
+U274|Enregistre
+U275|tous
+U276|les paramètres dans un fichier – y compris les mots de passe (sous forme de hachage), les clés WireGuard et TLS et le certificat HTTPS. Le fichier est chiffré avec votre mot de passe de sauvegarde (AES-256-GCM) ; sans ce mot de passe, il ne peut être ni lu ni restauré.
+U277|Mot de passe de sauvegarde (8 caractères min.)
+U278|Répéter le mot de passe de sauvegarde
+U279|Télécharger la sauvegarde
+U280|Restaurer un fichier de sauvegarde
+U281|Mot de passe de sauvegarde du fichier
+U282|Restaurer et redémarrer
+U283|Changer le nom de l'admin ?
+U284|L'admin et le lecteur doivent avoir des noms différents
+U285|Mot de passe de sauvegarde : au moins 8 caractères
+U286|Création de la sauvegarde…
+U287|Sauvegarde enregistrée
+U288|Échec de la sauvegarde
+U289|Veuillez choisir un fichier de sauvegarde
+U290|Veuillez saisir le mot de passe de sauvegarde
+U291|Remplacer tous les paramètres actuels par la sauvegarde et redémarrer ?
+U292|Paramètres restaurés – la carte redémarre…
+U293|sauvegarde de
+U294|Échec de la restauration
+U295|Première configuration
+U296|Se connecter en admin
+U297|Se déconnecter
+U298|Créer l’admin
+U299|Pas encore d’admin (carte neuve ou réinitialisation d’usine). Tant qu’aucun admin n’est créé, on peut seulement créer un admin ou restaurer une sauvegarde ici – tous les autres réglages sont verrouillés.
+U302|Ou : restaurer une sauvegarde
+U303|Restaure tous les réglages depuis un fichier de sauvegarde – y compris l’admin – et redémarre la carte.
+U304|Accès invité sans mot de passe (lecture seule)
+U307|« guest » est réservé à l’accès invité
+U308|Veuillez saisir un nom d’utilisateur
+U309|Veuillez saisir un mot de passe
+U310|Admin créé – connectez-vous maintenant
+H22|Après une réinitialisation d’usine, il n’y a pas d’admin. On peut alors seulement créer un admin ou restaurer une sauvegarde sous <b>Première configuration</b>.
+H23|<b>Connexion</b> : en bas à gauche <b>Se connecter en admin</b>, puis le navigateur demande le nom d’utilisateur et le mot de passe. <b>Se déconnecter</b> vous rend de nouveau <b translate="no">guest</b>.
+H24|Changer le mot de passe : saisir le nouveau dans les deux champs. Les deux vides = le mot de passe actuel reste. L’admin ne peut plus être désactivé, seulement supprimé par une réinitialisation d’usine.
+U311|Le navigateur demande ensuite le nom d’utilisateur et le mot de passe. Sans connexion, chacun peut seulement regarder en tant que « guest ».
+U312|Qui ne se connecte pas est « guest » : voit l’aperçu, les appareils et le trafic, mais aucun réglage, et ne peut pas détacher d’appareils. Désactivé, le navigateur demande tout de suite le mot de passe admin.

@@ -249,12 +249,9 @@ H18|Resolver nomes <code>.local</code> no PC:
 H19|Nos sistemas de ambiente de trabalho costuma estar já configurado (avahi). Caso contrário:
 H20|Em <code>/etc/nsswitch.conf</code>, acrescentar <code>mdns_minimal [NOTFOUND=return]</code> à linha <code>hosts:</code> antes de <code>resolve</code>.
 H21|O Windows 10/11 resolve os nomes <code>.local</code> sozinho. Se não, use o endereço IP.
-H22|Sem palavra-passe a interface é só de leitura. As definições só podem ser alteradas depois de definida uma palavra-passe.
-H23|Marcar a caixa, introduzir um utilizador e a palavra-passe <b>duas vezes</b> (contra erros de escrita) e depois <b>Guardar autenticação</b>. O navegador pedirá então as credenciais ao abrir a página.
-H24|Alterar a palavra-passe: introduzir a nova nos dois campos. Deixar ambos vazios = a palavra-passe atual mantém-se.
 H25|Após 5 tentativas erradas, a placa bloqueia os inícios de sessão deste PC durante 30 segundos.
 H26|Sem HTTPS a palavra-passe atravessa a LAN sem encriptação. Proteção: HTTPS (secção «Encriptação») ou abrir a interface através do WireGuard.
-H27|<b>Esqueceu a palavra-passe</b>: premir <b>RESET 5 vezes seguidas</b> na placa (menos de 5&nbsp;s entre cada) – tudo volta às definições de fábrica. Ou apagar só as definições pelo cabo USB, o firmware mantém-se: <code>idf.py -p /dev/ttyACM0 erase-region 0x9000 0x6000</code> (Windows: <code>-p COM3</code> ou semelhante). Todas as definições se perdem (incluindo as chaves WireGuard e TLS).
+H27|<b>Esqueceu a palavra-passe</b>: premir <b>RESET 5 vezes seguidas</b> na placa (cerca de cada 2&nbsp;s – pelo menos 1&nbsp;s, no máximo 5&nbsp;s entre cada) – tudo volta às definições de fábrica. Ou apagar só as definições pelo cabo USB, o firmware mantém-se: <code>idf.py -p /dev/ttyACM0 erase-region 0x9000 0x6000</code> (Windows: <code>-p COM3</code> ou semelhante). Todas as definições se perdem (incluindo as chaves WireGuard e TLS).
 H28|<b>Aberto</b>: qualquer pessoa na rede pode usar o USB/IP e esta interface.
 H29|<b>Fechado (lista de permitidos)</b>: só os participantes listados têm acesso, ao USB/IP <b>e</b> a esta interface. Uma entrada é um <b>IP</b> ou um <b>endereço MAC</b>, com um <b>comentário</b> para saber a quem deu acesso.
 H30|<b>MAC em vez de IP</b>: útil se o PC às vezes recebe outro IP por DHCP. Só funciona para PC na <b>mesma LAN</b> (a placa lê o MAC da sua tabela ARP), não através do WireGuard ou de um router. Um MAC pode ser falsificado – é uma conveniência, não uma proteção forte. Para proteção real: palavra-passe, TLS ou WireGuard.
@@ -321,7 +318,7 @@ H90|<b>Sem handshake</b> («connecting · no handshake»): normalmente a firewal
 H91|<b>Poupança de energia</b> (ativa de fábrica): sem dispositivo ligado a CPU funciona a 100&nbsp;MHz em vez de 400&nbsp;MHz. Assim que um dispositivo é ligado passa à frequência máxima, por isso as transferências não ficam mais lentas. Desmarcada, a placa funciona sempre a 400&nbsp;MHz. Efeito imediato, sem reiniciar. Quando ativa, aparece a folha verde em baixo à esquerda.
 H92|<b>Reiniciar</b>: reinicia a placa. Os dispositivos USB ligados são desligados em todos os PC e têm de ser ligados de novo com <code>attach</code>.
 H93|<b>Repor de fábrica</b>: apaga <b>todas</b> as definições (rede, palavra-passe, lista de acesso, filtro, chaves WireGuard e TLS) e reinicia. Depois aplica-se DHCP sem palavra-passe.
-H94|<b>Repor sem a interface</b>: premir o botão <b>RESET</b> da placa <b>5 vezes seguidas</b>, com menos de 5&nbsp;s entre duas pressões (ideal: cerca de uma vez por segundo). No 5.º arranque a placa apaga todas as definições como a reposição de fábrica. Desligar/ligar a alimentação conta da mesma forma. Um único reset ou uma falha de energia não faz nada; as falhas de software não contam. O botão BOOT não serve (premido ao ligar = modo flash, em funcionamento o pino é usado pela Ethernet).
+H94|<b>Repor sem a interface</b>: premir o botão <b>RESET</b> da placa <b>5 vezes seguidas</b>, cerca de cada 2&nbsp;s (pelo menos 1&nbsp;s, no máximo 5&nbsp;s; mais depressa, o arranque é interrompido antes de ser contado). No 5.º arranque a placa apaga todas as definições como a reposição de fábrica. Desligar/ligar a alimentação conta da mesma forma. Um único reset ou uma falha de energia não faz nada; as falhas de software não contam. O botão BOOT não serve (premido ao ligar = modo flash, em funcionamento o pino é usado pela Ethernet).
 H95|<b>Atualização do firmware</b>: pelo cabo USB com <code>idf.py -p /dev/ttyACM0 flash</code> (Windows: <code>-p COM3</code> ou semelhante). As definições mantêm-se.
 U229|Repor o barramento USB? Todos os dispositivos são desligados e enumerados de novo, e os clientes ligados são desligados.
 U230|Componentes de software
@@ -339,3 +336,70 @@ U241|USB/IP sobre TLS
 U242|Outro lado WireGuard
 U243|Interface web, HTTPS
 U244|PC de teste
+U245|Leitura rápida (experimental)
+U246|Lê blocos grandes de forma sobreposta (cerca de +20–30 % ao ler pens USB). Se um dispositivo falhar a meio de uma leitura, a ligação USB/IP é cortada em vez de ser reportado um erro de leitura. Desligada de fábrica.
+U247|Leitura rápida ligada
+U248|Leitura rápida desligada
+U249|Sessão iniciada como
+U250|USB/IP não encriptado
+U251|Pelo menos um dispositivo está ligado pela LAN sem encriptação.
+U252|USB/IP protegido por WireGuard
+U253|USB/IP encriptado com TLS
+U254|USB/IP encriptado (TLS/WireGuard)
+U255|Todos os dispositivos ligados usam uma ligação encriptada.
+U256|Início
+U257|Rede
+U258|Acesso
+U259|Segurança
+U260|Dispositivos
+U261|Acesso de visualizador (só leitura)
+U262|Um segundo utilizador que pode ver o painel, os dispositivos e o tráfego, mas não vê nem altera as definições e não pode desligar dispositivos.
+U263|Visualizador: utilizador
+U264|Visualizador: palavra-passe
+U265|Visualizador: repetir palavra-passe
+U266|O controlo de acesso está fechado
+U267|e não contém nenhum endereço da rede do túnel. Por isso o outro lado WireGuard é recusado. Adicione o IP de túnel dele à lista de permitidos (provavelmente
+U268|Adicionar à lista de acesso
+U269|Controlo de acesso: adicione o IP de túnel do outro lado, caso contrário é recusado.
+U270|Admin: utilizador
+U271|Admin: palavra-passe
+U272|Admin: repetir palavra-passe
+U273|Guardar / restaurar definições
+U274|Guarda
+U275|todas
+U276|as definições num ficheiro – incluindo palavras-passe (como hash), chaves WireGuard e TLS e o certificado HTTPS. O ficheiro é encriptado com a sua palavra-passe de cópia (AES-256-GCM); sem ela não pode ser lido nem restaurado.
+U277|Palavra-passe da cópia (mín. 8 caracteres)
+U278|Repetir palavra-passe da cópia
+U279|Transferir cópia
+U280|Restaurar ficheiro de cópia
+U281|Palavra-passe da cópia do ficheiro
+U282|Restaurar e reiniciar
+U283|Alterar o utilizador admin?
+U284|Admin e visualizador precisam de nomes diferentes
+U285|Palavra-passe da cópia: pelo menos 8 caracteres
+U286|A criar cópia…
+U287|Cópia guardada
+U288|Falha ao criar cópia
+U289|Escolha um ficheiro de cópia
+U290|Introduza a palavra-passe da cópia
+U291|Substituir todas as definições atuais pela cópia e reiniciar?
+U292|Definições restauradas – a placa está a reiniciar…
+U293|cópia de
+U294|Falha ao restaurar
+U295|Configuração inicial
+U296|Entrar como admin
+U297|Sair
+U298|Criar admin
+U299|Ainda não há admin (placa nova ou reposição de fábrica). Até criar um admin, aqui só é possível criar um admin ou restaurar uma cópia de segurança – todas as outras definições estão bloqueadas.
+U302|Ou: restaurar uma cópia de segurança
+U303|Restaura todas as definições a partir de um ficheiro de cópia – incluindo o admin – e reinicia a placa.
+U304|Acesso de convidado sem palavra-passe (só ver)
+U307|«guest» está reservado para o acesso de convidado
+U308|Introduza um nome de utilizador
+U309|Introduza uma palavra-passe
+U310|Admin criado – inicie sessão agora
+H22|Após uma reposição de fábrica não há admin. Então só é possível criar um admin ou restaurar uma cópia em <b>Configuração inicial</b>.
+H23|<b>Entrar</b>: em baixo à esquerda <b>Entrar como admin</b>, depois o navegador pede nome de utilizador e palavra-passe. <b>Sair</b> torna-o de novo <b translate="no">guest</b>.
+H24|Alterar a palavra-passe: introduzir a nova em ambos os campos. Ambos vazios = mantém-se a palavra-passe atual. O admin já não pode ser desligado, só apagado com uma reposição de fábrica.
+U311|Depois o navegador pede nome de utilizador e palavra-passe. Sem iniciar sessão, qualquer pessoa só pode ver como «guest».
+U312|Quem não inicia sessão é «guest»: vê a visão geral, os dispositivos e o tráfego, mas nenhuma definição, e não pode desligar dispositivos. Desligado, o navegador pede logo a palavra-passe de admin.

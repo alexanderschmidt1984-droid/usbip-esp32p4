@@ -249,12 +249,9 @@ H18|Resolve <code>.local</code> names on the PC:
 H19|Usually already set up on desktop systems (avahi). Otherwise:
 H20|In <code>/etc/nsswitch.conf</code>, add <code>mdns_minimal [NOTFOUND=return]</code> to the <code>hosts:</code> line before <code>resolve</code>.
 H21|Windows 10/11 resolves <code>.local</code> names by itself. If not, use the IP address.
-H22|Without a password the web UI is read-only. Settings can only be changed once a password is set.
-H23|Tick the box, enter a user name and the password <b>twice</b> (against typos), then <b>Save Auth Settings</b>. The browser will then ask for the credentials when opening the page.
-H24|Change the password: enter the new one in both fields. Leave both empty = the current password stays.
 H25|After 5 wrong attempts the board blocks further logins from this PC for 30 seconds.
 H26|Without HTTPS the password crosses the LAN unencrypted. Protection: HTTPS (panel "Encryption") or open the web UI via WireGuard.
-H27|<b>Forgot the password</b>: press <b>RESET 5 times in a row</b> on the board (less than 5&nbsp;s between presses) – this resets everything to factory settings. Or erase only the settings over the USB cable, the firmware stays: <code>idf.py -p /dev/ttyACM0 erase-region 0x9000 0x6000</code> (Windows: <code>-p COM3</code> or similar). All settings are lost (including WireGuard and TLS keys).
+H27|<b>Forgot the password</b>: press <b>RESET 5 times in a row</b> on the board (about every 2&nbsp;s – at least 1&nbsp;s, at most 5&nbsp;s apart) – this resets everything to factory settings. Or erase only the settings over the USB cable, the firmware stays: <code>idf.py -p /dev/ttyACM0 erase-region 0x9000 0x6000</code> (Windows: <code>-p COM3</code> or similar). All settings are lost (including WireGuard and TLS keys).
 H28|<b>Open</b>: everyone on the network may use USB/IP and this web UI.
 H29|<b>Closed (Allowlist)</b>: only listed participants get access, both to USB/IP <b>and</b> to this web UI. An entry is either an <b>IP</b> or a <b>MAC address</b>, plus a <b>comment</b> so it stays clear whom you gave access.
 H30|<b>MAC instead of IP</b>: handy if the PC sometimes gets a different IP via DHCP. Works only for PCs in the <b>same LAN</b> (the board reads the MAC from its ARP table), not across WireGuard or a router. A MAC can be spoofed – it is a convenience, not strong protection. For real protection: password, TLS or WireGuard.
@@ -321,7 +318,7 @@ H90|<b>No handshake</b> ("connecting · no handshake"): usually the PC's firewal
 H91|<b>Power save</b> (on by default): without an attached device the CPU runs at 100&nbsp;MHz instead of 400&nbsp;MHz. As soon as a device is attached it goes to full clock, so transfers do not get slower. Unticked, the board runs at 400&nbsp;MHz all the time. Takes effect immediately, without a restart. When it is on, the green leaf is shown at the bottom left.
 H92|<b>Restart</b>: restarts the board. Attached USB devices are disconnected on all PCs and must be attached again with <code>attach</code> afterwards.
 H93|<b>Factory Reset</b>: erases <b>all</b> settings (network, password, ACL, device filter, WireGuard and TLS keys) and restarts. Afterwards DHCP without a password applies.
-H94|<b>Reset without the web UI</b>: press the <b>RESET</b> button on the board <b>5 times in a row</b>, less than 5&nbsp;s between two presses (good: about once per second). On the 5th start the board erases all settings like Factory Reset. Power off/on counts the same. A single reset or power failure does nothing; crashes are not counted. The BOOT button cannot be used for this (pressed at power-on = flash mode, in operation Ethernet uses the pin).
+H94|<b>Reset without the web UI</b>: press the <b>RESET</b> button on the board <b>5 times in a row</b>, about every 2&nbsp;s (at least 1&nbsp;s, at most 5&nbsp;s apart; faster presses interrupt the start before it is counted). On the 5th start the board erases all settings like Factory Reset. Power off/on counts the same. A single reset or power failure does nothing; crashes are not counted. The BOOT button cannot be used for this (pressed at power-on = flash mode, in operation Ethernet uses the pin).
 H95|<b>Firmware update</b>: over the USB cable with <code>idf.py -p /dev/ttyACM0 flash</code> (Windows: <code>-p COM3</code> or similar). The settings are kept.
 U229|Reset the USB bus? This disconnects and re-enumerates ALL devices and drops any attached clients.
 U230|Software components
@@ -339,3 +336,70 @@ U241|USB/IP over TLS
 U242|WireGuard peer
 U243|Web UI, HTTPS
 U244|Test PC
+U245|Fast read (experimental)
+U246|Reads large blocks overlapped (about +20–30 % when reading sticks). If a device fails in the middle of a read, the USB/IP connection is closed instead of reporting a read error. Off by default.
+U247|Fast read on
+U248|Fast read off
+U249|Logged in as
+U250|USB/IP unencrypted
+U251|At least one device is attached over the LAN without encryption.
+U252|USB/IP protected by WireGuard
+U253|USB/IP encrypted via TLS
+U254|USB/IP encrypted (TLS/WireGuard)
+U255|All attached devices use an encrypted connection.
+U256|Start
+U257|Network
+U258|Login
+U259|Security
+U260|Devices
+U261|Viewer access (view only)
+U262|A second user who can see the dashboard, devices and traffic, but cannot see or change settings and cannot disconnect devices.
+U263|Viewer: user name
+U264|Viewer: password
+U265|Viewer: repeat password
+U266|Access control is closed
+U267|and contains no address of the tunnel network. The WireGuard peer is therefore refused. Add its tunnel IP to the allowlist (probably
+U268|Add to access list
+U269|Access control: add the peer's tunnel IP, otherwise it is refused.
+U270|Admin: user name
+U271|Admin: password
+U272|Admin: repeat password
+U273|Back up / restore settings
+U274|Saves
+U275|all
+U276|settings to a file – including passwords (as hashes), WireGuard and TLS keys and the HTTPS certificate. The file is encrypted with your backup password (AES-256-GCM); without this password it can neither be read nor restored.
+U277|Backup password (min. 8 characters)
+U278|Repeat backup password
+U279|Download backup
+U280|Restore backup file
+U281|Backup password of the file
+U282|Restore & restart
+U283|Change the admin user name?
+U284|Admin and viewer need different user names
+U285|Backup password: at least 8 characters
+U286|Creating backup…
+U287|Backup saved
+U288|Backup failed
+U289|Please choose a backup file
+U290|Please enter the backup password
+U291|Replace all current settings with the backup and restart?
+U292|Settings restored – board is restarting…
+U293|backup from
+U294|Restore failed
+U295|First-time setup
+U296|Log in as admin
+U297|Log out
+U298|Create admin
+U299|No admin yet (new board or factory reset). Until an admin is created, you can only create an admin or restore a backup here – all other settings are locked.
+U302|Or: restore a backup
+U303|Restores all settings from a backup file – including the admin – and restarts the board.
+U304|Guest access without password (view only)
+U307|“guest” is reserved for guest access
+U308|Please enter a user name
+U309|Please enter a password
+U310|Admin created – please log in now
+H22|After a factory reset there is no admin. Then you can only create an admin or restore a backup under <b>First-time setup</b>.
+H23|<b>Log in</b>: <b>Log in as admin</b> at the bottom left, then the browser asks for user name and password. <b>Log out</b> makes you <b translate="no">guest</b> again.
+H24|Change the password: enter the new one in both fields. Leave both empty = the current password stays. The admin can no longer be switched off, only removed by a factory reset.
+U311|The browser then asks for user name and password. Without logging in, anyone can only watch as “guest”.
+U312|Anyone who doesn't log in is “guest”: sees overview, devices and traffic, but no settings, and cannot detach devices. When switched off, the browser asks for the admin password right away.

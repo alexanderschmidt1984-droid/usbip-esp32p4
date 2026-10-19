@@ -19,9 +19,10 @@ CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_360=y
 # the earlier "reset after esp_pm_configure" was the sodium_init() abort.
 CONFIG_PM_ENABLE=y
 
-# Packet capture (USB traffic recording to SD card) is OFF by default: it
-# records everything incl. security-key traffic. Enable explicitly if needed.
-# CONFIG_CAPTURE_ENABLED is not set
+# Packet capture (USB traffic recording to SD card, .pcap). Compiled in, but it
+# records only after "Start Capture" on the dashboard. It sees everything incl.
+# security-key traffic, so only the admin account may start/download it.
+CONFIG_CAPTURE_ENABLED=y
 
 # PSRAM
 CONFIG_SPIRAM=y
@@ -124,3 +125,8 @@ CONFIG_MBEDTLS_CHACHA20_C=y
 CONFIG_MBEDTLS_CHACHAPOLY_C=y
 CONFIG_MBEDTLS_X509_CREATE_C=y
 CONFIG_MBEDTLS_X509_CRT_WRITE_C=y
+
+# Bootloader prints warnings only: its ~40 info lines at 115200 baud took
+# ~0.2 s, and the factory reset by pressing RESET 5x needs the app to start
+# (and count) quickly.
+CONFIG_BOOTLOADER_LOG_LEVEL_WARN=y

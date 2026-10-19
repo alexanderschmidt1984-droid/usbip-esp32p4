@@ -22,6 +22,7 @@
 #include "wg_tunnel.h"
 #include "sec_tls.h"
 #include "power_mgr.h"
+#include "transfer_engine.h"
 #include <time.h>
 #include "network_mgr.h"
 #include "event_log.h"
@@ -389,9 +390,10 @@ static esp_err_t handle_api_settings_auth_get(httpd_req_t *req)
 
     char buf[256];
     int n = snprintf(buf, sizeof(buf),
-        "{\"enabled\":%s,\"username\":\"%s\",\"has_password\":%s}",
+        "{\"enabled\":%s,\"username\":\"%s\",\"has_password\":%s,\"guest_enabled\":%s}",
         enabled ? "true" : "false", esc_user,
-        webui_auth_has_password() ? "true" : "false");
+        webui_auth_has_password() ? "true" : "false",
+        webui_guest_enabled() ? "true" : "false");
     return send_json(req, buf, n);
 }
 
@@ -404,24 +406,34 @@ static esp_err_t handle_api_settings_auth_post(httpd_req_t *req)
         return send_json_error(req, 400, "missing body");
     }
 
-    bool enabled = false;
     char username[64] = "";
     char password[64] = "";
+    bool first = !webui_auth_enabled();   /* guest creating the admin */
 
-    json_get_bool(body, "enabled", &enabled);
     json_get_string(body, "username", username, sizeof(username));
     json_get_string(body, "password", password, sizeof(password));
 
     /* Empty password = keep the current one (see webui_auth_save) */
-    esp_err_t err = webui_auth_save(enabled, username, password);
+    esp_err_t err = webui_auth_save(username, password);
     memset(password, 0, sizeof(password));
-    memset(body, 0, sizeof(body));
     if (err != ESP_OK) {
-        return send_json_error(req, 400, "a password is required to enable authentication");
+        memset(body, 0, sizeof(body));
+        return send_json_error(req, 400, err == ESP_ERR_INVALID_STATE
+            ? "\"guest\" is reserved for the password-less guest"
+            : "user name and password required");
     }
 
-    event_log_add(EVENT_LOG_LEVEL_INFO, "Auth settings updated via WebUI (auth %s)",
-                  enabled ? "enabled" : "disabled");
+    /* Password-less guest access (admin only - the guest never gets here
+     * once an admin exists) */
+    bool g_enabled;
+    if (!first && json_get_bool(body, "guest_enabled", &g_enabled) &&
+        g_enabled != webui_guest_enabled()) {
+        webui_guest_set(g_enabled);
+    }
+    memset(body, 0, sizeof(body));
+
+    event_log_add(EVENT_LOG_LEVEL_INFO, first ? "Admin account created via WebUI"
+                                              : "Auth settings updated via WebUI");
     return send_json_ok(req);
 }
 
@@ -885,6 +897,29 @@ static esp_err_t handle_api_system_components(httpd_req_t *req)
     return send_json(req, buf, n);
 }
 
+/* ---- Fast read (experimental) ---- */
+
+static esp_err_t handle_api_settings_speed_get(httpd_req_t *req)
+{
+    if (!webui_check_auth(req)) return webui_reject_auth(req);
+    return send_json(req, transfer_engine_get_fast_read() ? "{\"fast_read\":true}" : "{\"fast_read\":false}", -1);
+}
+
+static esp_err_t handle_api_settings_speed_post(httpd_req_t *req)
+{
+    if (!webui_check_auth(req)) return webui_reject_auth(req);
+    char body[96];
+    bool on;
+    if (read_body(req, body, sizeof(body)) < 0 || !json_get_bool(body, "fast_read", &on)) {
+        return send_json_error(req, 400, "missing fast_read");
+    }
+    if (transfer_engine_set_fast_read(on) != ESP_OK) {
+        return send_json_error(req, 500, "saving setting failed");
+    }
+    event_log_add(EVENT_LOG_LEVEL_INFO, "Fast read (experimental) %s", on ? "on" : "off");
+    return send_json_ok(req);
+}
+
 /* ---- Power save ---- */
 
 static esp_err_t handle_api_settings_power_get(httpd_req_t *req)
@@ -931,19 +966,31 @@ static esp_err_t handle_api_system_info(httpd_req_t *req)
     esp_chip_info_t chip_info;
     esp_chip_info(&chip_info);
 
+    /* Logged-in user: the admin (Basic auth) or the password-less guest;
+     * "setup" while no admin exists yet. */
+    char user_esc[72] = "";
+    bool guest = webui_req_role() == WEBUI_ROLE_GUEST;
+    bool setup = !webui_auth_enabled();
+    if (guest) {
+        strcpy(user_esc, WEBUI_GUEST_NAME);
+    } else if (!setup) {
+        webui_json_escape(webui_auth_username(), user_esc, sizeof(user_esc));
+    }
+
     char buf[512];
     int n = snprintf(buf, sizeof(buf),
         "{\"version\":\"%s\",\"idf_version\":\"%s\","
         "\"chip\":\"ESP32-P4\",\"revision\":\"v%d.%d\","
         "\"heap_free\":%" PRIu32 ",\"heap_internal\":%" PRIu32 ","
-        "\"uptime_sec\":%d,\"reset\":\"%s\",\"crash\":%s,\"crashes\":%lu,\"prev_log\":%u}",
+        "\"uptime_sec\":%d,\"reset\":\"%s\",\"crash\":%s,\"crashes\":%lu,\"prev_log\":%u,\"user\":\"%s\",\"role\":\"%s\",\"setup\":%s}",
         esp_app_get_description()->version,
         esp_get_idf_version(),
         chip_info.revision / 100, chip_info.revision % 100,
         free_heap, internal_heap,
         uptime_sec, event_log_reset_reason_str(),
         event_log_last_reset_was_crash() ? "true" : "false",
-        (unsigned long)event_log_crash_count(), (unsigned)event_log_previous_len());
+        (unsigned long)event_log_crash_count(), (unsigned)event_log_previous_len(),
+        user_esc, guest ? "guest" : "admin", setup ? "true" : "false");
 
     return send_json(req, buf, n);
 }
@@ -1065,6 +1112,18 @@ void webui_api_register(httpd_handle_t server)
         .handler = handle_api_system_restart, .user_ctx = NULL
     };
     httpd_register_uri_handler(server, &uri_system_restart);
+
+    const httpd_uri_t uri_settings_speed_get = {
+        .uri = "/api/settings/speed", .method = HTTP_GET,
+        .handler = handle_api_settings_speed_get, .user_ctx = NULL
+    };
+    httpd_register_uri_handler(server, &uri_settings_speed_get);
+
+    const httpd_uri_t uri_settings_speed_post = {
+        .uri = "/api/settings/speed", .method = HTTP_POST,
+        .handler = handle_api_settings_speed_post, .user_ctx = NULL
+    };
+    httpd_register_uri_handler(server, &uri_settings_speed_post);
 
     const httpd_uri_t uri_system_components = {
         .uri = "/api/system/components", .method = HTTP_GET,

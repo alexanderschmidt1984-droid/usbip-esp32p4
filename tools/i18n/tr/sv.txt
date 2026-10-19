@@ -249,12 +249,9 @@ H18|Slå upp <code>.local</code>-namn på datorn:
 H19|Oftast redan konfigurerat på skrivbordssystem (avahi). Annars:
 H20|I <code>/etc/nsswitch.conf</code>, lägg till <code>mdns_minimal [NOTFOUND=return]</code> på raden <code>hosts:</code> före <code>resolve</code>.
 H21|Windows 10/11 slår upp <code>.local</code>-namn själv. Annars använder du IP-adressen.
-H22|Utan lösenord är webbgränssnittet skrivskyddat. Inställningar kan bara ändras när ett lösenord har angetts.
-H23|Markera rutan, ange användarnamn och lösenordet <b>två gånger</b> (mot skrivfel) och klicka sedan på <b>Spara autentisering</b>. Därefter frågar webbläsaren efter inloggningsuppgifter när sidan öppnas.
-H24|Byt lösenord: ange det nya i båda fälten. Lämna båda tomma = nuvarande lösenord behålls.
 H25|Efter 5 felaktiga försök blockerar kortet fler inloggningar från den här datorn i 30 sekunder.
 H26|Utan HTTPS skickas lösenordet okrypterat över LAN:et. Skydd: HTTPS (avsnittet "Kryptering") eller öppna webbgränssnittet via WireGuard.
-H27|<b>Glömt lösenord</b>: tryck <b>RESET 5 gånger i rad</b> på kortet (under 5&nbsp;s mellan varje tryck) – allt återställs till fabriksinställningar. Eller radera bara inställningarna via USB-kabeln, firmware finns kvar: <code>idf.py -p /dev/ttyACM0 erase-region 0x9000 0x6000</code> (Windows: <code>-p COM3</code> el.&nbsp;likn.). Alla inställningar går förlorade (även WireGuard- och TLS-nycklar).
+H27|<b>Glömt lösenord</b>: tryck <b>RESET 5 gånger i rad</b> på kortet (ungefär varannan sekund – minst 1&nbsp;s, högst 5&nbsp;s mellan varje tryck) – allt återställs till fabriksinställningar. Eller radera bara inställningarna via USB-kabeln, firmware finns kvar: <code>idf.py -p /dev/ttyACM0 erase-region 0x9000 0x6000</code> (Windows: <code>-p COM3</code> el.&nbsp;likn.). Alla inställningar går förlorade (även WireGuard- och TLS-nycklar).
 H28|<b>Öppen</b>: alla i nätverket får använda USB/IP och detta webbgränssnitt.
 H29|<b>Stängd (tillåtelselista)</b>: bara listade deltagare får åtkomst, både till USB/IP <b>och</b> till detta webbgränssnitt. En post är antingen en <b>IP</b> eller en <b>MAC-adress</b>, plus en <b>kommentar</b> så att det är tydligt vem du gav åtkomst.
 H30|<b>MAC i stället för IP</b>: praktiskt om datorn ibland får en annan IP via DHCP. Fungerar bara för datorer i <b>samma LAN</b> (kortet läser MAC-adressen från sin ARP-tabell), inte via WireGuard eller en router. En MAC kan förfalskas – det är en bekvämlighet, inte ett starkt skydd. För verkligt skydd: lösenord, TLS eller WireGuard.
@@ -321,7 +318,7 @@ H90|<b>Ingen handskakning</b> ("connecting · no handshake"): oftast blockerar d
 H91|<b>Energisparläge</b> (på från fabrik): utan ansluten enhet kör CPU:n med 100&nbsp;MHz i stället för 400&nbsp;MHz. Så snart en enhet ansluts går den upp till full takt, så överföringar blir inte långsammare. Avmarkerat kör kortet hela tiden med 400&nbsp;MHz. Gäller direkt, utan omstart. När det är på visas det gröna lövet längst ned till vänster.
 H92|<b>Starta om</b>: startar om kortet. Anslutna USB-enheter kopplas från på alla datorer och måste sedan anslutas igen med <code>attach</code>.
 H93|<b>Fabriksåterställning</b>: raderar <b>alla</b> inställningar (nätverk, lösenord, åtkomstlista, enhetsfilter, WireGuard- och TLS-nycklar) och startar om. Därefter gäller DHCP utan lösenord.
-H94|<b>Återställ utan webbgränssnittet</b>: tryck på kortets <b>RESET</b>-knapp <b>5 gånger i rad</b>, under 5&nbsp;s mellan två tryck (bra: ungefär en gång per sekund). Vid 5:e starten raderar kortet alla inställningar som vid fabriksåterställning. Ström av/på räknas likadant. En enstaka återställning eller ett strömavbrott gör ingenting; krascher räknas inte. BOOT-knappen kan inte användas för detta (intryckt vid start = flash-läge, under drift använder Ethernet stiftet).
+H94|<b>Återställ utan webbgränssnittet</b>: tryck på kortets <b>RESET</b>-knapp <b>5 gånger i rad</b>, ungefär varannan sekund (minst 1&nbsp;s, högst 5&nbsp;s; trycker man snabbare avbryts starten innan den räknas). Vid 5:e starten raderar kortet alla inställningar som vid fabriksåterställning. Ström av/på räknas likadant. En enstaka återställning eller ett strömavbrott gör ingenting; krascher räknas inte. BOOT-knappen kan inte användas för detta (intryckt vid start = flash-läge, under drift använder Ethernet stiftet).
 H95|<b>Firmwareuppdatering</b>: via USB-kabeln med <code>idf.py -p /dev/ttyACM0 flash</code> (Windows: <code>-p COM3</code> el.&nbsp;likn.). Inställningarna behålls.
 U229|Återställa USB-bussen? Alla enheter kopplas från och identifieras igen, och anslutna klienter kopplas från.
 U230|Programvarukomponenter
@@ -339,3 +336,70 @@ U241|USB/IP över TLS
 U242|WireGuard-motpart
 U243|Webbgränssnitt, HTTPS
 U244|Testdator
+U245|Snabb läsning (experimentell)
+U246|Läser stora block överlappande (cirka +20–30 % vid läsning från USB-minnen). Om en enhet fallerar mitt i en läsning stängs USB/IP-anslutningen i stället för att ett läsfel rapporteras. Av från fabrik.
+U247|Snabb läsning på
+U248|Snabb läsning av
+U249|Inloggad som
+U250|USB/IP okrypterat
+U251|Minst en enhet är ansluten via LAN utan kryptering.
+U252|USB/IP skyddat av WireGuard
+U253|USB/IP krypterat med TLS
+U254|USB/IP krypterat (TLS/WireGuard)
+U255|Alla anslutna enheter använder en krypterad anslutning.
+U256|Start
+U257|Nätverk
+U258|Inloggning
+U259|Säkerhet
+U260|Enheter
+U261|Åskådaråtkomst (endast visning)
+U262|En andra användare som kan se översikt, enheter och trafik, men varken ser eller ändrar inställningar och inte kan koppla från enheter.
+U263|Åskådare: användarnamn
+U264|Åskådare: lösenord
+U265|Åskådare: upprepa lösenord
+U266|Åtkomstkontrollen är stängd
+U267|och innehåller ingen adress från tunnelnätet. WireGuard-motparten nekas därför. Lägg till dess tunnel-IP i tillåtelselistan (troligen
+U268|Lägg till i åtkomstlistan
+U269|Åtkomstkontroll: lägg till motpartens tunnel-IP, annars nekas den.
+U270|Admin: användarnamn
+U271|Admin: lösenord
+U272|Admin: upprepa lösenord
+U273|Säkerhetskopiera / återställ inställningar
+U274|Sparar
+U275|alla
+U276|inställningar i en fil – även lösenord (som hash), WireGuard- och TLS-nycklar och HTTPS-certifikatet. Filen är krypterad med ditt säkerhetskopielösenord (AES-256-GCM); utan det kan den varken läsas eller återställas.
+U277|Säkerhetskopielösenord (minst 8 tecken)
+U278|Upprepa säkerhetskopielösenord
+U279|Ladda ned säkerhetskopia
+U280|Återställ säkerhetskopia
+U281|Filens säkerhetskopielösenord
+U282|Återställ och starta om
+U283|Byta admin-användarnamn?
+U284|Admin och åskådare behöver olika användarnamn
+U285|Säkerhetskopielösenord: minst 8 tecken
+U286|Skapar säkerhetskopia…
+U287|Säkerhetskopia sparad
+U288|Säkerhetskopiering misslyckades
+U289|Välj en säkerhetskopiefil
+U290|Ange säkerhetskopielösenordet
+U291|Ersätta alla nuvarande inställningar med säkerhetskopian och starta om?
+U292|Inställningar återställda – kortet startar om…
+U293|säkerhetskopia från
+U294|Återställning misslyckades
+U295|Första konfiguration
+U296|Logga in som admin
+U297|Logga ut
+U298|Skapa admin
+U299|Ingen admin ännu (nytt kort eller fabriksåterställning). Tills en admin har skapats kan man här bara skapa en admin eller läsa in en säkerhetskopia – alla andra inställningar är låsta.
+U302|Eller: läs in en säkerhetskopia
+U303|Återställer alla inställningar från en säkerhetskopia – även admin – och startar om kortet.
+U304|Gäståtkomst utan lösenord (endast visning)
+U307|”guest” är reserverat för gäståtkomst
+U308|Ange ett användarnamn
+U309|Ange ett lösenord
+U310|Admin skapad – logga in nu
+H22|Efter en fabriksåterställning finns ingen admin. Då kan man bara skapa en admin eller läsa in en säkerhetskopia under <b>Första konfiguration</b>.
+H23|<b>Logga in</b>: nere till vänster <b>Logga in som admin</b>, sedan frågar webbläsaren efter användarnamn och lösenord. <b>Logga ut</b> gör dig till <b translate="no">guest</b> igen.
+H24|Byta lösenord: skriv det nya i båda fälten. Båda tomma = nuvarande lösenord behålls. Admin kan inte längre stängas av, bara raderas med en fabriksåterställning.
+U311|Sedan frågar webbläsaren efter användarnamn och lösenord. Utan inloggning kan alla bara titta som ”guest”.
+U312|Den som inte loggar in är ”guest”: ser översikt, enheter och trafik, men inga inställningar, och kan inte koppla från enheter. Avstängt frågar webbläsaren direkt efter admin-lösenordet.

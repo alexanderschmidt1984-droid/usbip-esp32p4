@@ -33,13 +33,15 @@ void webui_notify_device_change(void);
 
 /**
  * @brief Save authentication settings to NVS
- * @param enabled  Whether auth is enabled
- * @param username Username (NULL to keep current)
+ * Creates the admin on first use; there is no way to switch it off again
+ * other than a factory reset.
+ * @param username Username (NULL or "" to keep current; never "guest")
  * @param password Plaintext password - stored as salted, iterated SHA-256
  *                 (NULL or "" to keep current)
- * @return ESP_OK, or ESP_ERR_INVALID_ARG when enabling auth without any password
+ * @return ESP_OK, ESP_ERR_INVALID_ARG (first admin without name/password),
+ *         ESP_ERR_INVALID_STATE (name "guest")
  */
-esp_err_t webui_auth_save(bool enabled, const char *username, const char *password);
+esp_err_t webui_auth_save(const char *username, const char *password);
 
 /**
  * @brief Whether a Web UI password has been configured
@@ -60,6 +62,15 @@ bool webui_auth_enabled(void);
  * @brief Get the current auth username
  */
 const char *webui_auth_username(void);
+
+/* Password-less read-only guest (dashboard, devices, traffic; no settings).
+ * Without an admin it may only create one or restore a backup. */
+#define WEBUI_GUEST_NAME "guest"
+typedef enum { WEBUI_ROLE_ADMIN = 0, WEBUI_ROLE_GUEST } webui_role_t;
+void webui_guest_set(bool enabled);
+bool webui_guest_enabled(void);
+/* Role of the request currently being handled (valid after the auth check) */
+webui_role_t webui_req_role(void);
 
 /**
  * @brief Register REST API endpoint handlers

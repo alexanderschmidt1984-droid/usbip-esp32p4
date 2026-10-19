@@ -60,6 +60,7 @@
                  ['it', 'Italiano'], ['pt', 'Português'], ['da', 'Dansk'], ['sv', 'Svenska'],
                  ['ru', 'Русский'], ['uk', 'Українська'], ['tr', 'Türkçe'], ['ar', 'العربية']];
     var I18N = { lang: '', ui: {}, help: {} };
+    var I18N_REV = {};         /* text in the previous language -> source text */
     var helpUnits = null;      /* leaf blocks of the help sections, see i18nCaptureHelp */
     var I18N_SKIP = { SCRIPT: 1, STYLE: 1, PRE: 1, CODE: 1, svg: 1, SVG: 1, TEXTAREA: 1 };
 
@@ -104,14 +105,20 @@
         var w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
         var n;
         while ((n = w.nextNode())) {
-            if (n._src === undefined) {
-                if (!/[A-Za-zÀ-ž]{2}/.test(n.nodeValue) || i18nSkip(n.parentNode)) { n._src = null; continue; }
-                n._src = n.nodeValue;
+            /* A node we did not translate last time (new, or text set by
+             * app.js in the previous language): find its source text via the
+             * previous language's translations. */
+            if (n._src === undefined || n.nodeValue !== n._tr) {
+                if (!/[\p{L}]{2}/u.test(n.nodeValue) || i18nSkip(n.parentNode)) { n._src = null; continue; }
+                var cur = /^(\s*)([\s\S]*?)(\s*)$/.exec(n.nodeValue);
+                var ckey = cur[2].replace(/\s+/g, ' ');
+                n._src = cur[1] + (I18N_REV[ckey] || ckey) + cur[3];
             }
             if (n._src === null) continue;
             var m = /^(\s*)([\s\S]*?)(\s*)$/.exec(n._src);
             var key = m[2].replace(/\s+/g, ' ');
             n.nodeValue = m[1] + t(key) + m[3];
+            n._tr = n.nodeValue;
         }
         var els = document.querySelectorAll('[placeholder],[title]');
         for (var i = 0; i < els.length; i++) {
@@ -146,6 +153,13 @@
         return 'en';
     }
 
+    function setI18n(code, d) {
+        var rev = {};
+        for (var k in I18N.ui) if (I18N.ui.hasOwnProperty(k)) rev[I18N.ui[k]] = k;
+        I18N_REV = rev;
+        I18N = { lang: code, ui: d.ui || {}, help: d.help || {} };
+    }
+
     function setLanguage(code, remember) {
         if (remember) {
             try { localStorage.setItem('usbip-lang', code); } catch (e) { /* storage blocked */ }
@@ -159,7 +173,7 @@
         var cached = null;
         try { cached = JSON.parse(localStorage.getItem('usbip-lang-' + code) || 'null'); } catch (e) { /* none */ }
         if (cached) {
-            I18N = { lang: code, ui: cached.ui || {}, help: cached.help || {} };
+            setI18n(code, cached);
             i18nApplyDom();
         }
         return fetch('/lang?l=' + code)
@@ -170,9 +184,13 @@
                 try { d = txt ? JSON.parse(txt) : null; } catch (e) { d = null; }
                 if (!d) d = cached || { ui: {}, help: {} };
                 else { try { localStorage.setItem('usbip-lang-' + code, txt); } catch (e) { /* full/blocked */ } }
-                I18N = { lang: code, ui: d.ui || {}, help: d.help || {} };
+                setI18n(code, d);
                 i18nApplyDom();
                 applyTheme(theme);
+                /* rebuild what app.js rendered in the previous language */
+                if ($deviceList) { $deviceList.innerHTML = ''; expandedDevIdx = -1; }
+                componentsLoaded = false;
+                if (ws && ws.readyState === WebSocket.OPEN) $wsText.textContent = t('Connected');
                 if (activeSection === 'settings') loadAllSettings();
                 if (lastStats) handleStats(lastStats);
             });
@@ -212,6 +230,35 @@
             $b.className = 'ws-status wg-badge busy';
             $t.textContent = 'WireGuard: ' + (wg.state || '?');
             $b.title = t('Tunnel eingeschaltet, aber nicht verbunden.');
+        }
+    }
+
+    /* USB/IP protection, summed up over the attached devices (tr per device):
+     * shown no matter how this web page itself was opened. */
+    function updateUsbBadge(devices) {
+        var $b = document.getElementById('usb-badge');
+        var $t = document.getElementById('usb-badge-text');
+        if (!$b || !$t) return;
+        var n = 0, wgc = 0, tls = 0, plain = 0;
+        for (var i = 0; i < devices.length; i++) {
+            if (devices[i].state !== 1) continue;        /* only exported devices */
+            n++;
+            if (devices[i].tr === 2) wgc++;
+            else if (devices[i].tr === 1) tls++;
+            else plain++;
+        }
+        if (!n) { $b.style.display = 'none'; return; }
+        $b.style.display = '';
+        if (plain) {
+            $b.className = 'ws-status wg-badge busy';
+            $t.textContent = t('USB/IP unverschlüsselt');
+            $b.title = t('Mindestens ein Gerät ist ohne Verschlüsselung über das LAN angehängt.');
+        } else {
+            $b.className = 'ws-status wg-badge secure';
+            $t.textContent = wgc && !tls ? t('USB/IP über WireGuard geschützt')
+                           : tls && !wgc ? t('USB/IP über TLS verschlüsselt')
+                           : t('USB/IP verschlüsselt (TLS/WireGuard)');
+            $b.title = t('Alle angehängten Geräte laufen über eine verschlüsselte Verbindung.');
         }
     }
 
@@ -431,6 +478,9 @@
      * ================================================================ */
 
     function switchSection(name) {
+        var b = document.body.classList;
+        if (name === 'settings' && b.contains('role-guest')) name = b.contains('setup-mode') ? 'setup' : 'dashboard';
+        if (name === 'setup' && !b.contains('setup-mode')) name = 'dashboard';
         activeSection = name;
         for (var i = 0; i < $navItems.length; i++) {
             var item = $navItems[i];
@@ -618,6 +668,7 @@
 
         /* --- WireGuard badge --- */
         updateWgBadge(msg.wg, msg.wg_self);
+        updateUsbBadge(msg.devices || []);
 
         /* --- Update dashboard --- */
         updateDashboard(msg, devices, clientCount);
@@ -1025,7 +1076,7 @@
         }
 
         /* Action buttons */
-        html += '<div class="device-card-actions">';
+        html += '<div class="device-card-actions admin-only">';
         if (d.state === 'Exported') {
             html += '<button class="btn btn-sm btn-secondary" onclick="window._deviceAction(\'disconnect\',' + idx + ')">' + t('Disconnect Client') + '</button>';
         }
@@ -1337,7 +1388,7 @@
          * the server's max_open_sockets (7), and its LRU purge then closes the
          * WebSocket (oldest socket) -> brief "Disconnected" on every visit. */
         var loaders = [loadNetworkSettings, loadAuthSettings, loadAclSettings,
-                       loadUsbHub, loadDevFilter, loadWireguard, loadSecurity, loadPower, loadSystemInfo];
+                       loadUsbHub, loadDevFilter, loadWireguard, loadSecurity, loadPower, loadFastRead, loadSystemInfo];
         loaders.reduce(function(p, fn) {
             return p.then(function() { return fn(); }, function() { return fn(); });
         }, Promise.resolve());
@@ -1412,52 +1463,48 @@
 
     /* --- Auth --- */
 
-    var $setAuthEnabled = document.getElementById('set-auth-enabled');
-    var $authFields = document.getElementById('auth-fields');
     var $setAuthUser = document.getElementById('set-auth-user');
     var $setAuthPass = document.getElementById('set-auth-pass');
-
-    if ($setAuthEnabled) {
-        $setAuthEnabled.addEventListener('change', function() {
-            $authFields.style.display = this.checked ? 'block' : 'none';
-        });
-    }
+    var authLoadedUser = '';
 
     function loadAuthSettings() {
         return fetch('/api/settings/auth')
             .then(function(r) { return r.json(); })
             .then(function(data) {
-                if ($setAuthEnabled) {
-                    $setAuthEnabled.checked = !!data.enabled;
-                    $authFields.style.display = data.enabled ? 'block' : 'none';
-                }
-                if ($setAuthUser) $setAuthUser.value = data.username || '';
-                if ($setAuthPass) {
-                    $setAuthPass.value = '';
-                    $setAuthPass.placeholder = data.has_password ? t('(unchanged)') : t('required');
-                }
-                var $hint = document.getElementById('auth-hint');
-                if ($hint) $hint.style.display = data.has_password ? 'none' : 'block';
+                $setAuthUser.value = data.username || '';
+                authLoadedUser = data.username || '';
+                document.getElementById('set-guest-enabled').checked = !!data.guest_enabled;
+                $setAuthPass.value = '';
+                document.getElementById('set-auth-pass2').value = '';
+                $setAuthPass.placeholder = data.has_password ? t('(unchanged)') : t('required');
             })
             .catch(function() { /* ignore */ });
     }
 
     window.saveAuth = function() {
+        /* A renamed admin locks the old login out (a browser autofill once
+         * put another name here): ask first. */
+        var newUser = $setAuthUser.value.trim();
+        if (newUser.toLowerCase() === 'guest') {
+            toast(t('„guest“ ist für den Gastzugang reserviert'), 'error');
+            return;
+        }
+        if (authLoadedUser && newUser && newUser !== authLoadedUser &&
+            !confirm(t('Admin-Benutzername ändern?') + '\n' + authLoadedUser + ' → ' + newUser)) {
+            $setAuthUser.value = authLoadedUser;
+            return;
+        }
         var $pass2 = document.getElementById('set-auth-pass2');
         if ($setAuthPass.value !== $pass2.value) {
             toast(t('Passwörter stimmen nicht überein'), 'error');
             $pass2.focus();
             return;
         }
-        var body = {
-            enabled: $setAuthEnabled.checked,
-            username: $setAuthUser.value,
-            password: $setAuthPass.value
-        };
+        var guest = document.getElementById('set-guest-enabled').checked;
         fetch('/api/settings/auth', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
+            body: JSON.stringify({ username: newUser, password: $setAuthPass.value, guest_enabled: guest })
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
@@ -1472,6 +1519,42 @@
         })
         .catch(function() { toast(t('Request failed'), 'error'); });
     };
+
+    /* --- First-time setup: the guest creates the admin --- */
+
+    window.setupAdmin = function() {
+        var user = document.getElementById('setup-user').value.trim();
+        var $p = document.getElementById('setup-pass'), $p2 = document.getElementById('setup-pass2');
+        if (!user) { toast(t('Bitte einen Benutzernamen eingeben'), 'error'); return; }
+        if (user.toLowerCase() === 'guest') { toast(t('„guest“ ist für den Gastzugang reserviert'), 'error'); return; }
+        if (!$p.value) { toast(t('Bitte ein Passwort eingeben'), 'error'); $p.focus(); return; }
+        if ($p.value !== $p2.value) { toast(t('Passwörter stimmen nicht überein'), 'error'); $p2.focus(); return; }
+        fetch('/api/settings/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: user, password: $p.value })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (!d.ok) { toast(d.error || t('Save failed'), 'error'); return; }
+            $p.value = $p2.value = '';
+            toast(t('Admin angelegt – bitte jetzt anmelden'), 'success');
+            setTimeout(function() { location.href = '/login'; }, 1200);
+        })
+        .catch(function() { toast(t('Request failed'), 'error'); });
+    };
+
+    /* Login/logout with Basic auth: /login always demands credentials (the
+     * browser then keeps sending them); logout overwrites them with "guest:". */
+    document.getElementById('sidebar-login').addEventListener('click', function() {
+        location.href = '/login';
+    });
+    document.getElementById('sidebar-logout').addEventListener('click', function() {
+        var x = new XMLHttpRequest();
+        x.open('GET', '/logout', true, 'guest', 'logout');
+        x.onloadend = function() { location.href = '/'; };
+        x.send();
+    });
 
     /* --- Device filter (VID:PID allowlist) --- */
 
@@ -1544,6 +1627,53 @@
         .catch(function() { toast(t('Request failed'), 'error'); });
     };
 
+    /* --- Settings tabs (panels carry data-tab) --- */
+
+    var settingsTab = 'network';
+    try { settingsTab = localStorage.getItem('usbip-settings-tab') || 'network'; } catch (e) { /* storage blocked */ }
+
+    function setSettingsTab(tab) {
+        settingsTab = tab;
+        try { localStorage.setItem('usbip-settings-tab', tab); } catch (e) { /* storage blocked */ }
+        var btns = document.querySelectorAll('.settings-tabs button');
+        for (var i = 0; i < btns.length; i++) {
+            btns[i].classList.toggle('active', btns[i].getAttribute('data-tab') === tab);
+        }
+        var panels = document.querySelectorAll('#sec-settings .panel[data-tab]');
+        for (var k = 0; k < panels.length; k++) {
+            panels[k].classList.toggle('tab-hidden', panels[k].getAttribute('data-tab') !== tab);
+        }
+    }
+
+    document.addEventListener('click', function(e) {
+        var b = e.target.closest ? e.target.closest('.settings-tabs button') : null;
+        if (b) setSettingsTab(b.getAttribute('data-tab'));
+    });
+
+    /* --- Fast read (experimental) --- */
+
+    function loadFastRead() {
+        return fetch('/api/settings/speed')
+            .then(function(r) { return r.json(); })
+            .then(function(d) { document.getElementById('set-fastread').checked = !!d.fast_read; })
+            .catch(function() { /* ignore */ });
+    }
+
+    window.saveFastRead = function() {
+        var on = document.getElementById('set-fastread').checked;
+        fetch('/api/settings/speed', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fast_read: on })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.ok) toast(on ? t('Schnelles Lesen an') : t('Schnelles Lesen aus'), 'success');
+            else { toast(data.error || t('Save failed'), 'error'); loadFastRead(); }
+        })
+        .catch(function() { toast(t('Request failed'), 'error'); loadFastRead(); });
+    };
+
     /* --- Power save --- */
 
     function loadPower() {
@@ -1586,6 +1716,48 @@
         return t('{n} h ago').replace('{n}', Math.floor(s / 3600));
     }
 
+    /* Tunnel on + ACL closed + no address of the tunnel network in the list:
+     * the peer would be locked out. Suggest its tunnel IP (.1, or .2 if the
+     * board itself is .1). */
+    var aclClosed = false;
+    var wgSuggest = '';
+
+    function ipToInt(s) {
+        var p = String(s || '').split('.');
+        if (p.length !== 4) return null;
+        return ((+p[0] << 24) >>> 0) + (+p[1] << 16) + (+p[2] << 8) + (+p[3]);
+    }
+
+    function wgAclHint(data) {
+        var $h = $id('wg-acl-hint');
+        if (!$h) return;
+        var addr = ipToInt(data.address), mask = ipToInt(data.netmask || '255.255.255.0');
+        var show = false;
+        if (data.enabled && aclClosed && addr !== null && mask !== null) {
+            var net = (addr & mask) >>> 0;
+            var covered = aclEntries.some(function(e) {
+                var v = e.type === 'ip' ? ipToInt(e.value) : null;
+                return v !== null && ((v & mask) >>> 0) === net && v !== addr;
+            });
+            if (!covered) {
+                var first = (net + 1) >>> 0;
+                var peer = first === addr ? first + 1 : first;
+                wgSuggest = [peer >>> 24, (peer >>> 16) & 255, (peer >>> 8) & 255, peer & 255].join('.');
+                $id('wg-acl-ip').textContent = wgSuggest;
+                show = true;
+            }
+        }
+        $h.style.display = show ? '' : 'none';
+        return show;
+    }
+
+    window.wgAclAdd = function() {
+        if (!wgSuggest) return;
+        if (!pushAclEntry('ip', wgSuggest, 'WireGuard')) return;
+        saveAcl();
+        $id('wg-acl-hint').style.display = 'none';
+    };
+
     function wgStatus(data) {
         var $st = $id('wg-state');
         if (!$st) return;
@@ -1604,6 +1776,7 @@
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 wgStatus(data);
+                wgAclHint(data);
                 if (statusOnly) return;
                 $id('wg-enabled').checked = !!data.enabled;
                 $id('wg-peer').value = data.peer_public_key || '';
@@ -1663,7 +1836,14 @@
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
-            if (data.ok) { toast(t('WireGuard settings saved'), 'success'); loadWireguard(); }
+            if (data.ok) {
+                toast(t('WireGuard settings saved'), 'success');
+                Promise.resolve(loadWireguard()).then(function() {
+                    if ($id('wg-acl-hint').style.display !== 'none') {
+                        toast(t('Zugriffskontrolle: Tunnel-IP der Gegenstelle eintragen, sonst wird sie abgewiesen.'), 'error');
+                    }
+                });
+            }
             else toast(data.error || t('Save failed'), 'error');
         })
         .catch(function() { toast(t('Request failed'), 'error'); });
@@ -1831,6 +2011,7 @@
                 $aclListSection.style.display = data.closed ? 'block' : 'none';
 
                 aclEntries = data.entries || [];
+                aclClosed = !!data.closed;
                 aclMe = { ip: data.me_ip || '', mac: data.me_mac || '' };
                 document.getElementById('acl-add-me').style.display = aclMe.ip ? '' : 'none';
                 document.getElementById('acl-me-info').textContent = aclMe.ip
@@ -1942,6 +2123,65 @@
             .catch(function() { toast(t('Request failed'), 'error'); });
     };
 
+    /* --- Encrypted settings backup / restore --- */
+
+    window.downloadBackup = function() {
+        var p1 = document.getElementById('bak-pass').value, p2 = document.getElementById('bak-pass2').value;
+        if (p1.length < 8) { toast(t('Sicherungs-Passwort: mindestens 8 Zeichen'), 'error'); return; }
+        if (p1 !== p2) { toast(t('Passwörter stimmen nicht überein'), 'error'); return; }
+        toast(t('Sicherung wird erstellt…'), 'success');
+        fetch('/api/system/backup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ passphrase: p1 })
+        })
+        .then(function(r) {
+            if (!r.ok) return r.json().then(function(d) { throw new Error(d.error || ('HTTP ' + r.status)); });
+            var cd = r.headers.get('Content-Disposition') || '';
+            var m = /filename="([^"]+)"/.exec(cd);
+            return r.blob().then(function(b) { return { blob: b, name: m ? m[1] : 'usbip-settings.usbipbak' }; });
+        })
+        .then(function(f) {
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(f.blob);
+            a.download = f.name;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+            document.getElementById('bak-pass').value = '';
+            document.getElementById('bak-pass2').value = '';
+            toast(t('Sicherung gespeichert'), 'success');
+        })
+        .catch(function(e) { toast(t('Sicherung fehlgeschlagen') + ': ' + e.message, 'error'); });
+    };
+
+    window.restoreBackup = function(pfx) {
+        pfx = pfx || '';
+        var f = document.getElementById(pfx + 'bak-file').files[0];
+        var pass = document.getElementById(pfx + 'bak-rpass').value;
+        if (!f) { toast(t('Bitte eine Sicherungsdatei wählen'), 'error'); return; }
+        if (!pass) { toast(t('Bitte das Sicherungs-Passwort eingeben'), 'error'); return; }
+        if (!confirm(t('Alle aktuellen Einstellungen durch die Sicherung ersetzen und neu starten?'))) return;
+        var rd = new FileReader();
+        rd.onload = function() {
+            var bytes = new Uint8Array(rd.result), bin = '';
+            for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+            fetch('/api/system/restore', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ passphrase: pass, data: btoa(bin) })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                if (d.ok) toast(t('Einstellungen wiederhergestellt – Board startet neu…') +
+                                (d.from_fw ? ' (' + t('Sicherung von') + ' v' + d.from_fw + ')' : ''), 'success');
+                else toast(d.error || t('Wiederherstellen fehlgeschlagen'), 'error');
+            })
+            .catch(function() { toast(t('Keine Antwort - Board startet vermutlich neu'), 'success'); });
+        };
+        rd.readAsArrayBuffer(f);
+    };
+
     /* --- Restart / factory reset (with feedback; a silent failure looked like "nothing happens") --- */
 
     window.systemAction = function(what) {
@@ -1996,6 +2236,23 @@
                 if ($ver) $ver.textContent = data.version || '--';
                 var $sver = document.getElementById('sidebar-version');
                 if ($sver && data.version) $sver.textContent = 'v' + data.version;
+                /* Guest: hide everything that needs admin rights (the board refuses
+                 * those requests anyway). Without an admin only "first-time setup". */
+                var guest = data.role === 'guest', setup = !!data.setup;
+                var wasSetup = document.body.classList.contains('setup-mode');
+                document.body.classList.toggle('role-guest', guest);
+                document.body.classList.toggle('setup-mode', setup && guest);
+                if (guest && activeSection === 'settings') switchSection(setup ? 'setup' : 'dashboard');
+                else if (setup && guest && !wasSetup) switchSection('setup');
+                else if (!setup && activeSection === 'setup') switchSection('dashboard');
+                var $usr = document.getElementById('sidebar-user');
+                if ($usr) {
+                    $usr.style.display = data.user ? '' : 'none';
+                    document.getElementById('sidebar-user-text').textContent = data.user || '';
+                    $usr.title = t('Logged in as') + ' ' + (data.user || '');
+                    document.getElementById('sidebar-login').style.display = guest && !setup ? '' : 'none';
+                    document.getElementById('sidebar-logout').style.display = guest || setup ? 'none' : '';
+                }
                 if ($idf) $idf.textContent = data.idf_version || '--';
                 if ($chip) $chip.textContent = (data.chip || 'ESP32-P4') + (data.revision ? ' ' + data.revision : '');
                 if ($heap) $heap.textContent = Math.round((data.heap_free || 0) / 1024) + ' KB free';
@@ -2148,7 +2405,7 @@
 
     function checkHash() {
         var hash = location.hash.replace('#', '');
-        if (hash && ['dashboard', 'devices', 'topology', 'settings'].indexOf(hash) !== -1) {
+        if (hash && ['dashboard', 'devices', 'topology', 'settings', 'setup'].indexOf(hash) !== -1) {
             switchSection(hash);
         }
     }
@@ -2161,6 +2418,7 @@
      * ================================================================ */
 
     i18nCaptureHelp();
+    setSettingsTab(settingsTab);
     var $langSel = document.getElementById('lang-select');
     LANGS.forEach(function(l) {
         var o = document.createElement('option');

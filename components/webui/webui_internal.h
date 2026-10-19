@@ -37,3 +37,8 @@ static inline void webui_json_escape(const char *src, char *dst, int dstlen)
     }
     dst[j] = '\0';
 }
+
+#include "esp_http_server.h"
+
+/* Encrypted settings backup / restore (webui_backup.c) */
+void webui_backup_register(httpd_handle_t server);

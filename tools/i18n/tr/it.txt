@@ -249,12 +249,9 @@ H18|Risolvere i nomi <code>.local</code> sul PC:
 H19|Sui sistemi desktop di solito è già configurato (avahi). Altrimenti:
 H20|In <code>/etc/nsswitch.conf</code>, aggiungere <code>mdns_minimal [NOTFOUND=return]</code> alla riga <code>hosts:</code> prima di <code>resolve</code>.
 H21|Windows 10/11 risolve da solo i nomi <code>.local</code>. Altrimenti usare l'indirizzo IP.
-H22|Senza password l'interfaccia è in sola lettura. Le impostazioni si possono modificare solo dopo aver impostato una password.
-H23|Mettere la spunta, inserire un nome utente e la password <b>due volte</b> (contro gli errori di battitura), poi <b>Salva autenticazione</b>. Il browser chiederà quindi le credenziali all'apertura.
-H24|Cambiare la password: inserire la nuova in entrambi i campi. Lasciarli entrambi vuoti = la password attuale resta.
 H25|Dopo 5 tentativi errati la scheda blocca gli accessi da questo PC per 30 secondi.
 H26|Senza HTTPS la password attraversa la LAN in chiaro. Protezione: HTTPS (sezione «Crittografia») oppure aprire l'interfaccia tramite WireGuard.
-H27|<b>Password dimenticata</b>: premere <b>RESET 5 volte di seguito</b> sulla scheda (meno di 5&nbsp;s tra una pressione e l'altra): tutto torna alle impostazioni di fabbrica. Oppure cancellare solo le impostazioni tramite cavo USB, il firmware resta: <code>idf.py -p /dev/ttyACM0 erase-region 0x9000 0x6000</code> (Windows: <code>-p COM3</code> o simile). Tutte le impostazioni vanno perse (anche le chiavi WireGuard e TLS).
+H27|<b>Password dimenticata</b>: premere <b>RESET 5 volte di seguito</b> sulla scheda (circa ogni 2&nbsp;s – almeno 1&nbsp;s, al massimo 5&nbsp;s tra una pressione e l'altra): tutto torna alle impostazioni di fabbrica. Oppure cancellare solo le impostazioni tramite cavo USB, il firmware resta: <code>idf.py -p /dev/ttyACM0 erase-region 0x9000 0x6000</code> (Windows: <code>-p COM3</code> o simile). Tutte le impostazioni vanno perse (anche le chiavi WireGuard e TLS).
 H28|<b>Aperto</b>: chiunque nella rete può usare USB/IP e questa interfaccia.
 H29|<b>Chiuso (lista consentiti)</b>: hanno accesso solo i partecipanti elencati, sia a USB/IP <b>sia</b> a questa interfaccia. Una voce è un <b>IP</b> o un <b>indirizzo MAC</b>, con un <b>commento</b> per ricordare a chi hai dato l'accesso.
 H30|<b>MAC invece di IP</b>: comodo se il PC a volte riceve un altro IP via DHCP. Funziona solo per i PC della <b>stessa LAN</b> (la scheda legge il MAC dalla sua tabella ARP), non attraverso WireGuard o un router. Un MAC si può falsificare: è una comodità, non una protezione forte. Per una vera protezione: password, TLS o WireGuard.
@@ -321,7 +318,7 @@ H90|<b>Nessun handshake</b> («connecting · no handshake»): di solito il firew
 H91|<b>Risparmio energetico</b> (attivo di fabbrica): senza dispositivo collegato la CPU va a 100&nbsp;MHz invece di 400&nbsp;MHz. Appena un dispositivo viene collegato passa alla frequenza piena, quindi i trasferimenti non rallentano. Senza spunta, la scheda va sempre a 400&nbsp;MHz. Effetto immediato, senza riavvio. Se attivo, in basso a sinistra compare la foglia verde.
 H92|<b>Riavvia</b>: riavvia la scheda. I dispositivi USB collegati vengono disconnessi su tutti i PC e vanno poi ricollegati con <code>attach</code>.
 H93|<b>Ripristino di fabbrica</b>: cancella <b>tutte</b> le impostazioni (rete, password, lista accessi, filtro, chiavi WireGuard e TLS) e riavvia. Dopo vale DHCP senza password.
-H94|<b>Ripristino senza l'interfaccia</b>: premere il tasto <b>RESET</b> della scheda <b>5 volte di seguito</b>, con meno di 5&nbsp;s tra due pressioni (ideale: circa una volta al secondo). Al 5° avvio la scheda cancella tutte le impostazioni come il ripristino di fabbrica. Spegnere/riaccendere conta allo stesso modo. Un singolo reset o un'interruzione di corrente non fa nulla; i crash non contano. Il tasto BOOT non va bene (premuto all'accensione = modalità flash, durante il funzionamento il pin lo usa Ethernet).
+H94|<b>Ripristino senza l'interfaccia</b>: premere il tasto <b>RESET</b> della scheda <b>5 volte di seguito</b>, circa ogni 2&nbsp;s (almeno 1&nbsp;s, al massimo 5&nbsp;s; premendo più velocemente l'avvio viene interrotto prima di essere contato). Al 5° avvio la scheda cancella tutte le impostazioni come il ripristino di fabbrica. Spegnere/riaccendere conta allo stesso modo. Un singolo reset o un'interruzione di corrente non fa nulla; i crash non contano. Il tasto BOOT non va bene (premuto all'accensione = modalità flash, durante il funzionamento il pin lo usa Ethernet).
 H95|<b>Aggiornamento firmware</b>: tramite cavo USB con <code>idf.py -p /dev/ttyACM0 flash</code> (Windows: <code>-p COM3</code> o simile). Le impostazioni restano.
 U229|Reimpostare il bus USB? Tutti i dispositivi vengono scollegati e rilevati di nuovo, i client collegati vengono disconnessi.
 U230|Componenti software
@@ -339,3 +336,70 @@ U241|USB/IP su TLS
 U242|Peer WireGuard
 U243|Interfaccia web, HTTPS
 U244|PC di prova
+U245|Lettura veloce (sperimentale)
+U246|Legge i blocchi grandi in sovrapposizione (circa +20–30 % nella lettura di chiavette). Se un dispositivo si interrompe a metà lettura, la connessione USB/IP viene chiusa invece di segnalare un errore di lettura. Disattivata di fabbrica.
+U247|Lettura veloce attiva
+U248|Lettura veloce disattivata
+U249|Connesso come
+U250|USB/IP non cifrato
+U251|Almeno un dispositivo è collegato tramite LAN senza crittografia.
+U252|USB/IP protetto da WireGuard
+U253|USB/IP cifrato con TLS
+U254|USB/IP cifrato (TLS/WireGuard)
+U255|Tutti i dispositivi collegati usano una connessione cifrata.
+U256|Inizio
+U257|Rete
+U258|Accesso
+U259|Sicurezza
+U260|Dispositivi
+U261|Accesso spettatore (sola lettura)
+U262|Un secondo utente che vede pannello, dispositivi e traffico, ma non vede né modifica le impostazioni e non può scollegare dispositivi.
+U263|Spettatore: nome utente
+U264|Spettatore: password
+U265|Spettatore: ripeti password
+U266|Il controllo accessi è chiuso
+U267|e non contiene alcun indirizzo della rete del tunnel. Il peer WireGuard viene quindi rifiutato. Aggiungi il suo IP del tunnel alla lista consentiti (probabilmente
+U268|Aggiungi alla lista accessi
+U269|Controllo accessi: aggiungi l'IP del tunnel del peer, altrimenti viene rifiutato.
+U270|Admin: nome utente
+U271|Admin: password
+U272|Admin: ripeti password
+U273|Backup / ripristino impostazioni
+U274|Salva
+U275|tutte
+U276|le impostazioni in un file – comprese le password (come hash), le chiavi WireGuard e TLS e il certificato HTTPS. Il file è cifrato con la tua password di backup (AES-256-GCM); senza questa password non è leggibile né ripristinabile.
+U277|Password di backup (min. 8 caratteri)
+U278|Ripeti password di backup
+U279|Scarica backup
+U280|Ripristina file di backup
+U281|Password di backup del file
+U282|Ripristina e riavvia
+U283|Cambiare il nome utente admin?
+U284|Admin e spettatore devono avere nomi diversi
+U285|Password di backup: almeno 8 caratteri
+U286|Creazione del backup…
+U287|Backup salvato
+U288|Backup non riuscito
+U289|Scegli un file di backup
+U290|Inserisci la password di backup
+U291|Sostituire tutte le impostazioni attuali con il backup e riavviare?
+U292|Impostazioni ripristinate – la scheda si riavvia…
+U293|backup da
+U294|Ripristino non riuscito
+U295|Prima configurazione
+U296|Accedi come admin
+U297|Esci
+U298|Crea admin
+U299|Nessun admin ancora (scheda nuova o ripristino di fabbrica). Finché non viene creato un admin, qui si può solo creare un admin o ripristinare un backup – tutte le altre impostazioni sono bloccate.
+U302|Oppure: ripristina un backup
+U303|Ripristina tutte le impostazioni da un file di backup – admin compreso – e riavvia la scheda.
+U304|Accesso ospite senza password (solo visualizzazione)
+U307|«guest» è riservato all’accesso ospite
+U308|Inserisci un nome utente
+U309|Inserisci una password
+U310|Admin creato – ora accedi
+H22|Dopo un ripristino di fabbrica non c’è alcun admin. Si può allora solo creare un admin o ripristinare un backup in <b>Prima configurazione</b>.
+H23|<b>Accesso</b>: in basso a sinistra <b>Accedi come admin</b>, poi il browser chiede nome utente e password. <b>Esci</b> ti fa tornare <b translate="no">guest</b>.
+H24|Cambiare la password: inserire la nuova in entrambi i campi. Entrambi vuoti = resta la password attuale. L’admin non si può più disattivare, solo cancellare con un ripristino di fabbrica.
+U311|Poi il browser chiede nome utente e password. Senza accesso chiunque può solo guardare come «guest».
+U312|Chi non accede è «guest»: vede panoramica, dispositivi e traffico, ma nessuna impostazione, e non può scollegare dispositivi. Se disattivato, il browser chiede subito la password admin.

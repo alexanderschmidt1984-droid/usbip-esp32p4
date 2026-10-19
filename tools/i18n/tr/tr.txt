@@ -249,12 +249,9 @@ H18|Bilgisayarda <code>.local</code> adlarını çözümleme:
 H19|Masaüstü sistemlerde genellikle zaten ayarlıdır (avahi). Değilse:
 H20|<code>/etc/nsswitch.conf</code> içinde <code>hosts:</code> satırına <code>resolve</code> öncesine <code>mdns_minimal [NOTFOUND=return]</code> ekleyin.
 H21|Windows 10/11 <code>.local</code> adlarını kendisi çözümler. Olmazsa IP adresini kullanın.
-H22|Parola olmadan arayüz salt okunurdur. Ayarlar ancak bir parola belirlendikten sonra değiştirilebilir.
-H23|Kutuyu işaretleyin, kullanıcı adını ve parolayı <b>iki kez</b> girin (yazım hatalarına karşı), ardından <b>Kimlik doğrulamayı kaydet</b>. Tarayıcı bundan sonra sayfayı açarken kimlik bilgilerini ister.
-H24|Parolayı değiştirme: yenisini iki alana da girin. İkisi de boş = mevcut parola kalır.
 H25|5 hatalı denemeden sonra kart bu bilgisayardan girişleri 30 saniye engeller.
 H26|HTTPS olmadan parola LAN'da şifresiz iletilir. Koruma: HTTPS («Şifreleme» bölümü) veya arayüzü WireGuard üzerinden açmak.
-H27|<b>Parolayı unuttum</b>: kart üzerinde <b>RESET'e art arda 5 kez</b> basın (basışlar arası 5&nbsp;sn'den az) – her şey fabrika ayarlarına döner. Ya da USB kablosuyla yalnızca ayarları silin, bellenim kalır: <code>idf.py -p /dev/ttyACM0 erase-region 0x9000 0x6000</code> (Windows: <code>-p COM3</code> vb.). Tüm ayarlar kaybolur (WireGuard ve TLS anahtarları dahil).
+H27|<b>Parolayı unuttum</b>: kart üzerinde <b>RESET'e art arda 5 kez</b> basın (yaklaşık 2&nbsp;sn'de bir – basışlar arası en az 1&nbsp;sn, en fazla 5&nbsp;sn) – her şey fabrika ayarlarına döner. Ya da USB kablosuyla yalnızca ayarları silin, bellenim kalır: <code>idf.py -p /dev/ttyACM0 erase-region 0x9000 0x6000</code> (Windows: <code>-p COM3</code> vb.). Tüm ayarlar kaybolur (WireGuard ve TLS anahtarları dahil).
 H28|<b>Açık</b>: ağdaki herkes USB/IP'yi ve bu arayüzü kullanabilir.
 H29|<b>Kapalı (izin listesi)</b>: yalnızca listelenenler hem USB/IP'ye <b>hem de</b> bu arayüze erişebilir. Bir kayıt ya bir <b>IP</b> ya da bir <b>MAC adresidir</b>; kime erişim verdiğinizi bilmek için bir <b>yorum</b> eklenir.
 H30|<b>IP yerine MAC</b>: bilgisayar DHCP ile bazen başka bir IP alıyorsa kullanışlıdır. Yalnızca <b>aynı LAN</b>'daki bilgisayarlar için çalışır (kart MAC'i ARP tablosundan okur), WireGuard veya bir yönlendirici üzerinden çalışmaz. MAC taklit edilebilir – bu bir kolaylıktır, güçlü bir koruma değildir. Gerçek koruma için: parola, TLS veya WireGuard.
@@ -321,7 +318,7 @@ H90|<b>El sıkışma yok</b> («connecting · no handshake»): genellikle bilgis
 H91|<b>Güç tasarrufu</b> (fabrikada açık): bağlı cihaz yokken CPU 400&nbsp;MHz yerine 100&nbsp;MHz'de çalışır. Bir cihaz bağlanır bağlanmaz tam hıza çıkar, böylece aktarımlar yavaşlamaz. İşaret kaldırılırsa kart sürekli 400&nbsp;MHz'de çalışır. Yeniden başlatmadan hemen etkili olur. Açıkken sol altta yeşil yaprak görünür.
 H92|<b>Yeniden başlat</b>: kartı yeniden başlatır. Bağlı USB cihazlarının tüm bilgisayarlarda bağlantısı kesilir ve ardından <code>attach</code> ile yeniden bağlanmaları gerekir.
 H93|<b>Fabrika ayarlarına dön</b>: <b>tüm</b> ayarları siler (ağ, parola, erişim listesi, cihaz filtresi, WireGuard ve TLS anahtarları) ve yeniden başlatır. Ardından parolasız DHCP geçerli olur.
-H94|<b>Arayüz olmadan sıfırlama</b>: karttaki <b>RESET</b> düğmesine <b>art arda 5 kez</b> basın, iki basış arası 5&nbsp;sn'den az (ideal: saniyede yaklaşık bir kez). 5. açılışta kart, fabrika ayarlarına dönüşteki gibi tüm ayarları siler. Gücü kapatıp açmak da aynı şekilde sayılır. Tek bir sıfırlama veya elektrik kesintisi bir şey yapmaz; çökmeler sayılmaz. BOOT düğmesi bunun için kullanılamaz (açılışta basılıysa = flash modu, çalışırken pini Ethernet kullanır).
+H94|<b>Arayüz olmadan sıfırlama</b>: karttaki <b>RESET</b> düğmesine <b>art arda 5 kez</b> basın, yaklaşık 2&nbsp;sn'de bir (en az 1&nbsp;sn, en fazla 5&nbsp;sn; daha hızlı basılırsa açılış sayılmadan kesilir). 5. açılışta kart, fabrika ayarlarına dönüşteki gibi tüm ayarları siler. Gücü kapatıp açmak da aynı şekilde sayılır. Tek bir sıfırlama veya elektrik kesintisi bir şey yapmaz; çökmeler sayılmaz. BOOT düğmesi bunun için kullanılamaz (açılışta basılıysa = flash modu, çalışırken pini Ethernet kullanır).
 H95|<b>Bellenim güncellemesi</b>: USB kablosuyla <code>idf.py -p /dev/ttyACM0 flash</code> (Windows: <code>-p COM3</code> vb.). Ayarlar korunur.
 U229|USB veriyolu sıfırlansın mı? Tüm cihazların bağlantısı kesilip yeniden algılanır, bağlı istemcilerin bağlantısı kesilir.
 U230|Yazılım bileşenleri
@@ -339,3 +336,70 @@ U241|TLS üzerinden USB/IP
 U242|WireGuard karşı tarafı
 U243|Web arayüzü, HTTPS
 U244|Test bilgisayarı
+U245|Hızlı okuma (deneysel)
+U246|Büyük blokları örtüşmeli okur (USB belleklerden okurken yaklaşık +%20–30). Bir cihaz okumanın ortasında hata verirse okuma hatası bildirilmek yerine USB/IP bağlantısı kesilir. Fabrikada kapalı.
+U247|Hızlı okuma açık
+U248|Hızlı okuma kapalı
+U249|Oturum açan kullanıcı
+U250|USB/IP şifresiz
+U251|En az bir cihaz LAN üzerinden şifresiz bağlı.
+U252|USB/IP WireGuard ile korunuyor
+U253|USB/IP TLS ile şifreli
+U254|USB/IP şifreli (TLS/WireGuard)
+U255|Tüm bağlı cihazlar şifreli bir bağlantı kullanıyor.
+U256|Başlangıç
+U257|Ağ
+U258|Giriş
+U259|Güvenlik
+U260|Cihazlar
+U261|İzleyici erişimi (yalnızca görüntüleme)
+U262|Genel bakışı, cihazları ve trafiği görebilen, ancak ayarları göremeyen veya değiştiremeyen ve cihazların bağlantısını kesemeyen ikinci bir kullanıcı.
+U263|İzleyici: kullanıcı adı
+U264|İzleyici: parola
+U265|İzleyici: parolayı tekrarla
+U266|Erişim denetimi kapalı
+U267|ve tünel ağından hiçbir adres içermiyor. Bu yüzden WireGuard karşı tarafı reddediliyor. Onun tünel IP'sini izin listesine ekleyin (muhtemelen
+U268|Erişim listesine ekle
+U269|Erişim denetimi: karşı tarafın tünel IP'sini ekleyin, yoksa reddedilir.
+U270|Yönetici: kullanıcı adı
+U271|Yönetici: parola
+U272|Yönetici: parolayı tekrarla
+U273|Ayarları yedekle / geri yükle
+U274|Kaydeder
+U275|tüm
+U276|ayarları bir dosyaya – parolalar (hash olarak), WireGuard ve TLS anahtarları ve HTTPS sertifikası dahil. Dosya yedek parolanızla şifrelenir (AES-256-GCM); bu parola olmadan okunamaz ve geri yüklenemez.
+U277|Yedek parolası (en az 8 karakter)
+U278|Yedek parolasını tekrarla
+U279|Yedeği indir
+U280|Yedek dosyasını geri yükle
+U281|Dosyanın yedek parolası
+U282|Geri yükle ve yeniden başlat
+U283|Yönetici kullanıcı adı değiştirilsin mi?
+U284|Yönetici ve izleyicinin farklı kullanıcı adları olmalı
+U285|Yedek parolası: en az 8 karakter
+U286|Yedek oluşturuluyor…
+U287|Yedek kaydedildi
+U288|Yedekleme başarısız
+U289|Lütfen bir yedek dosyası seçin
+U290|Lütfen yedek parolasını girin
+U291|Tüm mevcut ayarlar yedekle değiştirilip yeniden başlatılsın mı?
+U292|Ayarlar geri yüklendi – kart yeniden başlıyor…
+U293|yedek sürümü
+U294|Geri yükleme başarısız
+U295|İlk kurulum
+U296|Admin olarak giriş yap
+U297|Çıkış yap
+U298|Admin oluştur
+U299|Henüz admin yok (yeni kart veya fabrika ayarlarına sıfırlama). Bir admin oluşturulana kadar burada yalnızca admin oluşturulabilir veya yedek geri yüklenebilir – diğer tüm ayarlar kilitlidir.
+U302|Veya: yedeği geri yükle
+U303|Tüm ayarları bir yedek dosyasından geri yükler – admin dahil – ve kartı yeniden başlatır.
+U304|Parolasız misafir erişimi (yalnızca görüntüleme)
+U307|“guest” misafir erişimi için ayrılmıştır
+U308|Lütfen bir kullanıcı adı girin
+U309|Lütfen bir parola girin
+U310|Admin oluşturuldu – şimdi giriş yapın
+H22|Fabrika ayarlarına sıfırlamadan sonra admin yoktur. O zaman <b>İlk kurulum</b> altında yalnızca admin oluşturulabilir veya yedek geri yüklenebilir.
+H23|<b>Giriş</b>: sol altta <b>Admin olarak giriş yap</b>, ardından tarayıcı kullanıcı adı ve parola ister. <b>Çıkış yap</b> sizi yeniden <b translate="no">guest</b> yapar.
+H24|Parolayı değiştirme: yenisini iki alana da girin. İkisi de boş = mevcut parola kalır. Admin artık kapatılamaz, yalnızca fabrika ayarlarına sıfırlamayla silinebilir.
+U311|Ardından tarayıcı kullanıcı adı ve parola ister. Giriş yapmadan herkes yalnızca “guest” olarak izleyebilir.
+U312|Giriş yapmayan herkes “guest” olur: genel bakışı, cihazları ve trafiği görür, ancak ayarları göremez ve cihaz ayıramaz. Kapalıyken tarayıcı hemen admin parolasını ister.

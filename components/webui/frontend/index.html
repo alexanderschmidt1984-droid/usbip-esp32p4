@@ -52,7 +52,14 @@
                 </svg>
                 Topology
             </a>
-            <a class="nav-item" data-section="settings">
+            <a class="nav-item setup-only" data-section="setup">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="4" y="9" width="12" height="9" rx="1.5"/>
+                    <path d="M7 9V6a3 3 0 0 1 6 0v3"/>
+                </svg>
+                Ersteinrichtung
+            </a>
+            <a class="nav-item admin-only" data-section="settings">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="10" cy="10" r="3"/>
                     <path d="M10 1.5v2M10 16.5v2M1.5 10h2M16.5 10h2M3.4 3.4l1.4 1.4M15.2 15.2l1.4 1.4M3.4 16.6l1.4-1.4M15.2 4.8l1.4-1.4"/>
@@ -72,12 +79,25 @@
                 </svg>
                 <span id="wg-badge-text"></span>
             </div>
+            <div class="ws-status wg-badge" id="usb-badge" style="display:none">
+                <svg class="wg-lock" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <rect x="3" y="7" width="10" height="7" rx="1.5"/>
+                    <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/>
+                </svg>
+                <span id="usb-badge-text"></span>
+            </div>
             <div class="ws-status pm-badge" id="pm-badge" style="display:none" title="Stromsparen: im Leerlauf taktet die CPU herunter, mit angehängtem Gerät läuft sie voll">
                 <svg class="pm-leaf" viewBox="0 0 16 16" width="12" height="12" fill="currentColor">
                     <path d="M14 2C7 2 3 5 3 10c0 1.2.3 2.2.8 3L2.5 14.3l.9.9L4.7 13.9C5.6 14.6 6.8 15 8 15c4.5 0 6-5 6-13z"/>
                     <path d="M4.5 13.5C6 10 8.5 7.5 12 5.5" fill="none" stroke="var(--sidebar-bg)" stroke-width="1.1" stroke-linecap="round"/>
                 </svg>
                 <span id="pm-badge-text">Energiesparen an</span>
+            </div>
+            <div class="sidebar-info sidebar-user" id="sidebar-user" style="display:none">
+                <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="5.5" r="2.8"/><path d="M2.5 14c.6-2.9 2.8-4.5 5.5-4.5s4.9 1.6 5.5 4.5"/></svg>
+                <span id="sidebar-user-text" translate="no"></span>
+                <button type="button" class="sidebar-login" id="sidebar-login" style="display:none">Als Admin anmelden</button>
+                <button type="button" class="sidebar-login" id="sidebar-logout" style="display:none">Abmelden</button>
             </div>
             <div class="sidebar-info" id="sidebar-uptime">--</div>
             <div class="sidebar-info sidebar-version" id="sidebar-version">--</div>
@@ -134,7 +154,7 @@
             <div class="panel">
                 <div class="panel-title">Recent Events</div>
                 <div class="log-area" id="log-area"></div>
-                <div class="btn-row log-export">
+                <div class="btn-row log-export admin-only">
                     <a class="btn btn-sm" href="/api/logs/export?type=events" download>Ereignisse exportieren</a>
                     <a class="btn btn-sm" href="/api/logs/export?type=system" download>System-Log exportieren</a>
                     <a class="btn btn-sm" id="log-prev" href="/api/logs/export?type=previous" download style="display:none">Log vor letztem Neustart</a>
@@ -169,13 +189,13 @@
                         <span id="cap-dropped">--</span>
                     </div>
                 </div>
-                <div class="btn-row">
+                <div class="btn-row admin-only">
                     <button class="btn" id="cap-toggle" onclick="toggleCapture()">Start Capture</button>
                     <button class="btn" id="cap-download" onclick="downloadCapture()" disabled>Download</button>
                     <button class="btn btn-danger" id="cap-delete" onclick="deleteCapture()" disabled>Delete</button>
                 </div>
             </div>
-            <div class="panel">
+            <div class="panel admin-only">
                 <div class="panel-title">USB Bus</div>
                 <div class="btn-row">
                     <button class="btn btn-danger" onclick="resetUsbBus()">Reset USB Bus</button>
@@ -197,11 +217,40 @@
             <div class="topology-container" id="topology-svg"></div>
         </section>
 
+        <!-- First-time setup (no admin yet: the guest may only do this) -->
+        <section class="section" id="sec-setup">
+            <h1 class="section-title">Ersteinrichtung</h1>
+            <div class="panel">
+                <div class="panel-title">Admin anlegen</div>
+                <p class="hint">Noch kein Admin vorhanden (neues Board oder Werksreset). Bis ein Admin angelegt ist, kann man hier nur einen Admin anlegen oder eine Sicherung einspielen – alle anderen Einstellungen sind gesperrt.</p>
+                <div class="form-group"><label>Admin: Benutzername</label><input type="text" id="setup-user" value="admin" autocomplete="off" data-lpignore="true"></div>
+                <div class="form-group"><label>Admin: Passwort</label><input type="password" id="setup-pass" autocomplete="new-password"></div>
+                <div class="form-group"><label>Admin: Passwort wiederholen</label><input type="password" id="setup-pass2" autocomplete="new-password"></div>
+                <button class="btn" onclick="setupAdmin()">Admin anlegen</button>
+                <p class="hint">Danach fragt der Browser nach Benutzername und Passwort. Ohne Anmeldung kann jeder nur als „guest“ zuschauen.</p>
+            </div>
+            <div class="panel">
+                <div class="panel-title">Oder: Sicherung einspielen</div>
+                <p class="hint">Stellt alle Einstellungen aus einer Sicherungsdatei wieder her – auch den Admin – und startet das Board neu.</p>
+                <div class="form-group"><label>Sicherungsdatei wiederherstellen</label><input type="file" id="setup-bak-file" accept=".usbipbak"></div>
+                <div class="form-group"><label>Sicherungs-Passwort der Datei</label><input type="password" id="setup-bak-rpass" autocomplete="new-password"></div>
+                <div class="btn-row"><button class="btn btn-warn" onclick="restoreBackup('setup-')">Wiederherstellen &amp; Neustart</button></div>
+            </div>
+        </section>
+
         <!-- Settings Section -->
         <section class="section" id="sec-settings">
             <h1 class="section-title">Settings</h1>
+            <div class="settings-tabs" role="tablist">
+                <button type="button" data-tab="start">Start</button>
+                <button type="button" data-tab="network">Netzwerk</button>
+                <button type="button" data-tab="auth">Anmeldung</button>
+                <button type="button" data-tab="security">Sicherheit</button>
+                <button type="button" data-tab="devices">Geräte</button>
+                <button type="button" data-tab="system">System</button>
+            </div>
 
-            <div class="panel">
+            <div class="panel" data-tab="start">
                 <div class="panel-title">Erste Schritte: USB-Gerät am PC nutzen</div>
                 <p class="hint">Das Board stellt angesteckte USB-Geräte per USB/IP im Netz bereit. Am PC wird ein Gerät eingebunden, als stecke es direkt dort. Ein Gerät kann immer nur ein PC gleichzeitig nutzen.</p>
                 <details class="help" data-help="start">
@@ -243,7 +292,7 @@ echo vhci-hcd | sudo tee /etc/modules-load.d/usbip.conf</pre></li>
                 </details>
             </div>
 
-            <div class="panel">
+            <div class="panel" data-tab="network">
                 <div class="panel-title">Network</div>
                 <div class="form-group">
                     <label>Hostname</label>
@@ -280,32 +329,30 @@ sudo systemctl enable --now avahi-daemon</pre><p>In <code>/etc/nsswitch.conf</co
                 </details>
             </div>
 
-            <div class="panel">
+            <div class="panel" data-tab="auth">
                 <div class="panel-title">Authentication</div>
+                <div class="form-group"><label>Admin: Benutzername</label><input type="text" id="set-auth-user" autocomplete="off" data-lpignore="true"></div>
+                <div class="form-group"><label>Admin: Passwort</label><input type="password" id="set-auth-pass" autocomplete="new-password"></div>
+                <div class="form-group"><label>Admin: Passwort wiederholen</label><input type="password" id="set-auth-pass2" autocomplete="new-password"></div>
                 <div class="form-group">
-                    <label class="checkbox-label"><input type="checkbox" id="set-auth-enabled"> Enable WebUI Password</label>
+                    <label class="checkbox-label"><input type="checkbox" id="set-guest-enabled"> Gastzugang ohne Passwort (nur Ansicht)</label>
+                    <p class="hint">Wer sich nicht anmeldet, ist „guest“: sieht Übersicht, Geräte und Datenverkehr, aber keine Einstellungen und kann keine Geräte trennen. Ausgeschaltet fragt der Browser sofort nach dem Admin-Passwort.</p>
                 </div>
-                <div id="auth-fields" style="display:none">
-                    <div class="form-group"><label>Username</label><input type="text" id="set-auth-user"></div>
-                    <div class="form-group"><label>Password</label><input type="password" id="set-auth-pass" autocomplete="new-password"></div>
-                    <div class="form-group"><label>Repeat password</label><input type="password" id="set-auth-pass2" autocomplete="new-password"></div>
-                </div>
-                <p id="auth-hint" class="hint" style="display:none">No password set: settings cannot be changed until a WebUI password is configured. Leave the password field empty to keep the current one.</p>
                 <button class="btn" onclick="saveAuth()">Save Auth Settings</button>
                 <details class="help" data-help="auth">
                     <summary>Hilfe</summary>
                     <ul>
-                        <li>Ohne Passwort ist die Oberfläche nur lesbar. Einstellungen lassen sich erst ändern, wenn ein Passwort gesetzt ist.</li>
-                        <li>Haken setzen, Benutzername eintragen und das Passwort <b>zweimal</b> (gegen Tippfehler), dann <b>Save Auth Settings</b>. Danach fragt der Browser beim Öffnen nach den Zugangsdaten.</li>
-                        <li>Passwort ändern: neues in beide Felder eintragen. Beide leer lassen = bisheriges Passwort bleibt.</li>
+                        <li>Nach einem Werksreset gibt es keinen Admin. Dann kann man nur unter <b>Ersteinrichtung</b> einen Admin anlegen oder eine Sicherung einspielen.</li>
+                        <li><b>Anmelden</b>: unten links <b>Als Admin anmelden</b>, dann fragt der Browser nach Benutzername und Passwort. <b>Abmelden</b> macht dich wieder zum <b translate="no">guest</b>.</li>
+                        <li>Passwort ändern: neues in beide Felder eintragen. Beide leer lassen = bisheriges Passwort bleibt. Ausschalten lässt sich der Admin nicht mehr, nur per Werksreset löschen.</li>
                         <li>Nach 5 falschen Versuchen sperrt das Board weitere Anmeldungen von diesem PC für 30 Sekunden.</li>
                         <li>Ohne HTTPS geht das Passwort unverschlüsselt durchs LAN. Schutz: HTTPS (Panel „Encryption“) oder die Oberfläche über WireGuard öffnen.</li>
-                        <li><b>Passwort vergessen</b>: am Board <b>RESET 5× kurz hintereinander</b> drücken (Abstand jeweils unter 5&nbsp;s) – das setzt alles auf Werkseinstellungen. Oder per USB-Kabel nur die Einstellungen löschen, die Firmware bleibt: <code>idf.py -p /dev/ttyACM0 erase-region 0x9000 0x6000</code> (Windows: <code>-p COM3</code> o.&nbsp;ä.). Dabei gehen alle Einstellungen verloren (auch WireGuard- und TLS-Schlüssel).</li>
+                        <li><b>Passwort vergessen</b>: am Board <b>RESET 5× kurz hintereinander</b> drücken (etwa alle 2&nbsp;Sekunden – mindestens 1&nbsp;s, höchstens 5&nbsp;s Abstand) – das setzt alles auf Werkseinstellungen. Oder per USB-Kabel nur die Einstellungen löschen, die Firmware bleibt: <code>idf.py -p /dev/ttyACM0 erase-region 0x9000 0x6000</code> (Windows: <code>-p COM3</code> o.&nbsp;ä.). Dabei gehen alle Einstellungen verloren (auch WireGuard- und TLS-Schlüssel).</li>
                     </ul>
                 </details>
             </div>
 
-            <div class="panel">
+            <div class="panel" data-tab="auth">
                 <div class="panel-title">Access Control</div>
                 <div class="form-group">
                     <label class="radio-label"><input type="radio" name="acl-mode" value="open" checked> Open</label>
@@ -348,7 +395,7 @@ ip -br link         # MAC</pre></div>
                 </details>
             </div>
 
-            <div class="panel" id="usb-hub-panel" style="display:none">
+            <div class="panel" data-tab="devices" id="usb-hub-panel" style="display:none">
                 <div class="panel-title">USB-Hub</div>
                 <div class="form-group">
                     <label class="checkbox-label"><input type="checkbox" id="set-fsls"> Hub-Kompatibilität (alle Geräte mit Full Speed)</label>
@@ -368,7 +415,7 @@ ip -br link         # MAC</pre></div>
                 </details>
             </div>
 
-            <div class="panel">
+            <div class="panel" data-tab="devices">
                 <div class="panel-title">Device Filter (VID:PID)</div>
                 <div class="form-group">
                     <label class="checkbox-label"><input type="checkbox" id="devf-enabled"> Only export listed devices</label>
@@ -392,7 +439,7 @@ ip -br link         # MAC</pre></div>
                 </details>
             </div>
 
-            <div class="panel">
+            <div class="panel" data-tab="security">
                 <div class="panel-title">Encryption (local network)</div>
                 <div class="form-group"><label>USB/IP over TLS (pre-shared key, PC uses stunnel)</label>
                     <label class="radio-label"><input type="radio" name="tls-mode" value="0" checked> Off</label>
@@ -481,7 +528,7 @@ usbip attach -r 127.0.0.1 -b 1-1</pre></li>
                 </details>
             </div>
 
-            <div class="panel">
+            <div class="panel" data-tab="security">
                 <div class="panel-title">WireGuard Tunnel</div>
                 <div class="form-group">
                     <label class="checkbox-label"><input type="checkbox" id="wg-enabled"> Enable WireGuard tunnel</label>
@@ -509,6 +556,10 @@ usbip attach -r 127.0.0.1 -b 1-1</pre></li>
                 <div class="form-row">
                     <button class="btn" onclick="saveWireguard()">Save WireGuard</button>
                     <button class="btn btn-sm" onclick="wgShowConfig()">Peer config snippet</button>
+                </div>
+                <div class="wg-acl-hint" id="wg-acl-hint" style="display:none">
+                    <p><b>Zugriffskontrolle ist geschlossen</b> und enthält keine Adresse aus dem Tunnelnetz. Die WireGuard-Gegenstelle wird so abgewiesen. Trage ihre Tunnel-IP in die Freigabeliste ein (vermutlich <code id="wg-acl-ip" translate="no"></code>).</p>
+                    <button class="btn btn-sm" onclick="wgAclAdd()">In Zugriffsliste eintragen</button>
                 </div>
                 <textarea id="wg-peercfg" readonly rows="5" style="display:none;width:100%;margin-top:8px;font-family:monospace"></textarea>
                 <details class="help" data-help="wireguard">
@@ -586,7 +637,7 @@ usbip attach -r <span class="h-wgaddr"></span> -b 1-1</pre></li>
                 </details>
             </div>
 
-            <div class="panel">
+            <div class="panel" data-tab="system">
                 <div class="panel-title">System</div>
                 <div class="info-row"><span>Firmware</span><span id="sys-version">--</span></div>
                 <div class="info-row"><span>ESP-IDF</span><span id="sys-idf">--</span></div>
@@ -617,6 +668,20 @@ usbip attach -r <span class="h-wgaddr"></span> -b 1-1</pre></li>
                 <div class="form-group" id="power-group" style="display:none">
                     <label class="checkbox-label"><input type="checkbox" id="set-power" onchange="savePower()"> Energiesparen (CPU taktet im Leerlauf herunter)</label>
                 </div>
+                <div class="form-group">
+                    <label class="checkbox-label"><input type="checkbox" id="set-fastread" onchange="saveFastRead()"> Schnelles Lesen (experimentell)</label>
+                    <p class="hint">Liest große Blöcke überlappend (etwa +20–30 % beim Lesen von Sticks). Bricht ein Gerät mitten im Lesen ab, wird die USB/IP-Verbindung getrennt statt ein Lesefehler gemeldet. Ab Werk aus.</p>
+                </div>
+                <details class="sw-list">
+                    <summary>Einstellungen sichern / wiederherstellen</summary>
+                    <p class="hint">Speichert <b>alle</b> Einstellungen in eine Datei – auch Passwörter (als Hash), WireGuard- und TLS-Schlüssel und das HTTPS-Zertifikat. Die Datei ist mit deinem Sicherungs-Passwort verschlüsselt (AES-256-GCM); ohne dieses Passwort ist sie nicht lesbar und nicht wiederherstellbar.</p>
+                    <div class="form-group"><label>Sicherungs-Passwort (mind. 8 Zeichen)</label><input type="password" id="bak-pass" autocomplete="new-password"></div>
+                    <div class="form-group"><label>Sicherungs-Passwort wiederholen</label><input type="password" id="bak-pass2" autocomplete="new-password"></div>
+                    <div class="btn-row"><button class="btn" onclick="downloadBackup()">Sicherung herunterladen</button></div>
+                    <div class="form-group"><label>Sicherungsdatei wiederherstellen</label><input type="file" id="bak-file" accept=".usbipbak"></div>
+                    <div class="form-group"><label>Sicherungs-Passwort der Datei</label><input type="password" id="bak-rpass" autocomplete="new-password"></div>
+                    <div class="btn-row"><button class="btn btn-warn" onclick="restoreBackup()">Wiederherstellen &amp; Neustart</button></div>
+                </details>
                 <div class="btn-row">
                     <button class="btn btn-warn" onclick="systemAction('restart')">Restart</button>
                     <button class="btn btn-danger" onclick="systemAction('factory-reset')">Factory Reset</button>
@@ -627,7 +692,7 @@ usbip attach -r <span class="h-wgaddr"></span> -b 1-1</pre></li>
                         <li><b>Energiesparen</b> (ab Werk an): Ohne angehängtes Gerät läuft die CPU mit 100&nbsp;MHz statt 400&nbsp;MHz. Sobald ein Gerät angehängt ist, geht sie auf vollen Takt, die Übertragung wird also nicht langsamer. Abgehakt läuft das Board die ganze Zeit mit 400&nbsp;MHz. Wirkt sofort, ohne Neustart. Ist es an, steht unten links das grüne Blatt.</li>
                         <li><b>Restart</b>: startet das Board neu. Eingebundene USB-Geräte werden dabei an allen PCs getrennt und müssen danach neu mit <code>attach</code> eingebunden werden.</li>
                         <li><b>Factory Reset</b>: löscht <b>alle</b> Einstellungen (Netzwerk, Passwort, ACL, Geräte-Filter, WireGuard- und TLS-Schlüssel) und startet neu. Danach gilt DHCP ohne Passwort.</li>
-                        <li><b>Ohne Web-UI zurücksetzen</b>: die <b>RESET</b>-Taste am Board <b>5× hintereinander</b> drücken, zwischen zwei Drückern jeweils weniger als 5&nbsp;s (gut: etwa einmal pro Sekunde). Beim 5. Start löscht das Board alle Einstellungen wie Factory Reset. Strom aus/ein zählt genauso. Ein einzelner Reset oder Stromausfall löst nichts aus; Abstürze zählen nicht mit. Die BOOT-Taste geht dafür nicht (beim Einschalten gedrückt = Flash-Modus, im Betrieb belegt Ethernet den Pin).</li>
+                        <li><b>Ohne Web-UI zurücksetzen</b>: die <b>RESET</b>-Taste am Board <b>5× hintereinander</b> drücken, etwa alle 2&nbsp;Sekunden (mindestens 1&nbsp;s, höchstens 5&nbsp;s Abstand; drückt man schneller, wird der Start unterbrochen, bevor er gezählt wird). Beim 5. Start löscht das Board alle Einstellungen wie Factory Reset. Strom aus/ein zählt genauso. Ein einzelner Reset oder Stromausfall löst nichts aus; Abstürze zählen nicht mit. Die BOOT-Taste geht dafür nicht (beim Einschalten gedrückt = Flash-Modus, im Betrieb belegt Ethernet den Pin).</li>
                         <li><b>Firmware-Update</b>: per USB-Kabel mit <code>idf.py -p /dev/ttyACM0 flash</code> (Windows: <code>-p COM3</code> o.&nbsp;ä.). Die Einstellungen bleiben erhalten.</li>
                     </ul>
                 </details>

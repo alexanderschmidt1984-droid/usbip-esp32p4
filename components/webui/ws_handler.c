@@ -17,6 +17,7 @@
 #include "event_log.h"
 #include "webui_internal.h"
 #include "wg_tunnel.h"
+#include "sdkconfig.h"
 
 #include <lwip/sockets.h>
 #include <string.h>
@@ -247,11 +248,21 @@ void ws_broadcast_stats(void)
     for (int i = 0; i < ws_count; i++) {
         bool self_wg = false;
         if (wg_ip) {
-            struct sockaddr_in local;
+            /* The web server listens on a dual-stack socket: IPv4 clients show
+             * up as v4-mapped IPv6 (::ffff:a.b.c.d), so AF_INET alone never matched. */
+            struct sockaddr_storage local;
             socklen_t llen = sizeof(local);
-            if (getsockname(ws_fds_list[i], (struct sockaddr *)&local, &llen) == 0 &&
-                local.sin_family == AF_INET) {
-                self_wg = (local.sin_addr.s_addr == wg_ip);
+            if (getsockname(ws_fds_list[i], (struct sockaddr *)&local, &llen) == 0) {
+                uint32_t v4 = 0;
+                if (local.ss_family == AF_INET) {
+                    v4 = ((struct sockaddr_in *)&local)->sin_addr.s_addr;
+                }
+#if CONFIG_LWIP_IPV6
+                else if (local.ss_family == AF_INET6) {
+                    memcpy(&v4, ((struct sockaddr_in6 *)&local)->sin6_addr.s6_addr + 12, 4);
+                }
+#endif
+                self_wg = (v4 == wg_ip);
             }
         }
         const char *tail = self_wg ? "true}" : "false}";

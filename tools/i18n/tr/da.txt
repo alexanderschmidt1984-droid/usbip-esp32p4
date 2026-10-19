@@ -249,12 +249,9 @@ H18|Opslag af <code>.local</code>-navne på pc'en:
 H19|Normalt allerede sat op på desktopsystemer (avahi). Ellers:
 H20|I <code>/etc/nsswitch.conf</code> tilføjes <code>mdns_minimal [NOTFOUND=return]</code> til linjen <code>hosts:</code> før <code>resolve</code>.
 H21|Windows 10/11 slår selv <code>.local</code>-navne op. Ellers brug IP-adressen.
-H22|Uden adgangskode er web-UI'et skrivebeskyttet. Indstillinger kan først ændres, når der er angivet en adgangskode.
-H23|Sæt flueben, angiv brugernavn og adgangskoden <b>to gange</b> (mod tastefejl), og klik så på <b>Gem godkendelse</b>. Derefter beder browseren om loginoplysninger, når siden åbnes.
-H24|Skift adgangskode: skriv den nye i begge felter. Lad begge stå tomme = den nuværende adgangskode bevares.
 H25|Efter 5 forkerte forsøg blokerer boardet yderligere login fra denne pc i 30 sekunder.
 H26|Uden HTTPS sendes adgangskoden ukrypteret over LAN'et. Beskyttelse: HTTPS (afsnittet "Kryptering") eller åbn web-UI'et via WireGuard.
-H27|<b>Glemt adgangskode</b>: tryk <b>RESET 5 gange i træk</b> på boardet (under 5&nbsp;s mellem hvert tryk) – alt nulstilles til fabriksindstillinger. Eller slet kun indstillingerne via USB-kablet, firmwaren bliver: <code>idf.py -p /dev/ttyACM0 erase-region 0x9000 0x6000</code> (Windows: <code>-p COM3</code> el.&nbsp;lign.). Alle indstillinger går tabt (også WireGuard- og TLS-nøgler).
+H27|<b>Glemt adgangskode</b>: tryk <b>RESET 5 gange i træk</b> på boardet (ca. hvert 2.&nbsp;s – mindst 1&nbsp;s, højst 5&nbsp;s mellem hvert tryk) – alt nulstilles til fabriksindstillinger. Eller slet kun indstillingerne via USB-kablet, firmwaren bliver: <code>idf.py -p /dev/ttyACM0 erase-region 0x9000 0x6000</code> (Windows: <code>-p COM3</code> el.&nbsp;lign.). Alle indstillinger går tabt (også WireGuard- og TLS-nøgler).
 H28|<b>Åben</b>: alle på netværket må bruge USB/IP og dette web-UI.
 H29|<b>Lukket (tilladelsesliste)</b>: kun angivne deltagere får adgang, både til USB/IP <b>og</b> til dette web-UI. En post er enten en <b>IP</b> eller en <b>MAC-adresse</b>, plus en <b>kommentar</b>, så det er klart, hvem du har givet adgang.
 H30|<b>MAC i stedet for IP</b>: praktisk, hvis pc'en nogle gange får en anden IP via DHCP. Virker kun for pc'er på <b>samme LAN</b> (boardet læser MAC'en fra sin ARP-tabel), ikke på tværs af WireGuard eller en router. En MAC kan forfalskes – det er en bekvemmelighed, ikke stærk beskyttelse. For reel beskyttelse: adgangskode, TLS eller WireGuard.
@@ -321,7 +318,7 @@ H90|<b>Intet handshake</b> ("connecting · no handshake"): typisk blokerer pc'en
 H91|<b>Strømbesparelse</b> (slået til fra fabrikken): uden tilknyttet enhed kører CPU'en med 100&nbsp;MHz i stedet for 400&nbsp;MHz. Så snart en enhed er tilknyttet, går den op på fuld takt, så overførslerne bliver ikke langsommere. Uden flueben kører boardet hele tiden med 400&nbsp;MHz. Virker med det samme, uden genstart. Når den er slået til, vises det grønne blad nederst til venstre.
 H92|<b>Genstart</b>: genstarter boardet. Tilknyttede USB-enheder afbrydes på alle pc'er og skal derefter tilknyttes igen med <code>attach</code>.
 H93|<b>Fabriksnulstilling</b>: sletter <b>alle</b> indstillinger (netværk, adgangskode, adgangsliste, enhedsfilter, WireGuard- og TLS-nøgler) og genstarter. Derefter gælder DHCP uden adgangskode.
-H94|<b>Nulstil uden web-UI</b>: tryk på <b>RESET</b>-knappen på boardet <b>5 gange i træk</b>, under 5&nbsp;s mellem to tryk (godt: ca. én gang i sekundet). Ved 5. opstart sletter boardet alle indstillinger som ved fabriksnulstilling. Strøm fra/til tæller på samme måde. En enkelt nulstilling eller strømafbrydelse udløser intet; nedbrud tælles ikke med. BOOT-knappen kan ikke bruges til dette (trykket ved opstart = flash-tilstand, under drift bruger Ethernet benet).
+H94|<b>Nulstil uden web-UI</b>: tryk på <b>RESET</b>-knappen på boardet <b>5 gange i træk</b>, ca. hvert 2.&nbsp;s (mindst 1&nbsp;s, højst 5&nbsp;s; trykker man hurtigere, afbrydes opstarten, før den tælles). Ved 5. opstart sletter boardet alle indstillinger som ved fabriksnulstilling. Strøm fra/til tæller på samme måde. En enkelt nulstilling eller strømafbrydelse udløser intet; nedbrud tælles ikke med. BOOT-knappen kan ikke bruges til dette (trykket ved opstart = flash-tilstand, under drift bruger Ethernet benet).
 H95|<b>Firmwareopdatering</b>: via USB-kablet med <code>idf.py -p /dev/ttyACM0 flash</code> (Windows: <code>-p COM3</code> el.&nbsp;lign.). Indstillingerne bevares.
 U229|Nulstil USB-bussen? Alle enheder afbrydes og registreres igen, og tilsluttede klienter afbrydes.
 U230|Softwarekomponenter
@@ -339,3 +336,70 @@ U241|USB/IP over TLS
 U242|WireGuard-modpart
 U243|Web-UI, HTTPS
 U244|Test-pc
+U245|Hurtig læsning (eksperimentel)
+U246|Læser store blokke overlappende (ca. +20–30 % ved læsning fra USB-sticks). Hvis en enhed fejler midt i en læsning, afbrydes USB/IP-forbindelsen i stedet for at melde en læsefejl. Slået fra fra fabrikken.
+U247|Hurtig læsning til
+U248|Hurtig læsning fra
+U249|Logget ind som
+U250|USB/IP ukrypteret
+U251|Mindst én enhed er tilknyttet via LAN uden kryptering.
+U252|USB/IP beskyttet af WireGuard
+U253|USB/IP krypteret med TLS
+U254|USB/IP krypteret (TLS/WireGuard)
+U255|Alle tilknyttede enheder bruger en krypteret forbindelse.
+U256|Start
+U257|Netværk
+U258|Login
+U259|Sikkerhed
+U260|Enheder
+U261|Tilskueradgang (kun visning)
+U262|En anden bruger, der kan se oversigt, enheder og trafik, men hverken ser eller ændrer indstillinger og ikke kan afbryde enheder.
+U263|Tilskuer: brugernavn
+U264|Tilskuer: adgangskode
+U265|Tilskuer: gentag adgangskode
+U266|Adgangskontrollen er lukket
+U267|og indeholder ingen adresse fra tunnelnetværket. WireGuard-modparten afvises derfor. Tilføj dens tunnel-IP til tilladelseslisten (sandsynligvis
+U268|Tilføj til adgangslisten
+U269|Adgangskontrol: tilføj modpartens tunnel-IP, ellers afvises den.
+U270|Admin: brugernavn
+U271|Admin: adgangskode
+U272|Admin: gentag adgangskode
+U273|Sikkerhedskopiér / gendan indstillinger
+U274|Gemmer
+U275|alle
+U276|indstillinger i en fil – også adgangskoder (som hash), WireGuard- og TLS-nøgler og HTTPS-certifikatet. Filen er krypteret med din backup-adgangskode (AES-256-GCM); uden den kan den hverken læses eller gendannes.
+U277|Backup-adgangskode (min. 8 tegn)
+U278|Gentag backup-adgangskode
+U279|Download sikkerhedskopi
+U280|Gendan sikkerhedskopi
+U281|Filens backup-adgangskode
+U282|Gendan og genstart
+U283|Ændre admin-brugernavnet?
+U284|Admin og tilskuer skal have forskellige brugernavne
+U285|Backup-adgangskode: mindst 8 tegn
+U286|Opretter sikkerhedskopi…
+U287|Sikkerhedskopi gemt
+U288|Sikkerhedskopiering mislykkedes
+U289|Vælg en sikkerhedskopifil
+U290|Indtast backup-adgangskoden
+U291|Erstat alle nuværende indstillinger med sikkerhedskopien og genstart?
+U292|Indstillinger gendannet – boardet genstarter…
+U293|sikkerhedskopi fra
+U294|Gendannelse mislykkedes
+U295|Første opsætning
+U296|Log ind som admin
+U297|Log ud
+U298|Opret admin
+U299|Der er endnu ingen admin (nyt board eller fabriksnulstilling). Indtil en admin er oprettet, kan man her kun oprette en admin eller indlæse en sikkerhedskopi – alle andre indstillinger er låst.
+U302|Eller: indlæs en sikkerhedskopi
+U303|Gendanner alle indstillinger fra en sikkerhedskopi – også admin – og genstarter boardet.
+U304|Gæsteadgang uden adgangskode (kun visning)
+U307|“guest” er reserveret til gæsteadgang
+U308|Indtast et brugernavn
+U309|Indtast en adgangskode
+U310|Admin oprettet – log ind nu
+H22|Efter en fabriksnulstilling er der ingen admin. Så kan man kun oprette en admin eller indlæse en sikkerhedskopi under <b>Første opsætning</b>.
+H23|<b>Log ind</b>: nederst til venstre <b>Log ind som admin</b>, så beder browseren om brugernavn og adgangskode. <b>Log ud</b> gør dig til <b translate="no">guest</b> igen.
+H24|Skift adgangskode: skriv den nye i begge felter. Begge tomme = den nuværende adgangskode bevares. Admin kan ikke længere slås fra, kun slettes med en fabriksnulstilling.
+U311|Derefter beder browseren om brugernavn og adgangskode. Uden login kan alle kun se med som “guest”.
+U312|Den, der ikke logger ind, er “guest”: ser oversigt, enheder og trafik, men ingen indstillinger, og kan ikke frakoble enheder. Slået fra beder browseren straks om admin-adgangskoden.
