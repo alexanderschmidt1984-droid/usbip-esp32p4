@@ -51,8 +51,10 @@ CONFIG_LWIP_MAX_SOCKETS=24   # +TLS listener, proxy + loopback sockets
 # Otherwise esp_netif reads the WireGuard netif's ->state as its own pointer and
 # crashes in esp_netif_internal_dhcpc_cb when the tunnel netif is added.
 CONFIG_LWIP_PPP_SUPPORT=y
-CONFIG_LWIP_TCP_SND_BUF_DEFAULT=32768
-CONFIG_LWIP_TCP_WND_DEFAULT=32768
+# TCP buffers at the maximum without window scaling. Measured 2026-10-19 (stick, 100 Mbit LAN):
+# write 5.1 -> 5.5 MB/s, read unchanged (7.8/7.5). Helps more over WireGuard (longer RTT).
+CONFIG_LWIP_TCP_SND_BUF_DEFAULT=65535
+CONFIG_LWIP_TCP_WND_DEFAULT=65535
 CONFIG_LWIP_TCP_RECVMBOX_SIZE=32
 CONFIG_LWIP_TCP_SND_QUEUELEN=64
 CONFIG_LWIP_TCP_MSS=1460
