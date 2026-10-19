@@ -6,3 +6,6 @@ dependencies.lock
 
 # Editor-local config (per-developer, not shared)
 .vscode/
+
+# Personal notes for Claude Code (names, real IPs) - never published
+CLAUDE.local.md
