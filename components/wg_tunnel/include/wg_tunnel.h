@@ -60,6 +60,9 @@ void        wg_tunnel_get_status(wg_tunnel_status_t *out);
 /* Tunnel address/netmask (network byte order) while the tunnel is up;
  * false otherwise. Cheap, no key material involved. */
 bool        wg_tunnel_up_addr(uint32_t *ip_nbo, uint32_t *mask_nbo);
+/* Real (outer) IPv4 address of the peer while the tunnel is up, e.g. the PC's
+ * LAN address when the PC itself is the peer; false otherwise. */
+bool        wg_tunnel_peer_endpoint(uint32_t *ip_nbo);
 const char *wg_tunnel_state_str(wg_tunnel_state_t s);
 
 #ifdef __cplusplus

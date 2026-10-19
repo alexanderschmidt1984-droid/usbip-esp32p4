@@ -516,6 +516,18 @@ bool wg_tunnel_up_addr(uint32_t *ip_nbo, uint32_t *mask_nbo)
     return up;
 }
 
+bool wg_tunnel_peer_endpoint(uint32_t *ip_nbo)
+{
+    uint32_t a = 0;
+    xSemaphoreTake(s_mtx, portMAX_DELAY);
+    if (s_st.state == WG_STATE_UP && IP_IS_V4(&s_wgcfg.endpoint_ip)) {
+        a = ip_2_ip4(&s_wgcfg.endpoint_ip)->addr;    /* resolved at connect */
+    }
+    xSemaphoreGive(s_mtx);
+    if (a && ip_nbo) *ip_nbo = a;
+    return a != 0;
+}
+
 const char *wg_tunnel_state_str(wg_tunnel_state_t s)
 {
     switch (s) {

@@ -9,6 +9,7 @@
 #include "transfer_engine.h"
 #include "usb_host_mgr.h"
 #include "event_log.h"
+#include "wg_tunnel.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
 #if CONFIG_USBIP_POWER_SAVE
@@ -168,6 +169,65 @@ static int handle_devlist(int fd, uint16_t client_version)
 
 /* --- IMPORT handler --- */
 
+/*
+ * Same PC, other path: a PC that already holds a device over the LAN (or TLS)
+ * and now attaches it through the WireGuard tunnel (or the other way round)
+ * would be refused, because the old session still owns the device. The board
+ * can tell it is the same PC: for a tunnel connection the PC's real address is
+ * the WireGuard peer endpoint. Then the old session is closed and the device
+ * handed over. Other PCs are still refused.
+ */
+static volatile int s_handover_fd = -1;    /* old session that must not reset the port */
+
+static uint32_t pc_identity(uint32_t ip, uint8_t transport)
+{
+    uint32_t ep = 0;
+    if (transport == DM_TRANSPORT_WG) {
+        return wg_tunnel_peer_endpoint(&ep) ? ep : 0;
+    }
+    return ip;
+}
+
+static const char *transport_name(uint8_t transport)
+{
+    return transport == DM_TRANSPORT_WG ? "WireGuard" : transport == DM_TRANSPORT_TLS ? "TLS" : "LAN";
+}
+
+static bool takeover_same_pc(int dev_index, uint32_t client_ip, uint8_t transport, const char *busid)
+{
+    dm_device_info_t cur;
+    if (device_manager_get(dev_index, &cur) != ESP_OK || cur.state != DEV_STATE_EXPORTED) {
+        return false;
+    }
+    char holder[16], asker[16];
+    inet_ntoa_r(*(struct in_addr *)&cur.client_ip, holder, sizeof(holder));
+    inet_ntoa_r(*(struct in_addr *)&client_ip, asker, sizeof(asker));
+    uint32_t a = pc_identity(cur.client_ip, cur.transport);
+    uint32_t b = pc_identity(client_ip, transport);
+    if (a == 0 || a != b) {
+        ESP_LOGW(TAG, "'%s' in use by %s (%s), request from %s (%s) refused",
+                 busid, holder, transport_name(cur.transport), asker, transport_name(transport));
+        event_log_add(EVENT_LOG_LEVEL_WARN, "%s in use by %s (%s) - request from %s (%s) refused",
+                      busid, holder, transport_name(cur.transport), asker, transport_name(transport));
+        return false;
+    }
+
+    ESP_LOGI(TAG, "'%s': same PC switches %s -> %s, handing over", busid,
+             transport_name(cur.transport), transport_name(transport));
+    event_log_add(EVENT_LOG_LEVEL_INFO, "%s handed over: same PC, %s -> %s", busid,
+                  transport_name(cur.transport), transport_name(transport));
+    s_handover_fd = cur.owner_fd;
+    shutdown(cur.owner_fd, SHUT_RDWR);        /* the old session ends and releases the device */
+    for (int i = 0; i < 50; i++) {
+        vTaskDelay(pdMS_TO_TICKS(100));
+        dm_device_info_t d;
+        if (device_manager_get(dev_index, &d) == ESP_OK && d.in_use && d.state == DEV_STATE_AVAILABLE) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static int handle_import(int fd, uint16_t client_version, uint32_t client_ip, uint8_t transport)
 {
     /* Read the import request (busid) */
@@ -202,6 +262,9 @@ static int handle_import(int fd, uint16_t client_version, uint32_t client_ip, ui
     /* Try to import (claim) the device. The connection fd is the ownership key
      * so only this exact connection can release it on disconnect. */
     err = device_manager_import(dev_index, client_ip, transport, fd);
+    if (err == ESP_ERR_INVALID_STATE && takeover_same_pc(dev_index, client_ip, transport, req.busid)) {
+        err = device_manager_import(dev_index, client_ip, transport, fd);
+    }
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "Failed to import device '%s': %s", req.busid, esp_err_to_name(err));
 
@@ -284,6 +347,10 @@ static int handle_import(int fd, uint16_t client_version, uint32_t client_ip, ui
      * power and may hang mid-command; the client's own reset does not reach us
      * over USB/IP. Re-enumerate it like a re-plug - but only the whole root
      * port can be reset, so not while another device is in use. */
+    if (needs_reset && s_handover_fd == fd) {
+        needs_reset = false;                  /* handed over to the same PC: keep it enumerated */
+        s_handover_fd = -1;
+    }
     if (needs_reset) {
         bool others_busy = false;
         for (int i = 0; i < DEVICE_MANAGER_MAX_DEVICES && !others_busy; i++) {
