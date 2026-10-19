@@ -21,6 +21,7 @@
 #include "usb/usb_host.h"
 #include "esp_log.h"
 #include "esp_timer.h"
+#include "esp_vfs_eventfd.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
@@ -115,12 +116,73 @@ static portMUX_TYPE s_pending_lock = portMUX_INITIALIZER_UNLOCKED;
  * @brief USB transfer completion callback.
  * Runs in USB host task context (Core 0). Only signals the semaphore.
  */
+/*
+ * Wake-up of the owning connection's loop on completion. Each running engine
+ * registers an eventfd for its socket; transfer_cb() writes to it so select()
+ * returns at once instead of after the next poll timeout (up to 1 ms per URB
+ * stage, which added up on mass-storage reads). Optional: without an eventfd
+ * the poll timeouts still pick up every completion as before.
+ * The mutex keeps a callback from writing to an eventfd that is being closed.
+ */
+#define WAKE_SLOTS 8
+static struct { int sockfd; int evfd; } s_wake[WAKE_SLOTS];
+static SemaphoreHandle_t s_wake_mtx;
+static bool s_eventfd_ok;
+
+static int wake_register(int sockfd)
+{
+    if (!s_eventfd_ok || !s_wake_mtx) return -1;
+    int evfd = eventfd(0, 0);
+    if (evfd < 0) return -1;
+    xSemaphoreTake(s_wake_mtx, portMAX_DELAY);
+    for (int i = 0; i < WAKE_SLOTS; i++) {
+        if (s_wake[i].evfd < 0) {
+            s_wake[i].sockfd = sockfd;
+            s_wake[i].evfd = evfd;
+            xSemaphoreGive(s_wake_mtx);
+            return evfd;
+        }
+    }
+    xSemaphoreGive(s_wake_mtx);
+    close(evfd);
+    return -1;
+}
+
+static void wake_unregister(int evfd)
+{
+    if (evfd < 0) return;
+    xSemaphoreTake(s_wake_mtx, portMAX_DELAY);
+    for (int i = 0; i < WAKE_SLOTS; i++) {
+        if (s_wake[i].evfd == evfd) {
+            s_wake[i].evfd = -1;
+            s_wake[i].sockfd = -1;
+        }
+    }
+    xSemaphoreGive(s_wake_mtx);
+    close(evfd);
+}
+
+static void wake_owner(int owner_fd)
+{
+    if (owner_fd < 0 || !s_wake_mtx) return;      /* orphaned slot: nobody waits */
+    xSemaphoreTake(s_wake_mtx, portMAX_DELAY);
+    for (int i = 0; i < WAKE_SLOTS; i++) {
+        if (s_wake[i].evfd >= 0 && s_wake[i].sockfd == owner_fd) {
+            uint64_t one = 1;
+            write(s_wake[i].evfd, &one, sizeof(one));
+            break;
+        }
+    }
+    xSemaphoreGive(s_wake_mtx);
+}
+
 static void transfer_cb(usb_transfer_t *transfer)
 {
     pending_urb_t *slot = (pending_urb_t *)transfer->context;
     if (slot) {
         slot->usb_status = transfer->status;
         xSemaphoreGive(slot->sem);
+        wake_owner(slot->owner_fd);
     }
 }
 
@@ -824,6 +886,19 @@ static int handle_cmd_unlink(int fd, usbip_header_t *hdr, const dm_device_info_t
 
 esp_err_t transfer_engine_init(void)
 {
+    for (int i = 0; i < WAKE_SLOTS; i++) {
+        s_wake[i].sockfd = -1;
+        s_wake[i].evfd = -1;
+    }
+    s_wake_mtx = xSemaphoreCreateMutex();
+    esp_vfs_eventfd_config_t cfg = ESP_VFS_EVENTD_CONFIG_DEFAULT();
+    cfg.max_fds = WAKE_SLOTS;
+    esp_err_t err = esp_vfs_eventfd_register(&cfg);
+    s_eventfd_ok = s_wake_mtx && (err == ESP_OK || err == ESP_ERR_INVALID_STATE);  /* already registered = fine */
+    if (!s_eventfd_ok) {
+        ESP_LOGW(TAG, "eventfd unavailable (%s) - completions picked up by polling only",
+                 esp_err_to_name(err));
+    }
     ESP_LOGI(TAG, "Transfer engine initialized");
     return ESP_OK;
 }
@@ -883,6 +958,7 @@ int transfer_engine_run(int sockfd, const char *busid, bool *needs_reset)
     /* Main concurrent URB forwarding loop */
     int ret = 0;
     bool device_removed = false;
+    int wake_fd = wake_register(sockfd);     /* -1 = poll timeouts only */
 
     while (1) {
         /* ---- Check device removal flag (set by usb_host_mgr) ---- */
@@ -898,6 +974,11 @@ int transfer_engine_run(int sockfd, const char *busid, bool *needs_reset)
         fd_set readfds;
         FD_ZERO(&readfds);
         FD_SET(sockfd, &readfds);
+        int maxfd = sockfd;
+        if (wake_fd >= 0) {
+            FD_SET(wake_fd, &readfds);
+            if (wake_fd > maxfd) maxfd = wake_fd;
+        }
 
         /* Poll fast only while this connection has URBs in flight. */
         bool have_pending = false;
@@ -912,12 +993,17 @@ int transfer_engine_run(int sockfd, const char *busid, bool *needs_reset)
         tv.tv_sec = 0;
         tv.tv_usec = have_pending ? SELECT_TIMEOUT_US : SELECT_TIMEOUT_IDLE_US;
 
-        int sel_ret = select(sockfd + 1, &readfds, NULL, NULL, &tv);
+        int sel_ret = select(maxfd + 1, &readfds, NULL, NULL, &tv);
 
         if (sel_ret < 0) {
             ESP_LOGE(TAG, "select() error: errno=%d", errno);
             ret = -1;
             break;
+        }
+
+        if (sel_ret > 0 && wake_fd >= 0 && FD_ISSET(wake_fd, &readfds)) {
+            uint64_t cnt;
+            read(wake_fd, &cnt, sizeof(cnt));        /* reset; completions are handled below */
         }
 
         if (sel_ret > 0 && FD_ISSET(sockfd, &readfds)) {
@@ -1033,6 +1119,8 @@ cleanup:
     if (needs_reset) {
         *needs_reset = !device_removed;
     }
+
+    wake_unregister(wake_fd);
 
     event_log_add(EVENT_LOG_LEVEL_INFO, "Transfer engine stopped for %s", busid);
     return ret;
