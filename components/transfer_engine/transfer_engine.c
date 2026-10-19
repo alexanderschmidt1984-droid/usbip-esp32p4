@@ -22,6 +22,7 @@
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "esp_vfs_eventfd.h"
+#include "nvs.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
@@ -75,6 +76,17 @@ static const char *TAG = "xfer_eng";
 #define OUT_CHUNK_MIN       (32 * 1024)     /* smaller transfers: one USB transfer as before */
 #define MAX_OUT_CHUNKS      (MAX_TRANSFER_SIZE / OUT_CHUNK_SIZE)
 
+/* Fast read (experimental, off by default, Settings -> System): large bulk IN
+ * transfers are read in chunks with two buffers; while one chunk goes out over
+ * the network the next one is read from the device. Only one chunk is on the
+ * bus at a time, so a short chunk can never swallow the device's next data
+ * (e.g. a mass-storage CSW). The RET_SUBMIT header has to promise the full
+ * length after the first chunk: if a later chunk comes back short or with an
+ * error, the stream cannot be repaired and the connection is closed. */
+#define IN_CHUNK_SIZE       (16 * 1024)
+#define IN_FAST_MIN         (32 * 1024)
+static bool s_fast_read;
+
 /* Linux errno values (USB/IP client expects these, not ESP-IDF values) */
 #define LINUX_EIO           5
 #define LINUX_EINVAL        22
@@ -117,6 +129,14 @@ typedef struct {
     int32_t chunk_bytes;
     usb_transfer_status_t chunk_status;
     bool chunk_flushed;
+    /* Fast read (rd_fast): two transfers alternate, xfer is the one in flight */
+    bool rd_fast;
+    bool rd_hdr_sent;
+    bool rd_inflight;             /* a chunk is on the bus (callback pending) */
+    int rd_cur;
+    int32_t rd_done;              /* bytes already sent to the client */
+    uint16_t rd_mps;
+    usb_transfer_t *rd_x[2];
 } pending_urb_t;
 
 static pending_urb_t s_pending[MAX_PENDING_URBS];
@@ -392,6 +412,14 @@ static void free_pending_slot(pending_urb_t *slot)
         vSemaphoreDelete(slot->sem);
         slot->sem = NULL;
     }
+    if (slot->rd_fast) {
+        for (int i = 0; i < 2; i++) {
+            if (slot->rd_x[i]) usb_host_transfer_free(slot->rd_x[i]);
+            slot->rd_x[i] = NULL;
+        }
+        slot->xfer = NULL;          /* was one of rd_x */
+        slot->rd_fast = false;
+    }
     if (slot->xfer) {
         usb_host_transfer_free(slot->xfer);
         slot->xfer = NULL;
@@ -600,6 +628,175 @@ static int send_completed_reply(int fd, pending_urb_t *slot, usb_device_handle_t
 }
 
 /* ------------------------------------------------------------------ */
+/* Fast read (experimental)                                            */
+/* ------------------------------------------------------------------ */
+
+bool transfer_engine_get_fast_read(void) { return s_fast_read; }
+
+esp_err_t transfer_engine_set_fast_read(bool on)
+{
+    nvs_handle_t nvs;
+    esp_err_t err = nvs_open("usb", NVS_READWRITE, &nvs);
+    if (err != ESP_OK) return err;
+    err = nvs_set_u8(nvs, "fastrd", on ? 1 : 0);
+    if (err == ESP_OK) err = nvs_commit(nvs);
+    nvs_close(nvs);
+    if (err == ESP_OK) {
+        s_fast_read = on;
+        ESP_LOGI(TAG, "Fast read (experimental) %s", on ? "on" : "off");
+    }
+    return err;
+}
+
+static int send_ret_submit_hdr(int fd, uint32_t seqnum, int32_t status, int32_t actual)
+{
+    usbip_header_t reply;
+    memset(&reply, 0, sizeof(reply));
+    reply.base.command = USBIP_RET_SUBMIT;
+    reply.base.seqnum = seqnum;
+    reply.u.ret_submit.status = status;
+    reply.u.ret_submit.actual_length = actual;
+    reply.u.ret_submit.number_of_packets = (int32_t)0xFFFFFFFF;
+    usbip_pack_header(&reply, true);
+    return usbip_net_send(fd, &reply, sizeof(reply));
+}
+
+/* Length to request for the chunk starting at byte `done` (rounded up to the
+ * MPS; the device must not deliver more than the client asked for). */
+static int fast_chunk_len(const pending_urb_t *slot, int32_t done, int32_t *want)
+{
+    int32_t rem = slot->buflen - done;
+    *want = rem < IN_CHUNK_SIZE ? rem : IN_CHUNK_SIZE;
+    return (*want + slot->rd_mps - 1) / slot->rd_mps * slot->rd_mps;
+}
+
+static int handle_in_fast(int fd, usbip_header_t *hdr, const dm_device_info_t *devinfo,
+                          int dev_index, uint32_t ep, int32_t buflen, uint16_t mps)
+{
+    uint32_t seqnum = hdr->base.seqnum;
+    int slot_idx = reserve_free_slot(fd, seqnum);
+    if (slot_idx < 0) {
+        ESP_LOGE(TAG, "Pending URB table full (%d slots)", MAX_PENDING_URBS);
+        send_error_reply(fd, seqnum, -LINUX_EIO);
+        return 0;
+    }
+    pending_urb_t *slot = &s_pending[slot_idx];
+    usb_device_handle_t dev_handle = usb_host_mgr_get_handle(devinfo->dev_addr);
+    SemaphoreHandle_t sem = xSemaphoreCreateBinary();
+    usb_transfer_t *x[2] = { NULL, NULL };
+    bool ok = dev_handle && sem &&
+              usb_host_transfer_alloc(IN_CHUNK_SIZE, 0, &x[0]) == ESP_OK &&
+              usb_host_transfer_alloc(IN_CHUNK_SIZE, 0, &x[1]) == ESP_OK;
+    if (!ok) {
+        for (int i = 0; i < 2; i++) if (x[i]) usb_host_transfer_free(x[i]);
+        if (sem) vSemaphoreDelete(sem);
+        free_pending_slot(slot);
+        send_error_reply(fd, seqnum, dev_handle ? -LINUX_EIO : -LINUX_ENODEV);
+        return 0;
+    }
+    for (int i = 0; i < 2; i++) {
+        x[i]->device_handle    = dev_handle;
+        x[i]->callback         = transfer_cb;
+        x[i]->context          = slot;
+        x[i]->timeout_ms       = USB_XFER_TIMEOUT_MS;
+        x[i]->bEndpointAddress = (uint8_t)(ep | 0x80);
+    }
+    slot->devid          = hdr->base.devid;
+    slot->direction      = USBIP_DIR_IN;
+    slot->ep             = ep;
+    slot->buflen         = buflen;
+    slot->num_iso        = 0;
+    slot->submit_time_us = esp_timer_get_time();
+    slot->sem            = sem;
+    slot->usb_status     = USB_TRANSFER_STATUS_ERROR;
+    slot->is_control     = false;
+    slot->dev_index      = dev_index;
+    slot->rd_fast        = true;
+    slot->rd_hdr_sent    = false;
+    slot->rd_cur         = 0;
+    slot->rd_done        = 0;
+    slot->rd_mps         = mps;
+    slot->rd_x[0]        = x[0];
+    slot->rd_x[1]        = x[1];
+    slot->xfer           = x[0];
+
+    int32_t want;
+    x[0]->num_bytes = fast_chunk_len(slot, 0, &want);
+    slot->rd_inflight = true;
+    if (usb_host_transfer_submit(x[0]) != ESP_OK) {
+        slot->rd_inflight = false;
+        ESP_LOGE(TAG, "Transfer submit failed (fast read, ep=0x%02x)", (unsigned)(ep | 0x80));
+        free_pending_slot(slot);
+        send_error_reply(fd, seqnum, -LINUX_EIO);
+    }
+    return 0;
+}
+
+/* A fast-read chunk completed. Returns 0 = more to come, 1 = finished (free
+ * the slot), -1 = connection must be closed. */
+static int fast_read_step(int fd, pending_urb_t *slot)
+{
+    usb_transfer_t *t = slot->xfer;
+    slot->rd_inflight = false;                /* its callback fired */
+    int32_t want;
+    fast_chunk_len(slot, slot->rd_done, &want);
+    int32_t got = t->actual_num_bytes;
+    bool ok = slot->usb_status == USB_TRANSFER_STATUS_COMPLETED && got <= want;
+    bool full = ok && got == want;
+    bool more = full && slot->rd_done + got < slot->buflen;
+
+    if (more) {                               /* read the next chunk while this one is sent */
+        usb_transfer_t *nx = slot->rd_x[1 - slot->rd_cur];
+        int32_t nwant;
+        nx->num_bytes = fast_chunk_len(slot, slot->rd_done + got, &nwant);
+        slot->usb_status = USB_TRANSFER_STATUS_ERROR;
+        slot->xfer = nx;
+        slot->rd_cur = 1 - slot->rd_cur;
+        slot->rd_inflight = true;
+        if (usb_host_transfer_submit(nx) != ESP_OK) {
+            slot->rd_inflight = false;
+            slot->xfer = t;
+            slot->rd_cur = 1 - slot->rd_cur;
+            more = false;
+        }
+    }
+
+    if (!slot->rd_hdr_sent) {
+        if (!more) {
+            /* Nothing promised yet: plain reply with what we have. */
+            int32_t status = ok ? 0 : map_usb_status(slot->usb_status);
+            int32_t len = ok ? got : 0;
+            if (send_ret_submit_hdr(fd, slot->seqnum, status, len) != 0 ||
+                (len > 0 && usbip_net_send(fd, t->data_buffer, len) != 0)) {
+                return -1;
+            }
+            device_manager_update_stats(slot->dev_index, status == 0 ? (uint32_t)len : 0, 0, status == 0);
+            return 1;
+        }
+        if (send_ret_submit_hdr(fd, slot->seqnum, 0, slot->buflen) != 0) return -1;
+        slot->rd_hdr_sent = true;
+    }
+
+    if (got > 0 && ok && usbip_net_send(fd, t->data_buffer, got) != 0) return -1;
+    if (ok) slot->rd_done += got;
+
+    if (slot->rd_done == slot->buflen) {
+        device_manager_update_stats(slot->dev_index, (uint32_t)slot->buflen, 0, true);
+        return 1;
+    }
+    if (!more) {
+        /* Header already promised the full length but the device ended early
+         * or failed: the stream cannot be repaired. */
+        ESP_LOGW(TAG, "Fast read seqnum=%lu: device returned %ld of %ld bytes (status %d) - "
+                 "closing connection", (unsigned long)slot->seqnum, (long)(slot->rd_done),
+                 (long)slot->buflen, (int)slot->usb_status);
+        event_log_add(EVENT_LOG_LEVEL_WARN, "Fast read: short read mid-stream, connection closed");
+        return -1;
+    }
+    return 0;
+}
+
+/* ------------------------------------------------------------------ */
 /* Chunked bulk OUT                                                    */
 /* ------------------------------------------------------------------ */
 
@@ -775,6 +972,15 @@ static int handle_cmd_submit(int fd, usbip_header_t *hdr, const dm_device_info_t
                      iface, alt, esp_err_to_name(e));
             send_error_reply(fd, seqnum, e == ESP_OK ? 0 : -LINUX_EIO);
             return 0;
+        }
+    }
+
+    /* Large bulk IN with fast read on: double-buffered chunks (experimental) */
+    if (s_fast_read && ep != 0 && direction == USBIP_DIR_IN && num_iso == 0 &&
+        buflen >= IN_FAST_MIN && ep_is_bulk(devinfo, (uint8_t)(ep | 0x80))) {
+        uint16_t mps = find_ep_mps(devinfo, (uint8_t)(ep | 0x80));
+        if (mps > 0 && IN_CHUNK_SIZE % mps == 0) {
+            return handle_in_fast(fd, hdr, devinfo, dev_index, ep, buflen, mps);
         }
     }
 
@@ -1004,6 +1210,14 @@ static int handle_cmd_unlink(int fd, usbip_header_t *hdr, const dm_device_info_t
         pending_urb_t *slot = &s_pending[slot_idx];
         usb_device_handle_t dev_handle = usb_host_mgr_get_handle(devinfo->dev_addr);
 
+        if (slot->rd_fast && slot->rd_hdr_sent) {
+            /* Part of the reply is already on the wire: a RET_UNLINK now would
+             * break the stream. Close the connection; cleanup cancels the URB. */
+            ESP_LOGW(TAG, "Unlink of fast read seqnum=%lu mid-stream - closing connection",
+                     (unsigned long)unlink_seqnum);
+            return -1;
+        }
+
         ESP_LOGI(TAG, "Aborting pending URB seqnum=%lu ep=0x%02x",
                  (unsigned long)unlink_seqnum,
                  (unsigned)(slot->ep | (slot->direction == USBIP_DIR_IN ? 0x80 : 0x00)));
@@ -1060,7 +1274,14 @@ esp_err_t transfer_engine_init(void)
         ESP_LOGW(TAG, "eventfd unavailable (%s) - completions picked up by polling only",
                  esp_err_to_name(err));
     }
-    ESP_LOGI(TAG, "Transfer engine initialized");
+    nvs_handle_t nvs;
+    uint8_t fr = 0;
+    if (nvs_open("usb", NVS_READONLY, &nvs) == ESP_OK) {
+        nvs_get_u8(nvs, "fastrd", &fr);
+        nvs_close(nvs);
+    }
+    s_fast_read = fr != 0;
+    ESP_LOGI(TAG, "Transfer engine initialized%s", s_fast_read ? " (fast read: experimental, on)" : "");
     return ESP_OK;
 }
 
@@ -1210,7 +1431,20 @@ int transfer_engine_run(int sockfd, const char *busid, bool *needs_reset)
                 continue;  /* only poll this connection's own URBs */
             }
 
-            if (xSemaphoreTake(slot->sem, 0) == pdTRUE) {
+            if (slot->rd_fast && xSemaphoreTake(slot->sem, 0) == pdTRUE) {
+                int r = fast_read_step(sockfd, slot);
+                if (r > 0) {
+                    free_pending_slot(slot);
+                } else if (r < 0) {
+                    /* With a chunk still on the bus the cleanup below cancels
+                     * it and frees the slot; otherwise free it here. */
+                    if (!slot->rd_inflight) {
+                        free_pending_slot(slot);
+                    }
+                    ret = -1;
+                    goto cleanup;
+                }
+            } else if (!slot->rd_fast && xSemaphoreTake(slot->sem, 0) == pdTRUE) {
                 /* Transfer completed! */
                 if (send_completed_reply(sockfd, slot, cached_dev_handle) != 0) {
                     free_pending_slot(slot);

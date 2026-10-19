@@ -37,6 +37,11 @@ esp_err_t transfer_engine_stop(void);
  */
 int transfer_engine_run(int sockfd, const char *busid, bool *needs_reset);
 
+/** Fast read (experimental): pipelined large bulk IN, see transfer_engine.c.
+ *  Stored in NVS "usb"/"fastrd", off by default, applies to new transfers. */
+bool transfer_engine_get_fast_read(void);
+esp_err_t transfer_engine_set_fast_read(bool on);
+
 #ifdef __cplusplus
 }
 #endif
