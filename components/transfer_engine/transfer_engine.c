@@ -68,6 +68,13 @@ static const char *TAG = "xfer_eng";
  * huge allocations / an int overflow in the drain length). */
 #define MAX_ISO_PACKETS     128
 
+/* Large bulk OUT transfers are split into chunks that go to the device while
+ * the rest is still arriving over the network (store-and-forward made the
+ * network and USB times add up). The reply still comes after the last chunk. */
+#define OUT_CHUNK_SIZE      (16 * 1024)     /* multiple of every bulk MPS (64/512) */
+#define OUT_CHUNK_MIN       (32 * 1024)     /* smaller transfers: one USB transfer as before */
+#define MAX_OUT_CHUNKS      (MAX_TRANSFER_SIZE / OUT_CHUNK_SIZE)
+
 /* Linux errno values (USB/IP client expects these, not ESP-IDF values) */
 #define LINUX_EIO           5
 #define LINUX_EINVAL        22
@@ -101,6 +108,15 @@ typedef struct {
      * completion callback still points at this slot). The slot stays reserved
      * (owner_fd = -1) and is reaped once the callback has fired. */
     bool orphaned;
+    /* Chunked bulk OUT (n_chunks > 0): xfer is chunk 0, chunk[] the rest.
+     * chunks_left counts submitted chunks still in flight plus a guard of 1
+     * held while submitting; the slot completes when it reaches 0. */
+    int n_chunks;
+    usb_transfer_t *chunk[MAX_OUT_CHUNKS];
+    int chunks_left;
+    int32_t chunk_bytes;
+    usb_transfer_status_t chunk_status;
+    bool chunk_flushed;
 } pending_urb_t;
 
 static pending_urb_t s_pending[MAX_PENDING_URBS];
@@ -176,9 +192,32 @@ static void wake_owner(int owner_fd)
     xSemaphoreGive(s_wake_mtx);
 }
 
+/* One chunk (or the submit guard) of a chunked OUT is done; the last one
+ * completes the slot with the summed length and the first error. */
+static void chunk_settle(pending_urb_t *slot, usb_transfer_status_t st, int bytes)
+{
+    bool last;
+    portENTER_CRITICAL(&s_pending_lock);
+    slot->chunk_bytes += bytes;
+    if (st != USB_TRANSFER_STATUS_COMPLETED && slot->chunk_status == USB_TRANSFER_STATUS_COMPLETED) {
+        slot->chunk_status = st;
+    }
+    last = (--slot->chunks_left == 0);
+    portEXIT_CRITICAL(&s_pending_lock);
+    if (last) {
+        slot->usb_status = slot->chunk_status;
+        xSemaphoreGive(slot->sem);
+        wake_owner(slot->owner_fd);
+    }
+}
+
 static void transfer_cb(usb_transfer_t *transfer)
 {
     pending_urb_t *slot = (pending_urb_t *)transfer->context;
+    if (slot && slot->n_chunks > 0) {
+        chunk_settle(slot, transfer->status, transfer->actual_num_bytes);
+        return;
+    }
     if (slot) {
         slot->usb_status = transfer->status;
         xSemaphoreGive(slot->sem);
@@ -357,6 +396,13 @@ static void free_pending_slot(pending_urb_t *slot)
         usb_host_transfer_free(slot->xfer);
         slot->xfer = NULL;
     }
+    for (int i = 0; i < MAX_OUT_CHUNKS; i++) {
+        if (slot->chunk[i]) {
+            usb_host_transfer_free(slot->chunk[i]);
+            slot->chunk[i] = NULL;
+        }
+    }
+    slot->n_chunks = 0;
     slot->orphaned = false;
     slot->active = false;
 }
@@ -438,7 +484,7 @@ static int send_completed_reply(int fd, pending_urb_t *slot, usb_device_handle_t
     }
 
     if (reply_status == 0) {
-        actual_length = slot->xfer->actual_num_bytes;
+        actual_length = slot->n_chunks > 0 ? slot->chunk_bytes : slot->xfer->actual_num_bytes;
         if (slot->is_control && actual_length >= 8) {
             actual_length -= 8; /* subtract setup packet */
         } else if (slot->is_control) {
@@ -554,6 +600,115 @@ static int send_completed_reply(int fd, pending_urb_t *slot, usb_device_handle_t
 }
 
 /* ------------------------------------------------------------------ */
+/* Chunked bulk OUT                                                    */
+/* ------------------------------------------------------------------ */
+
+static bool ep_is_bulk(const dm_device_info_t *devinfo, uint8_t ep_addr)
+{
+    if (!devinfo || !devinfo->config_desc_raw || devinfo->config_desc_len == 0) {
+        return false;
+    }
+    const usb_config_desc_t *cfg = (const usb_config_desc_t *)devinfo->config_desc_raw;
+    const usb_standard_desc_t *d = (const usb_standard_desc_t *)cfg;
+    int offset = 0;
+    while ((d = usb_parse_next_descriptor_of_type(
+                    d, cfg->wTotalLength, USB_B_DESCRIPTOR_TYPE_ENDPOINT, &offset)) != NULL) {
+        const usb_ep_desc_t *ep = (const usb_ep_desc_t *)d;
+        if (ep->bEndpointAddress == ep_addr) {
+            return (ep->bmAttributes & USB_BM_ATTRIBUTES_XFERTYPE_MASK) == USB_BM_ATTRIBUTES_XFER_BULK;
+        }
+    }
+    return false;
+}
+
+/* Receive a large bulk OUT payload chunk by chunk and submit each chunk as
+ * soon as it is in, so the device writes while the rest is on the wire. The
+ * endpoint queue keeps the order; RET_SUBMIT is sent by the normal completion
+ * path once every chunk is done. Returns -1 only on a socket error. */
+static int handle_out_chunked(int fd, usbip_header_t *hdr, const dm_device_info_t *devinfo,
+                              int dev_index, uint32_t ep, int32_t buflen)
+{
+    uint32_t seqnum = hdr->base.seqnum;
+    int n = (buflen + OUT_CHUNK_SIZE - 1) / OUT_CHUNK_SIZE;
+
+    int slot_idx = reserve_free_slot(fd, seqnum);
+    if (slot_idx < 0) {
+        ESP_LOGE(TAG, "Pending URB table full (%d slots)", MAX_PENDING_URBS);
+        if (drain_socket(fd, buflen) != 0) return -1;
+        send_error_reply(fd, seqnum, -LINUX_EIO);
+        return 0;
+    }
+    pending_urb_t *slot = &s_pending[slot_idx];
+
+    usb_device_handle_t dev_handle = usb_host_mgr_get_handle(devinfo->dev_addr);
+    SemaphoreHandle_t sem = xSemaphoreCreateBinary();
+    usb_transfer_t *x[MAX_OUT_CHUNKS] = { 0 };
+    bool ok = dev_handle && sem;
+    for (int i = 0; i < n && ok; i++) {
+        int len = (i < n - 1) ? OUT_CHUNK_SIZE : buflen - i * OUT_CHUNK_SIZE;
+        ok = usb_host_transfer_alloc(len, 0, &x[i]) == ESP_OK && x[i];
+    }
+    if (!ok) {
+        for (int i = 0; i < n; i++) if (x[i]) usb_host_transfer_free(x[i]);
+        if (sem) vSemaphoreDelete(sem);
+        free_pending_slot(slot);
+        if (drain_socket(fd, buflen) != 0) return -1;
+        send_error_reply(fd, seqnum, dev_handle ? -LINUX_EIO : -LINUX_ENODEV);
+        return 0;
+    }
+
+    slot->devid          = hdr->base.devid;
+    slot->direction      = USBIP_DIR_OUT;
+    slot->ep             = ep;
+    slot->buflen         = buflen;
+    slot->num_iso        = 0;
+    slot->submit_time_us = esp_timer_get_time();
+    slot->sem            = sem;
+    slot->usb_status     = USB_TRANSFER_STATUS_ERROR;
+    slot->is_control     = false;
+    slot->dev_index      = dev_index;
+    slot->chunk_bytes    = 0;
+    slot->chunk_status   = USB_TRANSFER_STATUS_COMPLETED;
+    slot->chunks_left    = 1;                       /* submit guard */
+    slot->chunk_flushed  = false;
+    slot->xfer           = x[0];
+    for (int i = 1; i < n; i++) slot->chunk[i] = x[i];
+    slot->n_chunks       = n;
+
+    int32_t received = 0;
+    for (int i = 0; i < n; i++) {
+        usb_transfer_t *t = x[i];
+        int len = (i < n - 1) ? OUT_CHUNK_SIZE : buflen - i * OUT_CHUNK_SIZE;
+        t->device_handle    = dev_handle;
+        t->callback         = transfer_cb;
+        t->context          = slot;
+        t->timeout_ms       = USB_XFER_TIMEOUT_MS;
+        t->bEndpointAddress = (uint8_t)ep;
+        t->num_bytes        = len;
+        if (usbip_net_recv(fd, t->data_buffer, len) != 0) {
+            ESP_LOGE(TAG, "Failed to recv OUT data");
+            chunk_settle(slot, USB_TRANSFER_STATUS_ERROR, 0);   /* drop the guard; cleanup cancels the rest */
+            return -1;
+        }
+        received += len;
+        portENTER_CRITICAL(&s_pending_lock);
+        slot->chunks_left++;
+        portEXIT_CRITICAL(&s_pending_lock);
+        if (usb_host_transfer_submit(t) != ESP_OK) {
+            ESP_LOGE(TAG, "Transfer submit failed (chunk %d/%d, ep=0x%02x)", i + 1, n, (unsigned)ep);
+            chunk_settle(slot, USB_TRANSFER_STATUS_ERROR, 0);   /* this chunk never went out */
+            if (drain_socket(fd, buflen - received) != 0) {
+                chunk_settle(slot, USB_TRANSFER_STATUS_ERROR, 0);
+                return -1;
+            }
+            break;                                             /* reply -EIO once the rest is done */
+        }
+    }
+    chunk_settle(slot, USB_TRANSFER_STATUS_COMPLETED, 0);       /* release the guard */
+    return 0;
+}
+
+/* ------------------------------------------------------------------ */
 /* CMD_SUBMIT handler (non-blocking: submit and store in pending)      */
 /* ------------------------------------------------------------------ */
 
@@ -621,6 +776,12 @@ static int handle_cmd_submit(int fd, usbip_header_t *hdr, const dm_device_info_t
             send_error_reply(fd, seqnum, e == ESP_OK ? 0 : -LINUX_EIO);
             return 0;
         }
+    }
+
+    /* Large bulk OUT: pipelined chunks (see handle_out_chunked) */
+    if (ep != 0 && direction == USBIP_DIR_OUT && num_iso == 0 && buflen >= OUT_CHUNK_MIN &&
+        ep_is_bulk(devinfo, (uint8_t)ep)) {
+        return handle_out_chunked(fd, hdr, devinfo, dev_index, ep, buflen);
     }
 
     /* Reserve a free slot for this connection (atomic under the table lock) */
@@ -1057,6 +1218,16 @@ int transfer_engine_run(int sockfd, const char *busid, bool *needs_reset)
                     goto cleanup;
                 }
                 free_pending_slot(slot);
+            } else if (slot->n_chunks > 0 && !slot->chunk_flushed &&
+                       slot->chunk_status != USB_TRANSFER_STATUS_COMPLETED && cached_dev_handle) {
+                /* A chunk failed (e.g. STALL): the pipe halts and the queued
+                 * chunks would wait for the client's unlink. Flush them now so
+                 * the error is reported as fast as with a single transfer. */
+                slot->chunk_flushed = true;
+                uint8_t ep_addr = slot->xfer->bEndpointAddress;
+                usb_host_endpoint_halt(cached_dev_handle, ep_addr);
+                usb_host_endpoint_flush(cached_dev_handle, ep_addr);
+                usb_host_endpoint_clear(cached_dev_handle, ep_addr);
             } else if ((slot->is_control || slot->direction != USBIP_DIR_IN) &&
                        (now - slot->submit_time_us) > PENDING_URB_TIMEOUT_US) {
                 /* Timeout - abort */
