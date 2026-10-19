@@ -302,14 +302,14 @@ H74|Este guia configura <b>este PC como o outro lado</b>, na mesma rede. PC: <co
 H75|Instalar:{P0}
 H76|Clique aqui em <b>Gerar</b>. A chave privada fica na placa, só a pública é mostrada.
 H77|Criar uma chave para o PC e mostrar a sua chave pública:{P0}
-H78|Criar a configuração com <code>sudoedit /etc/wireguard/wg-usbip.conf</code>:{P0}
+H78|Criar a configuração com <code>sudoedit /etc/wireguard/wg-usbip.conf</code>:{P0}<span class="note">Depois de <code>PublicKey</code> vem a chave <b>pública</b> da placa – não é segredo, pertence exatamente aqui. A chave privada nunca sai da placa.</span>
 H79|Abrir a firewall para UDP 51820 (ufw):{P0}<span class="note">Com firewalld: <code>sudo firewall-cmd --permanent --add-port=51820/udp &amp;&amp; sudo firewall-cmd --reload</code>. Sem firewall este passo não é necessário.</span>
 H80|Iniciar o túnel e arrancá-lo automaticamente no arranque:{P0}
 H81|Introduzir aqui: <b>Chave pública do outro lado</b> = resultado do passo 3, <b>Endereço do outro lado</b> = IP do PC (<code>ip -4 -br addr</code>), <b>Porta do outro lado</b> 51820, <b>Endereço do túnel</b> 10.8.0.2, <b>Máscara</b> 255.255.255.0, <b>Keepalive</b> 25, marcar <b>Ativar túnel WireGuard</b> e depois <b>Guardar WireGuard</b>.
 H82|Verificar:{P0}
 H83|Abrir a interface de forma protegida: <code>http://<span class="h-wgaddr"></span>/</code>
 H84|Instalar o <b>WireGuard para Windows</b>: <code>wireguard.com/install</code>.
-H85|Na aplicação WireGuard: seta ao lado de «Adicionar túnel» → «Adicionar túnel vazio…», nome <code>wg-usbip</code>. A aplicação cria uma chave sozinha. Anote a <b>chave pública</b> mostrada. Por baixo da linha existente <code>PrivateKey = …</code> acrescente:{P0}Guardar e depois <b>Ativar</b>.
+H85|Na aplicação WireGuard: seta ao lado de «Adicionar túnel» → «Adicionar túnel vazio…», nome <code>wg-usbip</code>. A aplicação cria uma chave sozinha. Anote a <b>chave pública</b> mostrada. Por baixo da linha existente <code>PrivateKey = …</code> acrescente:{P0}Guardar e depois <b>Ativar</b>.<span class="note">Depois de <code>PublicKey</code> vem a chave <b>pública</b> da placa – não é segredo, pertence exatamente aqui. A chave privada nunca sai da placa.</span>
 H86|Abrir a firewall para UDP 51820 (PowerShell como administrador):{P0}
 H87|Introduzir aqui: <b>Chave pública do outro lado</b> = chave do passo 3, <b>Endereço do outro lado</b> = IP do PC (<code>ipconfig</code>), <b>Porta do outro lado</b> 51820, <b>Endereço do túnel</b> 10.8.0.2, <b>Máscara</b> 255.255.255.0, <b>Keepalive</b> 25, marcar <b>Ativar túnel WireGuard</b> e depois <b>Guardar WireGuard</b>.
 H88|Verificar: a aplicação mostra «Último handshake». Depois (como administrador):{P0}

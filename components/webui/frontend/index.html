@@ -580,7 +580,7 @@ PostUp = wg set %i private-key /etc/wireguard/wg-usbip.key
 
 [Peer]
 PublicKey = <span class="h-wgpub"></span>
-AllowedIPs = <span class="h-wgaddr"></span>/32</pre></li>
+AllowedIPs = <span class="h-wgaddr"></span>/32</pre><span class="note">Hinter <code>PublicKey</code> steht der <b>öffentliche</b> Schlüssel des Boards – kein Geheimnis, er gehört genau hierher. Der private Schlüssel verlässt das Board nie.</span></li>
                             <li>Firewall für UDP 51820 öffnen (ufw):<pre>sudo ufw allow 51820/udp</pre><span class="note">Mit firewalld: <code>sudo firewall-cmd --permanent --add-port=51820/udp &amp;&amp; sudo firewall-cmd --reload</code>. Ohne Firewall entfällt der Schritt.</span></li>
                             <li>Tunnel starten und beim Booten automatisch starten:<pre>sudo wg-quick up wg-usbip
 sudo systemctl enable wg-quick@wg-usbip</pre></li>
@@ -604,7 +604,7 @@ PostUp = wg set %i private-key /etc/wireguard/wg-usbip.key
 
 [Peer]
 PublicKey = <span class="h-wgpub"></span>
-AllowedIPs = <span class="h-wgaddr"></span>/32</pre></li>
+AllowedIPs = <span class="h-wgaddr"></span>/32</pre><span class="note">Hinter <code>PublicKey</code> steht der <b>öffentliche</b> Schlüssel des Boards – kein Geheimnis, er gehört genau hierher. Der private Schlüssel verlässt das Board nie.</span></li>
                             <li>Firewall für UDP 51820 öffnen (ufw):<pre>sudo ufw allow 51820/udp</pre><span class="note">Mit firewalld: <code>sudo firewall-cmd --permanent --add-port=51820/udp &amp;&amp; sudo firewall-cmd --reload</code>. Ohne Firewall entfällt der Schritt.</span></li>
                             <li>Tunnel starten und beim Booten automatisch starten:<pre>sudo wg-quick up wg-usbip
 sudo systemctl enable wg-quick@wg-usbip</pre></li>
@@ -624,7 +624,7 @@ Address = 10.8.0.1/24
 
 [Peer]
 PublicKey = <span class="h-wgpub"></span>
-AllowedIPs = <span class="h-wgaddr"></span>/32</pre>Speichern, dann <b>Aktivieren</b>.</li>
+AllowedIPs = <span class="h-wgaddr"></span>/32</pre>Speichern, dann <b>Aktivieren</b>.<span class="note">Hinter <code>PublicKey</code> steht der <b>öffentliche</b> Schlüssel des Boards – kein Geheimnis, er gehört genau hierher. Der private Schlüssel verlässt das Board nie.</span></li>
                             <li>Firewall für UDP 51820 öffnen (PowerShell als Administrator):<pre>New-NetFirewallRule -DisplayName "WireGuard usbip" -Direction Inbound -Protocol UDP -LocalPort 51820 -Action Allow</pre></li>
                             <li>Hier eintragen: <b>Peer public key</b> = Schlüssel aus Schritt 3, <b>Peer endpoint</b> = IP des PCs (<code>ipconfig</code>), <b>Peer port</b> 51820, <b>Tunnel address</b> 10.8.0.2, <b>Netmask</b> 255.255.255.0, <b>Keepalive</b> 25, Haken bei <b>Enable</b>, dann <b>Save WireGuard</b>.</li>
                             <li>Prüfen: In der App erscheint „Letzter Handshake“. Dann (als Administrator):<pre>ping <span class="h-wgaddr"></span>

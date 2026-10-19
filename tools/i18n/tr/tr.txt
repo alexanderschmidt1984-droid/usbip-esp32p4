@@ -302,14 +302,14 @@ H74|Bu kılavuz <b>bu bilgisayarı karşı taraf olarak</b> aynı ağda kurar. B
 H75|Kurun:{P0}
 H76|Burada <b>Oluştur</b>'a tıklayın. Özel anahtar kartta kalır, yalnızca genel anahtar gösterilir.
 H77|Bilgisayar için bir anahtar oluşturup genel anahtarını gösterin:{P0}
-H78|Yapılandırmayı <code>sudoedit /etc/wireguard/wg-usbip.conf</code> ile oluşturun:{P0}
+H78|Yapılandırmayı <code>sudoedit /etc/wireguard/wg-usbip.conf</code> ile oluşturun:{P0}<span class="note"><code>PublicKey</code> sonrasında kartın <b>açık</b> anahtarı yer alır – gizli değildir, tam buraya aittir. Özel anahtar karttan asla çıkmaz.</span>
 H79|Güvenlik duvarında UDP 51820'yi açın (ufw):{P0}<span class="note">firewalld ile: <code>sudo firewall-cmd --permanent --add-port=51820/udp &amp;&amp; sudo firewall-cmd --reload</code>. Güvenlik duvarı yoksa bu adım gerekmez.</span>
 H80|Tüneli başlatın ve açılışta otomatik başlatın:{P0}
 H81|Buraya girin: <b>Karşı tarafın genel anahtarı</b> = 3. adımın çıktısı, <b>Karşı tarafın adresi</b> = bilgisayarın IP'si (<code>ip -4 -br addr</code>), <b>Karşı tarafın portu</b> 51820, <b>Tünel adresi</b> 10.8.0.2, <b>Ağ maskesi</b> 255.255.255.0, <b>Keepalive</b> 25, <b>WireGuard tünelini etkinleştir</b> işaretli, ardından <b>WireGuard'ı kaydet</b>.
 H82|Kontrol:{P0}
 H83|Arayüzü korumalı açın: <code>http://<span class="h-wgaddr"></span>/</code>
 H84|<b>Windows için WireGuard</b> kurun: <code>wireguard.com/install</code>.
-H85|WireGuard uygulamasında: «Tünel ekle» yanındaki ok → «Boş tünel ekle…», ad <code>wg-usbip</code>. Uygulama kendisi bir anahtar oluşturur. Gösterilen <b>genel anahtarı</b> not edin. Mevcut <code>PrivateKey = …</code> satırının altına ekleyin:{P0}Kaydedin, ardından <b>Etkinleştir</b>.
+H85|WireGuard uygulamasında: «Tünel ekle» yanındaki ok → «Boş tünel ekle…», ad <code>wg-usbip</code>. Uygulama kendisi bir anahtar oluşturur. Gösterilen <b>genel anahtarı</b> not edin. Mevcut <code>PrivateKey = …</code> satırının altına ekleyin:{P0}Kaydedin, ardından <b>Etkinleştir</b>.<span class="note"><code>PublicKey</code> sonrasında kartın <b>açık</b> anahtarı yer alır – gizli değildir, tam buraya aittir. Özel anahtar karttan asla çıkmaz.</span>
 H86|Güvenlik duvarında UDP 51820'yi açın (yönetici olarak PowerShell):{P0}
 H87|Buraya girin: <b>Karşı tarafın genel anahtarı</b> = 3. adımdaki anahtar, <b>Karşı tarafın adresi</b> = bilgisayarın IP'si (<code>ipconfig</code>), <b>Karşı tarafın portu</b> 51820, <b>Tünel adresi</b> 10.8.0.2, <b>Ağ maskesi</b> 255.255.255.0, <b>Keepalive</b> 25, <b>WireGuard tünelini etkinleştir</b> işaretli, ardından <b>WireGuard'ı kaydet</b>.
 H88|Kontrol: uygulamada «Son el sıkışma» görünür. Sonra (yönetici olarak):{P0}

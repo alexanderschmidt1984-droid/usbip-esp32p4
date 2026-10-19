@@ -302,14 +302,14 @@ H74|Esta guía configura <b>este PC como otro extremo</b>, en la misma red. PC: 
 H75|Instalar:{P0}
 H76|Haz clic aquí en <b>Generar</b>. La clave privada se queda en la placa, solo se muestra la pública.
 H77|Crear una clave para el PC y mostrar su clave pública:{P0}
-H78|Crear la configuración con <code>sudoedit /etc/wireguard/wg-usbip.conf</code>:{P0}
+H78|Crear la configuración con <code>sudoedit /etc/wireguard/wg-usbip.conf</code>:{P0}<span class="note">Tras <code>PublicKey</code> va la clave <b>pública</b> de la placa – no es un secreto, va justo aquí. La clave privada nunca sale de la placa.</span>
 H79|Abrir el cortafuegos para UDP 51820 (ufw):{P0}<span class="note">Con firewalld: <code>sudo firewall-cmd --permanent --add-port=51820/udp &amp;&amp; sudo firewall-cmd --reload</code>. Sin cortafuegos este paso no es necesario.</span>
 H80|Iniciar el túnel y arrancarlo automáticamente al iniciar el sistema:{P0}
 H81|Introducir aquí: <b>Clave pública del otro extremo</b> = salida del paso 3, <b>Dirección del otro extremo</b> = IP del PC (<code>ip -4 -br addr</code>), <b>Puerto del otro extremo</b> 51820, <b>Dirección del túnel</b> 10.8.0.2, <b>Máscara</b> 255.255.255.0, <b>Keepalive</b> 25, marcar <b>Activar túnel WireGuard</b> y luego <b>Guardar WireGuard</b>.
 H82|Comprobar:{P0}
 H83|Abrir la interfaz de forma protegida: <code>http://<span class="h-wgaddr"></span>/</code>
 H84|Instalar <b>WireGuard para Windows</b>: <code>wireguard.com/install</code>.
-H85|En la aplicación WireGuard: flecha junto a «Añadir túnel» → «Añadir túnel vacío…», nombre <code>wg-usbip</code>. La aplicación crea una clave por sí misma. Anota la <b>clave pública</b> mostrada. Debajo de la línea existente <code>PrivateKey = …</code> añade:{P0}Guardar y luego <b>Activar</b>.
+H85|En la aplicación WireGuard: flecha junto a «Añadir túnel» → «Añadir túnel vacío…», nombre <code>wg-usbip</code>. La aplicación crea una clave por sí misma. Anota la <b>clave pública</b> mostrada. Debajo de la línea existente <code>PrivateKey = …</code> añade:{P0}Guardar y luego <b>Activar</b>.<span class="note">Tras <code>PublicKey</code> va la clave <b>pública</b> de la placa – no es un secreto, va justo aquí. La clave privada nunca sale de la placa.</span>
 H86|Abrir el cortafuegos para UDP 51820 (PowerShell como administrador):{P0}
 H87|Introducir aquí: <b>Clave pública del otro extremo</b> = clave del paso 3, <b>Dirección del otro extremo</b> = IP del PC (<code>ipconfig</code>), <b>Puerto del otro extremo</b> 51820, <b>Dirección del túnel</b> 10.8.0.2, <b>Máscara</b> 255.255.255.0, <b>Keepalive</b> 25, marcar <b>Activar túnel WireGuard</b> y luego <b>Guardar WireGuard</b>.
 H88|Comprobar: la aplicación muestra «Último handshake». Luego (como administrador):{P0}

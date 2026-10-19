@@ -302,14 +302,14 @@ H74|This guide sets up <b>this PC as the peer</b>, in the same network. PC: <cod
 H75|Install:{P0}
 H76|Click <b>Generate</b> here. The private key stays on the board, only the public one is shown.
 H77|Create a key for the PC and show its public key:{P0}
-H78|Create the configuration with <code>sudoedit /etc/wireguard/wg-usbip.conf</code>:{P0}
+H78|Create the configuration with <code>sudoedit /etc/wireguard/wg-usbip.conf</code>:{P0}<span class="note">After <code>PublicKey</code> comes the board’s <b>public</b> key – not a secret, it belongs exactly here. The private key never leaves the board.</span>
 H79|Open the firewall for UDP 51820 (ufw):{P0}<span class="note">With firewalld: <code>sudo firewall-cmd --permanent --add-port=51820/udp &amp;&amp; sudo firewall-cmd --reload</code>. Without a firewall this step is not needed.</span>
 H80|Start the tunnel and start it automatically at boot:{P0}
 H81|Enter here: <b>Peer public key</b> = output of step 3, <b>Peer endpoint</b> = IP of the PC (<code>ip -4 -br addr</code>), <b>Peer port</b> 51820, <b>Tunnel address</b> 10.8.0.2, <b>Netmask</b> 255.255.255.0, <b>Keepalive</b> 25, tick <b>Enable</b>, then <b>Save WireGuard</b>.
 H82|Check:{P0}
 H83|Open the web UI protected: <code>http://<span class="h-wgaddr"></span>/</code>
 H84|Install <b>WireGuard for Windows</b>: <code>wireguard.com/install</code>.
-H85|In the WireGuard app: arrow next to "Add Tunnel" → "Add empty tunnel…", name <code>wg-usbip</code>. The app creates a key by itself. Note the displayed <b>public key</b>. Below the given line <code>PrivateKey = …</code> add:{P0}Save, then <b>Activate</b>.
+H85|In the WireGuard app: arrow next to "Add Tunnel" → "Add empty tunnel…", name <code>wg-usbip</code>. The app creates a key by itself. Note the displayed <b>public key</b>. Below the given line <code>PrivateKey = …</code> add:{P0}Save, then <b>Activate</b>.<span class="note">After <code>PublicKey</code> comes the board’s <b>public</b> key – not a secret, it belongs exactly here. The private key never leaves the board.</span>
 H86|Open the firewall for UDP 51820 (PowerShell as administrator):{P0}
 H87|Enter here: <b>Peer public key</b> = key from step 3, <b>Peer endpoint</b> = IP of the PC (<code>ipconfig</code>), <b>Peer port</b> 51820, <b>Tunnel address</b> 10.8.0.2, <b>Netmask</b> 255.255.255.0, <b>Keepalive</b> 25, tick <b>Enable</b>, then <b>Save WireGuard</b>.
 H88|Check: the app shows "Latest handshake". Then (as administrator):{P0}

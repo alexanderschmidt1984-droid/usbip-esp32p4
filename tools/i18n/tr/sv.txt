@@ -302,14 +302,14 @@ H74|Guiden konfigurerar <b>den här datorn som motpart</b> i samma nätverk. Dat
 H75|Installera:{P0}
 H76|Klicka på <b>Generera</b> här. Den privata nyckeln stannar på kortet, bara den publika visas.
 H77|Skapa en nyckel för datorn och visa dess publika nyckel:{P0}
-H78|Skapa konfigurationen med <code>sudoedit /etc/wireguard/wg-usbip.conf</code>:{P0}
+H78|Skapa konfigurationen med <code>sudoedit /etc/wireguard/wg-usbip.conf</code>:{P0}<span class="note">Efter <code>PublicKey</code> står kortets <b>publika</b> nyckel – ingen hemlighet, den hör hemma just här. Den privata nyckeln lämnar aldrig kortet.</span>
 H79|Öppna brandväggen för UDP 51820 (ufw):{P0}<span class="note">Med firewalld: <code>sudo firewall-cmd --permanent --add-port=51820/udp &amp;&amp; sudo firewall-cmd --reload</code>. Utan brandvägg behövs inte steget.</span>
 H80|Starta tunneln och starta den automatiskt vid uppstart:{P0}
 H81|Ange här: <b>Motpartens publika nyckel</b> = utdata från steg 3, <b>Motpartens adress</b> = datorns IP (<code>ip -4 -br addr</code>), <b>Motpartens port</b> 51820, <b>Tunneladress</b> 10.8.0.2, <b>Nätmask</b> 255.255.255.0, <b>Keepalive</b> 25, markera <b>Aktivera WireGuard-tunnel</b> och sedan <b>Spara WireGuard</b>.
 H82|Kontrollera:{P0}
 H83|Öppna webbgränssnittet skyddat: <code>http://<span class="h-wgaddr"></span>/</code>
 H84|Installera <b>WireGuard för Windows</b>: <code>wireguard.com/install</code>.
-H85|I WireGuard-appen: pilen bredvid "Lägg till tunnel" → "Lägg till tom tunnel…", namn <code>wg-usbip</code>. Appen skapar själv en nyckel. Anteckna den visade <b>publika nyckeln</b>. Under den befintliga raden <code>PrivateKey = …</code> lägger du till:{P0}Spara och klicka sedan på <b>Aktivera</b>.
+H85|I WireGuard-appen: pilen bredvid "Lägg till tunnel" → "Lägg till tom tunnel…", namn <code>wg-usbip</code>. Appen skapar själv en nyckel. Anteckna den visade <b>publika nyckeln</b>. Under den befintliga raden <code>PrivateKey = …</code> lägger du till:{P0}Spara och klicka sedan på <b>Aktivera</b>.<span class="note">Efter <code>PublicKey</code> står kortets <b>publika</b> nyckel – ingen hemlighet, den hör hemma just här. Den privata nyckeln lämnar aldrig kortet.</span>
 H86|Öppna brandväggen för UDP 51820 (PowerShell som administratör):{P0}
 H87|Ange här: <b>Motpartens publika nyckel</b> = nyckeln från steg 3, <b>Motpartens adress</b> = datorns IP (<code>ipconfig</code>), <b>Motpartens port</b> 51820, <b>Tunneladress</b> 10.8.0.2, <b>Nätmask</b> 255.255.255.0, <b>Keepalive</b> 25, markera <b>Aktivera WireGuard-tunnel</b> och sedan <b>Spara WireGuard</b>.
 H88|Kontrollera: appen visar "Senaste handskakning". Sedan (som administratör):{P0}

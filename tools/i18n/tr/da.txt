@@ -302,14 +302,14 @@ H74|Vejledningen opsætter <b>denne pc som modpart</b> på samme netværk. Pc: <
 H75|Installér:{P0}
 H76|Klik på <b>Generér</b> her. Den private nøgle bliver på boardet, kun den offentlige vises.
 H77|Opret en nøgle til pc'en, og vis dens offentlige nøgle:{P0}
-H78|Opret konfigurationen med <code>sudoedit /etc/wireguard/wg-usbip.conf</code>:{P0}
+H78|Opret konfigurationen med <code>sudoedit /etc/wireguard/wg-usbip.conf</code>:{P0}<span class="note">Efter <code>PublicKey</code> står boardets <b>offentlige</b> nøgle – ingen hemmelighed, den hører netop til her. Den private nøgle forlader aldrig boardet.</span>
 H79|Åbn firewallen for UDP 51820 (ufw):{P0}<span class="note">Med firewalld: <code>sudo firewall-cmd --permanent --add-port=51820/udp &amp;&amp; sudo firewall-cmd --reload</code>. Uden firewall er trinnet unødvendigt.</span>
 H80|Start tunnelen, og start den automatisk ved opstart:{P0}
 H81|Indtast her: <b>Modpartens offentlige nøgle</b> = output fra trin 3, <b>Modpartens adresse</b> = pc'ens IP (<code>ip -4 -br addr</code>), <b>Modpartens port</b> 51820, <b>Tunneladresse</b> 10.8.0.2, <b>Netmaske</b> 255.255.255.0, <b>Keepalive</b> 25, sæt flueben ved <b>Aktivér WireGuard-tunnel</b>, og derefter <b>Gem WireGuard</b>.
 H82|Kontrollér:{P0}
 H83|Åbn web-UI'et beskyttet: <code>http://<span class="h-wgaddr"></span>/</code>
 H84|Installér <b>WireGuard til Windows</b>: <code>wireguard.com/install</code>.
-H85|I WireGuard-appen: pilen ved siden af "Tilføj tunnel" → "Tilføj tom tunnel…", navn <code>wg-usbip</code>. Appen opretter selv en nøgle. Notér den viste <b>offentlige nøgle</b>. Under den eksisterende linje <code>PrivateKey = …</code> tilføjes:{P0}Gem, og klik derefter på <b>Aktivér</b>.
+H85|I WireGuard-appen: pilen ved siden af "Tilføj tunnel" → "Tilføj tom tunnel…", navn <code>wg-usbip</code>. Appen opretter selv en nøgle. Notér den viste <b>offentlige nøgle</b>. Under den eksisterende linje <code>PrivateKey = …</code> tilføjes:{P0}Gem, og klik derefter på <b>Aktivér</b>.<span class="note">Efter <code>PublicKey</code> står boardets <b>offentlige</b> nøgle – ingen hemmelighed, den hører netop til her. Den private nøgle forlader aldrig boardet.</span>
 H86|Åbn firewallen for UDP 51820 (PowerShell som administrator):{P0}
 H87|Indtast her: <b>Modpartens offentlige nøgle</b> = nøglen fra trin 3, <b>Modpartens adresse</b> = pc'ens IP (<code>ipconfig</code>), <b>Modpartens port</b> 51820, <b>Tunneladresse</b> 10.8.0.2, <b>Netmaske</b> 255.255.255.0, <b>Keepalive</b> 25, sæt flueben ved <b>Aktivér WireGuard-tunnel</b>, og derefter <b>Gem WireGuard</b>.
 H88|Kontrollér: appen viser "Seneste handshake". Derefter (som administrator):{P0}

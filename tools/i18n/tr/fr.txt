@@ -302,14 +302,14 @@ H74|Ce guide configure <b>ce PC comme pair</b>, dans le même réseau. PC : <cod
 H75|Installer :{P0}
 H76|Cliquer ici sur <b>Générer</b>. La clé privée reste sur la carte, seule la clé publique est affichée.
 H77|Créer une clé pour le PC et afficher sa clé publique :{P0}
-H78|Créer la configuration avec <code>sudoedit /etc/wireguard/wg-usbip.conf</code> :{P0}
+H78|Créer la configuration avec <code>sudoedit /etc/wireguard/wg-usbip.conf</code> :{P0}<span class="note">Après <code>PublicKey</code> figure la clé <b>publique</b> de la carte – pas un secret, elle a sa place exactement ici. La clé privée ne quitte jamais la carte.</span>
 H79|Ouvrir le pare-feu pour UDP 51820 (ufw) :{P0}<span class="note">Avec firewalld : <code>sudo firewall-cmd --permanent --add-port=51820/udp &amp;&amp; sudo firewall-cmd --reload</code>. Sans pare-feu, cette étape est inutile.</span>
 H80|Démarrer le tunnel et le lancer automatiquement au démarrage :{P0}
 H81|Saisir ici : <b>Clé publique du pair</b> = sortie de l'étape 3, <b>Adresse du pair</b> = IP du PC (<code>ip -4 -br addr</code>), <b>Port du pair</b> 51820, <b>Adresse tunnel</b> 10.8.0.2, <b>Masque</b> 255.255.255.0, <b>Keepalive</b> 25, cocher <b>Activer le tunnel WireGuard</b>, puis <b>Enregistrer WireGuard</b>.
 H82|Vérifier :{P0}
 H83|Ouvrir l'interface de façon protégée : <code>http://<span class="h-wgaddr"></span>/</code>
 H84|Installer <b>WireGuard pour Windows</b> : <code>wireguard.com/install</code>.
-H85|Dans l'application WireGuard : flèche à côté de « Ajouter un tunnel » → « Ajouter un tunnel vide… », nom <code>wg-usbip</code>. L'application crée elle-même une clé. Noter la <b>clé publique</b> affichée. Sous la ligne existante <code>PrivateKey = …</code>, ajouter :{P0}Enregistrer, puis <b>Activer</b>.
+H85|Dans l'application WireGuard : flèche à côté de « Ajouter un tunnel » → « Ajouter un tunnel vide… », nom <code>wg-usbip</code>. L'application crée elle-même une clé. Noter la <b>clé publique</b> affichée. Sous la ligne existante <code>PrivateKey = …</code>, ajouter :{P0}Enregistrer, puis <b>Activer</b>.<span class="note">Après <code>PublicKey</code> figure la clé <b>publique</b> de la carte – pas un secret, elle a sa place exactement ici. La clé privée ne quitte jamais la carte.</span>
 H86|Ouvrir le pare-feu pour UDP 51820 (PowerShell en administrateur) :{P0}
 H87|Saisir ici : <b>Clé publique du pair</b> = clé de l'étape 3, <b>Adresse du pair</b> = IP du PC (<code>ipconfig</code>), <b>Port du pair</b> 51820, <b>Adresse tunnel</b> 10.8.0.2, <b>Masque</b> 255.255.255.0, <b>Keepalive</b> 25, cocher <b>Activer le tunnel WireGuard</b>, puis <b>Enregistrer WireGuard</b>.
 H88|Vérifier : l'application affiche « Dernier handshake ». Puis (en administrateur) :{P0}

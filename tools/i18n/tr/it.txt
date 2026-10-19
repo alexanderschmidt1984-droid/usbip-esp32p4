@@ -302,14 +302,14 @@ H74|Questa guida configura <b>questo PC come peer</b>, nella stessa rete. PC: <c
 H75|Installare:{P0}
 H76|Fare clic qui su <b>Genera</b>. La chiave privata resta sulla scheda, viene mostrata solo quella pubblica.
 H77|Creare una chiave per il PC e mostrarne la chiave pubblica:{P0}
-H78|Creare la configurazione con <code>sudoedit /etc/wireguard/wg-usbip.conf</code>:{P0}
+H78|Creare la configurazione con <code>sudoedit /etc/wireguard/wg-usbip.conf</code>:{P0}<span class="note">Dopo <code>PublicKey</code> c’è la chiave <b>pubblica</b> della scheda – non è un segreto, va proprio qui. La chiave privata non lascia mai la scheda.</span>
 H79|Aprire il firewall per UDP 51820 (ufw):{P0}<span class="note">Con firewalld: <code>sudo firewall-cmd --permanent --add-port=51820/udp &amp;&amp; sudo firewall-cmd --reload</code>. Senza firewall questo passo non serve.</span>
 H80|Avviare il tunnel e farlo partire automaticamente all'avvio:{P0}
 H81|Inserire qui: <b>Chiave pubblica del peer</b> = output del passo 3, <b>Indirizzo del peer</b> = IP del PC (<code>ip -4 -br addr</code>), <b>Porta del peer</b> 51820, <b>Indirizzo tunnel</b> 10.8.0.2, <b>Maschera</b> 255.255.255.0, <b>Keepalive</b> 25, spuntare <b>Attiva tunnel WireGuard</b>, poi <b>Salva WireGuard</b>.
 H82|Verificare:{P0}
 H83|Aprire l'interfaccia in modo protetto: <code>http://<span class="h-wgaddr"></span>/</code>
 H84|Installare <b>WireGuard per Windows</b>: <code>wireguard.com/install</code>.
-H85|Nell'app WireGuard: freccia accanto ad «Aggiungi tunnel» → «Aggiungi tunnel vuoto…», nome <code>wg-usbip</code>. L'app crea da sola una chiave. Annotare la <b>chiave pubblica</b> mostrata. Sotto la riga esistente <code>PrivateKey = …</code> aggiungere:{P0}Salvare, poi <b>Attiva</b>.
+H85|Nell'app WireGuard: freccia accanto ad «Aggiungi tunnel» → «Aggiungi tunnel vuoto…», nome <code>wg-usbip</code>. L'app crea da sola una chiave. Annotare la <b>chiave pubblica</b> mostrata. Sotto la riga esistente <code>PrivateKey = …</code> aggiungere:{P0}Salvare, poi <b>Attiva</b>.<span class="note">Dopo <code>PublicKey</code> c’è la chiave <b>pubblica</b> della scheda – non è un segreto, va proprio qui. La chiave privata non lascia mai la scheda.</span>
 H86|Aprire il firewall per UDP 51820 (PowerShell come amministratore):{P0}
 H87|Inserire qui: <b>Chiave pubblica del peer</b> = chiave del passo 3, <b>Indirizzo del peer</b> = IP del PC (<code>ipconfig</code>), <b>Porta del peer</b> 51820, <b>Indirizzo tunnel</b> 10.8.0.2, <b>Maschera</b> 255.255.255.0, <b>Keepalive</b> 25, spuntare <b>Attiva tunnel WireGuard</b>, poi <b>Salva WireGuard</b>.
 H88|Verificare: l'app mostra «Ultimo handshake». Poi (come amministratore):{P0}
