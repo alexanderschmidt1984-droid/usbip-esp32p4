@@ -1,5 +1,23 @@
 # USB/IP Server for ESP32-P4
 
+> **About this fork (branch `improvements`)**
+> Fork of [ringof/usbip-esp32p4](https://github.com/ringof/usbip-esp32p4), which itself is a fork of
+> [DatanoiseTV/usbip-esp32p4](https://github.com/DatanoiseTV/usbip-esp32p4). Tested on a Waveshare
+> ESP32-P4-ETH (chip rev v3.2) with ESP-IDF v6.0.3. Changes on top of ringof's `main`:
+>
+> - **Transfer engine fixes**: large bulk IN/OUT transfers, cancel/unlink use-after-free, ISO length checks,
+>   port reset after a session; faster reads/writes (about 9 MB/s read, 6 MB/s write on 100 Mbit Ethernet)
+> - **Encryption**: WireGuard tunnel on the board, USB/IP over TLS-PSK (port 3241, for stunnel), HTTPS Web UI
+> - **Web UI security**: salted password hash, login lockout, CSRF protection, IP/MAC allowlist with comments,
+>   password-less read-only `guest`, first-time setup after a factory reset, USB device filter (VID:PID)
+> - **Web UI**: 12 languages, dark theme, settings tabs, encrypted settings backup/restore, log export,
+>   crash info, power save (DFS) toggle, factory reset by pressing RESET 5 times
+>
+> Hardware test notes: [`CLAUDE.md`](CLAUDE.md) (German), guides in [`docs/`](docs/) (German).
+>
+> **License:** the upstream projects have no license yet, so all rights remain with their authors.
+> A license has been requested; until then this fork is shared for reference only.
+
 A standalone USB/IP server running on the ESP32-P4-Nano that exports locally-connected USB devices over Ethernet. Plug in USB devices (directly or via a hub), and they appear as native USB devices on remote machines running Linux, Windows, or macOS.
 
 ## Features
